@@ -42,14 +42,13 @@ $('#vis-3d').on({
               reader.onload = $.proxy(function(file, event) {
                 if (file.name.match('.+(\.swc)$')) {
                   var name = file.name.split('.')[0];
-                  var json = {
-                    name: {
-                      label: name,
-                      dataStr: event.target.result,
-                      filetype: 'swc'
-                    }
-                  }
-                  ffbomesh.addJson({ffbo_json: json})
+                  var json = {};
+                  json[name] = {
+                    label: name,
+                    dataStr: event.target.result,
+                    filetype: 'swc'
+                  };
+                  ffbomesh.addJson({ffbo_json: json});
                 }
               }, this, file);
               reader.readAsText(file);
