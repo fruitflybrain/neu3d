@@ -12,7 +12,7 @@ function dataCallback(data) {
 window.ffbomesh = ffbomesh;
 
 $.getJSON("./config.json", function (json) {
-    console.log('????',json);
+    console.log(json);
     ffbomesh.addJson({
         ffbo_json: json,
         showAfterLoadAll: true
@@ -22,13 +22,49 @@ $.getJSON("./config.json", function (json) {
 var oldHeight = ffbomesh.container.clientHeight;
 var oldWidth = ffbomesh.container.clientWidth;
 
-setInterval(() => {
-    if (oldHeight != ffbomesh.container.clientHeight || oldWidth != ffbomesh.container.clientWidth) {
-        ffbomesh.onWindowResize();
-        oldHeight = ffbomesh.container.clientHeight;
-        oldWidth = ffbomesh.container.clientWidth;
+$(document).ready(()=>{
+    ffbomesh.onWindowResize();
+});
+
+$('#vis-3d').on({
+    'dragover dragenter': function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    },
+    'drop': function(e) {
+        //console.log(e.originalEvent instanceof DragEvent);
+        var dataTransfer =  e.originalEvent.dataTransfer;
+        if( dataTransfer && dataTransfer.files.length) {
+            e.preventDefault();
+            e.stopPropagation();
+            $.each( dataTransfer.files, function(i, file) {
+              var reader = new FileReader();
+              reader.onload = $.proxy(function(file, event) {
+                if (file.name.match('.+(\.swc)$')) {
+                  var name = file.name.split('.')[0];
+                  var json = {};
+                  json[name] = {
+                    label: name,
+                    dataStr: event.target.result,
+                    filetype: 'swc'
+                  };
+                  ffbomesh.addJson({ffbo_json: json});
+                }
+              }, this, file);
+              reader.readAsText(file);
+            });
+        }
     }
-}, 200);
+});
+
+
+// setInterval(() => {
+//     if (oldHeight != ffbomesh.container.clientHeight || oldWidth != ffbomesh.container.clientWidth) {
+//         ffbomesh.onWindowResize();
+//         oldHeight = ffbomesh.container.clientHeight;
+//         oldWidth = ffbomesh.container.clientWidth;
+//     }
+// }, 200);
 
 ffbomesh.createUIBtn("showSettings", "fa-cog", "Settings")
 ffbomesh.createUIBtn("takeScreenshot", "fa-camera", "Download Screenshot")

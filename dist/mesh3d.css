@@ -1,0 +1,97 @@
+
+/*
+ * 3D Visual Scene
+ */
+.vis-3d {
+  background: rgba(0,0,0,0);
+  overflow: hidden;
+  text-align:center;
+  position: fixed;
+  z-index: 100;
+  -webkit-transition: left .5s, top .5s, width .5s, height .5s;
+  transition: left .5s, top .5s, width .5s, height .5s;
+}
+.vis-3d canvas {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
+
+.vis-3d-sm {
+  border: 3px solid #1f1f1f;
+  border-radius: 5px;
+  height: 150px;
+  width: 150px;
+  top: 60px;
+  right: 10px;
+}
+
+.vis-3d-lg {
+  border: none;
+  height: calc( 100% - 100px );
+  width: 100%;
+  top: 50px;
+  right: 0px;
+}
+
+.vis-3d-hf {
+  border: 0px solid #1f1f1f;
+  border-radius: 5px;
+  height: calc( 100% - 120px );
+  width: calc(100% - var(--boundary-horizontal) - 10px);
+  top: 60px;
+  left: calc(var(--boundary-horizontal));
+  margin-left: 0px;
+}
+
+.vis {
+  position: fixed;
+  background: #000000;
+  -webkit-transition: left .5s, top .5s, width .5s, height .5s;
+  transition: left .5s, top .5s, width .5s, height .5s;
+}
+.vis-sm {
+  border: 3px solid #1f1f1f;
+  border-radius: 5px;
+  height: 150px;
+  width: 150px;
+  top: 60px;
+  left: 10px;
+  overflow: hidden;
+  z-index: 150;
+}
+.vis-sm-1 {
+  border: 3px solid #1f1f1f;
+  border-radius: 5px;
+  height: 150px;
+  width: 150px;
+  top: 220px;
+  left: 10px;
+  overflow: hidden;
+  z-index: 150;
+}
+.vis-lg {
+  text-align: center;
+  clear: left;
+  top: 50px;
+  left: 160px;
+  width: calc( 100% - 170px );
+  height: calc( 100% - 100px );
+  overflow-y: auto;
+}
+
+.vis-sm:hover,
+.vis-sm-1:hover {
+  top: 60px;
+  height: calc(100% - 120px);
+  width: calc(50% - 15px);
+  z-index: 9999;
+}
+vis-hf-r {
+  border: 3px solid #1f1f1f;
+  border-radius: 5px;
+  top: 60px;
+  left: calc(50% + 5px);
+  height: calc(100% - 120px);
+  width: calc(50% - 15px);
+}

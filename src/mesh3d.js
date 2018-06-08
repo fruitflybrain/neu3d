@@ -1278,11 +1278,11 @@ export class FFBOMesh3D {
       if (!this.meshDict[key]['background']) {
         if (!('morph_type' in this.meshDict[key]) ||
           (this.meshDict[key]['morph_type'] != 'Synapse SWC')) {
-          for (i in this.meshDict[key].object.children)
+          for (let i in this.meshDict[key].object.children)
             this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
         }
         else {
-          for (i in this.meshDict[key].object.children)
+          for (let i in this.meshDict[key].object.children)
             this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
         }
       }
