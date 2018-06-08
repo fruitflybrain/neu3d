@@ -2,7 +2,7 @@
   "name": "mesh3d",
   "version": "1.0.0",
   "description": "A npm package for rendering SWC files.",
-  "main": "index.js",
+  "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,5 +15,18 @@
   "bugs": {
     "url": "https://github.com/TK-21st/mesh3D/issues"
   },
-  "homepage": "https://github.com/TK-21st/mesh3D#readme"
+  "homepage": "https://github.com/TK-21st/mesh3D#readme",
+  "dependencies": {
+    "dat.gui": "^0.7.2",
+    "exports-loader": "^0.7.0",
+    "imports-loader": "^0.8.0",
+    "jquery": "^3.3.1",
+    "lodash": "^4.17.10",
+    "stats.js": "^0.17.0",
+    "three": "^0.93.0"
+  },
+  "devDependencies": {
+    "webpack": "^4.11.1",
+    "webpack-cli": "^3.0.3"
+  }
 }
