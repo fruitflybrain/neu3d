@@ -901,17 +901,17 @@ export class FFBOMesh3D {
   onWindowResize() {
     var height = this.container.clientHeight;
     var width = this.container.clientWidth;
-    aspect = width / height;
-    cam_dir = new THREE.Vector3();
+    let aspect = width / height;
+    let cam_dir = new THREE.Vector3();
     cam_dir.subVectors(this.camera.position, this.controls.target);
-    prevDist = cam_dir.length();
+    let prevDist = cam_dir.length();
     cam_dir.normalize();
-    hspan = prevDist * 2 * Math.tan(this.prevhfov / 2);
+    let hspan = prevDist * 2 * Math.tan(this.prevhfov / 2);
     //vspan = prevDist*2*Math.tan(Math.PI*this.fov/2/180);
     this.prevhfov = 2 * Math.atan(Math.tan(Math.PI * this.fov / 2 / 180) * aspect);
     //span = Math.max(ffbomesh.boundingBox.maxX-ffbomesh.boundingBox.minX,ffbomesh.boundingBox.maxY-ffbomesh.boundingBox.minY, ffbomesh.boundingBox.maxZ-ffbomesh.boundingBox.minZ);
     //dist = Math.max(hspan/2/Math.tan(hfov/2), vspan/2/Math.tan(Math.PI*this.fov/2/180));
-    dist = hspan / 2 / Math.tan(this.prevhfov / 2);
+    let dist = hspan / 2 / Math.tan(this.prevhfov / 2);
     this.camera.position.copy(this.controls.target);
     this.camera.position.addScaledVector(cam_dir, dist);
     this.camera.aspect = aspect;
