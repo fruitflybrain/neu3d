@@ -12,7 +12,7 @@ function dataCallback(data) {
 window.ffbomesh = ffbomesh;
 
 $.getJSON("./config.json", function (json) {
-    console.log('????',json);
+    console.log(json);
     ffbomesh.addJson({
         ffbo_json: json,
         showAfterLoadAll: true
@@ -22,13 +22,18 @@ $.getJSON("./config.json", function (json) {
 var oldHeight = ffbomesh.container.clientHeight;
 var oldWidth = ffbomesh.container.clientWidth;
 
-setInterval(() => {
-    if (oldHeight != ffbomesh.container.clientHeight || oldWidth != ffbomesh.container.clientWidth) {
-        ffbomesh.onWindowResize();
-        oldHeight = ffbomesh.container.clientHeight;
-        oldWidth = ffbomesh.container.clientWidth;
-    }
-}, 200);
+$(document).ready(()=>{
+    ffbomesh.onWindowResize();
+});
+
+
+// setInterval(() => {
+//     if (oldHeight != ffbomesh.container.clientHeight || oldWidth != ffbomesh.container.clientWidth) {
+//         ffbomesh.onWindowResize();
+//         oldHeight = ffbomesh.container.clientHeight;
+//         oldWidth = ffbomesh.container.clientWidth;
+//     }
+// }, 200);
 
 ffbomesh.createUIBtn("showSettings", "fa-cog", "Settings")
 ffbomesh.createUIBtn("takeScreenshot", "fa-camera", "Download Screenshot")
