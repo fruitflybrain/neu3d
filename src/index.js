@@ -26,6 +26,38 @@ $(document).ready(()=>{
     ffbomesh.onWindowResize();
 });
 
+$('#vis-3d').on({
+    'dragover dragenter': function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    },
+    'drop': function(e) {
+        //console.log(e.originalEvent instanceof DragEvent);
+        var dataTransfer =  e.originalEvent.dataTransfer;
+        if( dataTransfer && dataTransfer.files.length) {
+            e.preventDefault();
+            e.stopPropagation();
+            $.each( dataTransfer.files, function(i, file) {
+              var reader = new FileReader();
+              reader.onload = $.proxy(function(file, event) {
+                if (file.name.match('.+(\.swc)$')) {
+                  var name = file.name.split('.')[0];
+                  var json = {
+                    name: {
+                      label: name,
+                      dataStr: event.target.result,
+                      filetype: 'swc'
+                    }
+                  }
+                  ffbomesh.addJson({ffbo_json: json})
+                }
+              }, this, file);
+              reader.readAsText(file);
+            });
+        }
+    }
+});
+
 
 // setInterval(() => {
 //     if (oldHeight != ffbomesh.container.clientHeight || oldWidth != ffbomesh.container.clientWidth) {
