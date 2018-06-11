@@ -3,7 +3,6 @@
 
 ## To test this in a live site
 ```
-git checkout testsite
 npm install
 npx webpack --config webpack.config.js
 ```
