@@ -1,6 +1,6 @@
 import { FFBOMesh3D } from "./mesh3d";
 
-var parentDivId  = 'vis-3d';
+const parentDivId  = 'vis-3d';
 var ffbomesh = new FFBOMesh3D(parentDivId, undefined, { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } });
 //ffbomesh.settings.neuron3d = 1;
 function dataCallback(data) {
@@ -24,11 +24,7 @@ $(document).ready(()=>{
     ffbomesh.onWindowResize();
 });
 
-$(parentDivId).on('resize',()=>{
-    ffbomesh.onWindowResize();
-})
-
-$(parentDivId).on({
+$('#'+parentDivId).on({
     'dragover dragenter': function(e) {
         e.preventDefault();
         e.stopPropagation();
