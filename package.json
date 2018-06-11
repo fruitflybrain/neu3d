@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "A npm package for rendering SWC files.",
   "private": true,
+  "main": "./src/mesh3D.js",
+  "types": "./src/mesh3D.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

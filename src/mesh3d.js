@@ -1,29 +1,10 @@
-import * as Detector from 'three/examples/js/Detector';
 import * as Stats from 'stats.js';
 
 import { PropertyManager } from './propertymanager';
 import { FFBOLightsHelper } from './lightshelper';
 
-//import "three/examples/js/utils/SceneUtils";
-import "three/examples/js/math/Lut";
-import "three/examples/js/shaders/CopyShader";
-import "three/examples/js/shaders/ConvolutionShader";
-import "three/examples/js/shaders/FXAAShader";
-import "three/examples/js/shaders/SSAOShader";
-import "three/examples/js/shaders/LuminosityHighPassShader";
-import "three/examples/js/shaders/LuminosityShader";
-import "three/examples/js/shaders/ToneMapShader";
-import "three/examples/js/shaders/GammaCorrectionShader";
-import "three/examples/js/postprocessing/EffectComposer";
-import "three/examples/js/postprocessing/RenderPass";
-import "three/examples/js/postprocessing/SSAARenderPass";
-import "three/examples/js/postprocessing/ShaderPass";
-import "three/examples/js/postprocessing/SSAOPass";
-import "three/examples/js/postprocessing/MaskPass";
-import "three/examples/js/postprocessing/BloomPass";
-import "three/examples/js/postprocessing/UnrealBloomPass";
-import "three/examples/js/postprocessing/AdaptiveToneMappingPass";
-import "three/examples/js/controls/TrackballControls";
+const Detector = require("three/examples/js/Detector");
+const THREE = require('../lib/three');
 
 
 var isOnMobile = checkOnMobile();
@@ -55,7 +36,16 @@ function getRandomIntInclusive(min, max) {
 if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 
-
+/**
+ * Function taken from THREE.SceneUtils
+ * 
+ * @param geometry 
+ * @param materials 
+ * 
+ * ### Note
+ * reason for extracting this method is that loading THREE.SceneUtils
+ * always returns `module has been moved to ...` error.
+ */
 function createMultiMaterialObject(geometry, materials) {
 
       var group = new THREE.Group();
@@ -69,27 +59,17 @@ function createMultiMaterialObject(geometry, materials) {
       return group;
 }
 
-function detach (child, parent, scene) {
-
-      child.applyMatrix(parent.matrixWorld);
-      parent.remove(child);
-      scene.add(child);
-
-};
-
-function attach (child, scene, parent) {
-
-      child.applyMatrix(new THREE.Matrix4().getInverse(parent.matrixWorld));
-
-      scene.remove(child);
-      parent.add(child);
-
-}
-
-
 
 export class FFBOMesh3D {
-  constructor(div_id, data, metadata, stats = false) {
+  /**
+   * 
+   * @param {HTMLDivElement} container : parent div element
+   * @param {JSON | undefined } data : optionally add initalization data
+   * @param {JSON | undefined } metadata : optional metadata
+   * @param {boolean} [stats=false] : whether to show rendering stats panel overlay
+   */
+  constructor(container, data, metadata, stats = false) {
+    this.container = container;
     /* default metadata */
     this._metadata = {
       "colormap": "rainbow_gist",
@@ -149,7 +129,6 @@ export class FFBOMesh3D {
     this._labelToRid = {};
     this.raycaster = new THREE.Raycaster();
     this.raycaster.linePrecision = 3;
-    this.container = document.getElementById(div_id);
     this.stats = new Stats();
     if (stats) {
       this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
@@ -245,7 +224,46 @@ export class FFBOMesh3D {
       this.addJson(data);
     this.animate();
     this._defaultSettings = this.export_settings();
-  }
+
+    // setup drag-drop functionality
+    $('#' + this.container.id).on({
+      'dragover dragenter': function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      },
+      'drop': function (e) {
+        var dataTransfer = e.originalEvent.dataTransfer;
+        if (dataTransfer && dataTransfer.files.length) {
+          e.preventDefault();
+          e.stopPropagation();
+          $.each(dataTransfer.files, function (i, file) {
+            var reader = new FileReader();
+            reader.onload = $.proxy(function (file, event) {
+              if (file.name.match('.+(\.swc)$')) {
+                var name = file.name.split('.')[0];
+                var json = {};
+                json[name] = {
+                  label: name,
+                  dataStr: event.target.result,
+                  filetype: 'swc'
+                };
+                ffbomesh.addJson({ ffbo_json: json });
+              }
+            }, this, file);
+            reader.readAsText(file);
+          });
+        }
+      }
+    });
+    
+    // <DEBUG>: this resize event is not working right now
+    this.container.addEventListener('resize',()=>{
+      console.log('div resize');
+      this.onWindowResize();
+    })
+    window.onresize = this.onWindowResize.bind(this);
+  } // ENDOF Constructor
+
   on(key, func) {
     if (typeof (func) !== "function") {
       console.log("not a function");
@@ -262,6 +280,7 @@ export class FFBOMesh3D {
       console.log("callback keyword '" + key + "' not recognized.");
     }
   }
+
   initCamera() {
     var height = this.container.clientHeight;
     var width = this.container.clientWidth;
@@ -275,6 +294,7 @@ export class FFBOMesh3D {
       camera.position.z = 2600;
     return camera;
   }
+
   initRenderer() {
     let renderer = new THREE.WebGLRenderer({ 'logarithmicDepthBuffer': true });
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -282,6 +302,7 @@ export class FFBOMesh3D {
     this.container.appendChild(renderer.domElement);
     return renderer;
   }
+
   initControls() {
     let controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
     controls.rotateSpeed = 2.0;
@@ -292,6 +313,7 @@ export class FFBOMesh3D {
     controls.addEventListener('change', this.render.bind(this));
     return controls;
   }
+
   initPostProcessing() {
     var height = this.container.clientHeight;
     var width = this.container.clientWidth;
@@ -1071,7 +1093,7 @@ export class FFBOMesh3D {
     Object.assign(this.settings, settings);
   }
   export_state() {
-    state_metadata = { 'color': {}, 'pinned': {}, 'visibility': {}, 'camera': { 'position': {}, 'up': {} }, 'target': {} };
+    let state_metadata = { 'color': {}, 'pinned': {}, 'visibility': {}, 'camera': { 'position': {}, 'up': {} }, 'target': {} };
     state_metadata['camera']['position']['x'] = this.camera.position.x;
     state_metadata['camera']['position']['y'] = this.camera.position.y;
     state_metadata['camera']['position']['z'] = this.camera.position.z;
@@ -1341,6 +1363,12 @@ export class FFBOMesh3D {
       delete this.meshDict[id[i]];
     }
   }
+
+  /**
+   * Set color of given object
+   * @param id 
+   * @param color 
+   */
   setColor(id, color) {
     id = this.asarray(id);
     for (var i = 0; i < id.length; ++i) {
@@ -1383,7 +1411,7 @@ export class FFBOMesh3D {
     this.controls.target.z = 0.5 * (this.visibleBoundingBox.minZ + this.visibleBoundingBox.maxZ);
     this.camera.updateProjectionMatrix();
     setTimeout(() => {
-      positions = [
+      let positions = [
         new THREE.Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.minY, this.visibleBoundingBox.minZ),
         new THREE.Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.minY, this.visibleBoundingBox.maxZ),
         new THREE.Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.maxY, this.visibleBoundingBox.minZ),
@@ -1394,21 +1422,21 @@ export class FFBOMesh3D {
         new THREE.Vector3(this.visibleBoundingBox.maxX, this.visibleBoundingBox.maxY, this.visibleBoundingBox.maxZ)
       ];
       // From https://stackoverflow.com/a/11771236
-      targetFov = 0.0;
+      let targetFov = 0.0;
       for (var i = 0; i < 8; i++) {
-        proj2d = positions[i].applyMatrix4(this.camera.matrixWorldInverse);
-        angle = Math.max(Math.abs(Math.atan(proj2d.x / proj2d.z) / camera.aspect), Math.abs(Math.atan(proj2d.y / proj2d.z)));
+        let proj2d = positions[i].applyMatrix4(this.camera.matrixWorldInverse);
+        let angle = Math.max(Math.abs(Math.atan(proj2d.x / proj2d.z) / this.camera.aspect), Math.abs(Math.atan(proj2d.y / proj2d.z)));
         targetFov = Math.max(targetFov, angle);
       }
-      currentFov = Math.PI * this.fov / 2 / 180;
-      cam_dir = new THREE.Vector3();
+      let currentFov = Math.PI * this.fov / 2 / 180;
+      let cam_dir = new THREE.Vector3();
       cam_dir.subVectors(this.camera.position, this.controls.target);
-      prevDist = cam_dir.length();
+      let prevDist = cam_dir.length();
       cam_dir.normalize();
-      dist = prevDist * Math.tan(targetFov) / Math.tan(currentFov);
-      aspect = this.camera.aspect;
-      targetHfov = 2 * Math.atan(Math.tan(targetFov / 2) * aspect);
-      currentHfov = 2 * Math.atan(Math.tan(currentFov / 2) * aspect);
+      let dist = prevDist * Math.tan(targetFov) / Math.tan(currentFov);
+      let aspect = this.camera.aspect;
+      let targetHfov = 2 * Math.atan(Math.tan(targetFov / 2) * aspect);
+      let currentHfov = 2 * Math.atan(Math.tan(currentFov / 2) * aspect);
       dist = Math.max(prevDist * Math.tan(targetHfov) / Math.tan(currentHfov), dist);
       this.camera.position.copy(this.controls.target);
       this.camera.position.addScaledVector(cam_dir, dist);
@@ -1548,7 +1576,7 @@ var _saveImage = (function () {
   document.body.appendChild(a);
   a.style = "display: none";
   return function (blob, fileName) {
-    url = window.URL.createObjectURL(blob);
+    let url = window.URL.createObjectURL(blob);
     a.href = url;
     a.download = fileName;
     a.click();

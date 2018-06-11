@@ -1,124 +1,15 @@
 <!doctype html>
 <html>
   <head>
-    <title>three.js webgl - postprocessing - Screen Space Ambient Occlusion</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>mesh3D.js test site</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.5/require.min.js"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp"
+      crossorigin="anonymous">
     <link rel="stylesheet" href="./mesh3d.css">
-    <style>
-      body {
-        background-color: #000000;
-        margin: 0px;
-        overflow: hidden;
-        font-family: Monospace;
-        font-size: 13px;
-        text-align: center;
-        font-weight: bold;
-      }
-    
-      a {
-        color: #00ff78;
-      }
-    
-      #info {
-        color: #fff;
-        position: absolute;
-        top: 0px;
-        width: 100%;
-        padding: 5px;
-      }
-    
-      .dg.ac {
-        z-index: 1 !important;
-        /* FIX DAT.GUI */
-      }
-    </style>
   </head>
   <body>
     <div id="vis-3d" class="vis-3d" style="width: 100%; height: 100%;"></div>
-    <!-- <div id="vis-3d" class="vis-3d vis-3d-hf"></div> -->
+    <script src="mesh3DTest.min.js"></script>
 
-    <!-- <div id="info">
-      <a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - webgl screen space ambient occlusion example
-      <br/> shader by
-      <a href="http://alteredqualia.com">alteredq</a>
-    </div> -->
-    <script src="bundle.js"></script>
   </body>
 </html>
-
-<!-- <!DOCTYPE HTML> -->
-<!-- <html> -->
-<!-- <head> -->
-<!--   <\!-- when using the mode "code", it's important to specify charset utf-8 -\-> -->
-<!--   <meta http-equiv="Content-Type" content="text/html;charset=utf-8"> -->
-
-<!--   <\!-- <link href="../src/mesh3d.css" rel="stylesheet" type="text/css"> -->
-<!--   <script src="../style/mesh3d.js"></script> -\-> -->
-<!--   <\!-- <script src="js/three.min.js"></script> -\-> -->
-<!-- </head> -->
-<!-- <body> -->
-<!--   <\!-- <div id="vis-3d" class="vis-3d vis-3d-hf"></div> -\-> -->
-<!--   <script> -->
-<!--     import * as THREE from 'three'; -->
-<!--     var camera, scene, renderer; -->
-<!--     var geometry, material, mesh; -->
-
-<!--     init(); -->
-<!--     animate(); -->
-
-<!--     function init() { -->
-
-<!--       camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 10); -->
-<!--       camera.position.z = 1; -->
-
-<!--       scene = new THREE.Scene(); -->
-
-<!--       geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2); -->
-<!--       material = new THREE.MeshNormalMaterial(); -->
-
-<!--       mesh = new THREE.Mesh(geometry, material); -->
-<!--       scene.add(mesh); -->
-
-<!--       renderer = new THREE.WebGLRenderer({ antialias: true }); -->
-<!--       renderer.setSize(window.innerWidth, window.innerHeight); -->
-<!--       document.body.appendChild(renderer.domElement); -->
-
-<!--     } -->
-
-<!--     function animate() { -->
-
-<!--       requestAnimationFrame(animate); -->
-
-<!--       mesh.rotation.x += 0.01; -->
-<!--       mesh.rotation.y += 0.02; -->
-
-<!--       renderer.render(scene, camera); -->
-
-<!--     } -->
-<!--     // create the editor -->
-<!--     // var container = document.getElementById("vis-3d"); -->
-<!--     // var options = {}; -->
-
-<!--     // var ffbomesh = new FFBOMesh3D('vis-3d', undefined, { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } }); -->
-
-<!--     // function dataCallback(data) { -->
-<!--     //   ffbomesh.addJson({ ffbo_json: data, type: 'morphology_json' }); -->
-<!--     // } -->
-
-<!--     // window.ffbomesh = ffbomesh; -->
-
-<!--     // var oldHeight = ffbomesh.container.clientHeight; -->
-<!--     // var oldWidth = ffbomesh.container.clientWidth; -->
-
-<!--     // setInterval(() => { -->
-<!--     //   if (oldHeight != ffbomesh.container.clientHeight || oldWidth != ffbomesh.container.clientWidth) { -->
-<!--     //     ffbomesh.onWindowResize(); -->
-<!--     //     oldHeight = ffbomesh.container.clientHeight; -->
-<!--     //     oldWidth = ffbomesh.container.clientWidth; -->
-<!--     //   } -->
-<!--     // }, 200); -->
-
-<!--   </script> -->
-<!-- </body> -->
-<!-- </html> -->
