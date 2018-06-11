@@ -1,7 +1,7 @@
 import { FFBOMesh3D } from "./mesh3d";
 
-
-var ffbomesh = new FFBOMesh3D('vis-3d', undefined, { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } });
+var parentDivId  = 'vis-3d';
+var ffbomesh = new FFBOMesh3D(parentDivId, undefined, { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } });
 //ffbomesh.settings.neuron3d = 1;
 function dataCallback(data) {
     ffbomesh.addJson({ ffbo_json: data, type: 'morphology_json' });
@@ -19,14 +19,16 @@ $.getJSON("./config.json", function (json) {
     });
 });
 
-var oldHeight = ffbomesh.container.clientHeight;
-var oldWidth = ffbomesh.container.clientWidth;
 
 $(document).ready(()=>{
     ffbomesh.onWindowResize();
 });
 
-$('#vis-3d').on({
+$(parentDivId).on('resize',()=>{
+    ffbomesh.onWindowResize();
+})
+
+$(parentDivId).on({
     'dragover dragenter': function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -57,14 +59,6 @@ $('#vis-3d').on({
     }
 });
 
-
-// setInterval(() => {
-//     if (oldHeight != ffbomesh.container.clientHeight || oldWidth != ffbomesh.container.clientWidth) {
-//         ffbomesh.onWindowResize();
-//         oldHeight = ffbomesh.container.clientHeight;
-//         oldWidth = ffbomesh.container.clientWidth;
-//     }
-// }, 200);
 
 ffbomesh.createUIBtn("showSettings", "fa-cog", "Settings")
 ffbomesh.createUIBtn("takeScreenshot", "fa-camera", "Download Screenshot")
