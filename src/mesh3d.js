@@ -6,8 +6,6 @@ import { FFBOLightsHelper } from './lightshelper';
 const Detector = require("three/examples/js/Detector");
 const THREE = require('../lib/three');
 
-import '../style/mesh3d.css';
-
 
 var isOnMobile = checkOnMobile();
 
