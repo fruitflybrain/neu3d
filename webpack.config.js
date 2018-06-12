@@ -11,7 +11,15 @@ module.exports = {
     }),
   ],
   output: {
-    filename: 'mesh3DTest.min.js',
+    filename: 'mesh3D.min.js',
     path: path.resolve(__dirname, 'dist')
+  },
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: [ 'style-loader', 'css-loader' ]
+      }
+    ]
   }
 };
