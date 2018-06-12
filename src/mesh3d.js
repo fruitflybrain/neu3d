@@ -1,5 +1,5 @@
 import * as Stats from 'stats.js';
-
+import * as dat from 'dat.gui';
 import { PropertyManager } from './propertymanager';
 import { FFBOLightsHelper } from './lightshelper';
 
@@ -34,6 +34,36 @@ function getRandomIntInclusive(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+
+/* 
+ * overload dat.GUI library to enable tooltip
+ */
+var __eachController = function (fnc) {
+  for (var controllerName in dat.controllers) {
+    if (dat.controllers.hasOwnProperty(controllerName)) {
+      fnc(dat.controllers[controllerName]);
+    }
+  }
+}
+
+var __setTitle = function (v) {
+  // __li is the root dom element of each controller
+  if (v) {
+    this.__li.setAttribute('title', v);
+  } else {
+    this.__li.removeAttribute('title')
+  }
+  return this;
+};
+
+__eachController(function (controller) {
+  if (!controller.prototype.hasOwnProperty('title')) {
+    controller.prototype.title = __setTitle;
+  }
+});
+
+
 
 
 /**
@@ -97,9 +127,9 @@ export class FFBOMesh3D {
       backgroundWireframeOpacity: 0.07,
       neuron3d: false,
       neuron3dMode: 1,
-      synapseMode: 1,
+      synapseMode: true,
       meshWireframe: true,
-      backgroundColor: undefined,
+      backgroundColor: "#260226"
     });
     this.settings.toneMappingPass = new PropertyManager({ brightness: 0.95 });
     this.settings.bloomPass = new PropertyManager({ radius: 0.2, strength: 0.2, threshold: 0.3 });
@@ -146,6 +176,12 @@ export class FFBOMesh3D {
     this.lightsHelper = this.initLights();
     this.lut = this.initLut();
     this.loadingManager = this.initLoadingManager();
+    let controlPanelDiv = document.createElement('div');
+    controlPanelDiv.id = 'vis-3d-settings';
+    this.controlPanel = this.initControlPanel();
+    controlPanelDiv.appendChild(this.controlPanel.domElement);
+    this.container.appendChild(controlPanelDiv);
+
     this.container.addEventListener('click', this.onDocumentMouseClick.bind(this), false);
     this.container.addEventListener('dblclick', this.onDocumentMouseDBLClick.bind(this), false);
     if (isOnMobile) {
@@ -160,12 +196,12 @@ export class FFBOMesh3D {
     this.defaultBoundingBox = { 'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000 };
     this.boundingBox = Object.assign({}, this.defaultBoundingBox);
     this.visibleBoundingBox = Object.assign({}, this.defaultBoundingBox);
-    this.createInfoPanel();
+    //this.createInfoPanel();
     this.createToolTip();
     this._take_screenshot = false;
     this.initPostProcessing();
     //this.composer.addPass( this.gammaCorrectionPass );
-    this.UIBtns = {};
+    // this.UIBtns = {};
     this.dispatch = {
       click: undefined,
       dblclick: undefined,
@@ -202,7 +238,9 @@ export class FFBOMesh3D {
     this.on('remove', (function (e) { this.onRemoveMesh(e); }).bind(this));
     this.on('pinned', (function (e) { this.updatePinned(e); this.updateOpacity(e); }).bind(this));
     this.on('visibility', (function (e) { this.onUpdateVisibility(e.path[0]); }).bind(this));
-    this.on('num', (function () { this.updateInfoPanel(); }).bind(this));
+    //this.on('num', (function () { this.updateInfoPanel(); }).bind(this)); 
+    this.on('num', ()=>{ this.controlPanel.__controllers[0].setValue(this.uiVars.frontNum); });
+
     this.on('highlight', (function (e) { this.updateOpacity(e); this.onUpdateHighlight(e); }).bind(this));
     this.settings.on("change", (function (e) {
       this.updateOpacity(e);
@@ -262,6 +300,7 @@ export class FFBOMesh3D {
       this.onWindowResize();
     })
     window.onresize = this.onWindowResize.bind(this);
+
   } // ENDOF Constructor
 
   on(key, func) {
@@ -273,14 +312,70 @@ export class FFBOMesh3D {
       var register = this.callbackRegistry[key];
       register(func);
     }
-    else if (key in this.UIBtns) {
-      this.UIBtns[key]['callbacks'].push(func);
-    }
+    // else if (key in this.UIBtns) {
+    //   this.UIBtns[key]['callbacks'].push(func);
+    // }
     else {
       console.log("callback keyword '" + key + "' not recognized.");
     }
   }
 
+  initControlPanel(){
+    let controlPanel = new dat.GUI({ autoPlace: false, resizable:true });
+    //let controlPanel = new dat.GUI();
+    let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Neuron Number');
+    neuronNum.domElement.style["pointerEvents"] = "None";
+    // neuronNum.domElement.style["width"] = "20px";
+
+    // add ui btns
+    let UIFolder = controlPanel.addFolder('UI Controls');
+
+    function _createBtn (name, icon, tooltip, func) {
+      let newButton = function () {
+        this[name] = func;
+      };
+      let btn = new newButton();
+      UIFolder.add(btn, name).title(tooltip);
+    }
+
+    _createBtn("resetView", "fa-refresh", "Reset View", () => { this.resetView() });
+    _createBtn("resetVisibleView", "fa-align-justify", "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
+    _createBtn("hideAll", "fa-eye-slash", "Hide All", () => { this.hideAll() });
+    _createBtn("showAll", "fa-eye", "Show All", () => { this.showAll() });
+    _createBtn("takeScreenshot", "fa-camera", "Download Screenshot", () => { this._take_screenshot = true; });
+
+    // add settings
+    let f_vis = controlPanel.addFolder('Visualization Settings');
+    let f0 = f_vis.addFolder('Mode');
+    f0.add(this.settings, 'neuron3d');
+    f0.add(this.settings, 'neuron3dMode', [1, 2, 3]);
+    f0.add(this.settings, 'synapseMode');
+
+    let f1 = f_vis.addFolder('Visualization');
+    f1.add(this.settings, 'meshWireframe');
+    f1.add(this.settings, 'defaultOpacity', 0.0, 1.0);
+    f1.add(this.settings, 'synapseOpacity', 0.0, 1.0);
+    f1.add(this.settings, 'nonHighlightableOpacity', 0.0, 1.0);
+    f1.add(this.settings, 'lowOpacity', 0.0, 1.0);
+    f1.add(this.settings, 'pinOpacity', 0.0, 1.0);
+    f1.add(this.settings, 'pinLowOpacity', 0.0, 1.0);
+    f1.add(this.settings, 'highlightedObjectOpacity', 0.0, 1.0);
+    f1.add(this.settings, 'backgroundOpacity', 0.0, 1.0);
+    f1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0);
+    f1.addColor(this.settings, 'backgroundColor');
+
+    let f2 = f_vis.addFolder('Size');
+    f2.add(this.settings, 'defaultRadius');
+    f2.add(this.settings, 'defaultSomaRadius');
+    f2.add(this.settings, 'defaultSynapseRadius');
+
+    let f3 = f_vis.addFolder('Animation');
+    f3.add(this.settings, 'meshOscAmp', 0.0, 1.0);
+
+    controlPanel.open();
+    return controlPanel;
+  }
+  
   initCamera() {
     var height = this.container.clientHeight;
     var width = this.container.clientWidth;
@@ -800,7 +895,7 @@ export class FFBOMesh3D {
           unit['position'] = new THREE.Vector3(c.x, c.y, c.z);
         }
         if (c.type == -1) {
-          if (this.settings.synapseMode == 1) {
+          if (this.settings.synapseMode == true) {
             if (mergedGeometry == undefined)
               mergedGeometry = new THREE.Geometry();
             if (c.radius)
@@ -874,8 +969,8 @@ export class FFBOMesh3D {
   onDocumentMouseClick(event) {
     if (event !== undefined)
       event.preventDefault();
-    if (!this.controls.checkStateIsNone())
-      return;
+    // if (!this.controls.checkStateIsNone())
+    //   return;
     var intersected = this.getIntersection([this.groups.front]);
     if (intersected != undefined && intersected['highlight']) {
       this.select(intersected.rid);
@@ -978,7 +1073,8 @@ export class FFBOMesh3D {
     /*
     * show label of mesh object when it intersects with cursor
     */
-    if (this.controls.checkStateIsNone() && this.states.mouseOver) {
+    // if (this.controls.checkStateIsNone() && this.states.mouseOver) {
+    if (this.states.mouseOver) {
       var intersected = this.getIntersection([this.groups.front, this.groups.back]);
       if (this.uiVars.currentIntersected || intersected) {
         this.uiVars.currentIntersected = intersected;
@@ -1458,43 +1554,38 @@ export class FFBOMesh3D {
     for (var key of this.uiVars.pinnedObjects)
       this.meshDict[key]['pinned'] = false;
   }
-  createInfoPanel() {
-    this.infoDiv = document.createElement('div');
-    this.infoDiv.style.cssText = "position: absolute; text-align: left; height: 15px; top: 6px; right: 5px; font: 12px sans-serif; z-index: 999; padding-right: 5px; padding-left: 5px; border-right: 1px solid #888; border-left: 1px solid #888;pointer-events: none;  color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; font-weight: 100";
-    this.container.appendChild(this.infoDiv);
-    this.updateInfoPanel();
-  }
-  updateInfoPanel() {
-    this.infoDiv.innerHTML = "Number of Neurons: " + this.uiVars.frontNum;
-  }
+  // createInfoPanel() {
+  //   this.infoDiv = document.createElement('div');
+  //   this.infoDiv.style.cssText = "position: absolute; text-align: left; height: 15px; top: 6px; right: 5px; font: 12px sans-serif; z-index: 999; padding-right: 5px; padding-left: 5px; border-right: 1px solid #888; border-left: 1px solid #888;pointer-events: none;  color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; font-weight: 100";
+  //   this.container.appendChild(this.infoDiv);
+  //   this.updateInfoPanel();
+  // }
+  // updateInfoPanel() {
+  //   this.infoDiv.innerHTML = "Number of Neurons: " + this.uiVars.frontNum;
+  //   //this.controlPanel.__controllers[0].setValue(this.uiVars.frontNum);
+  // }
+
+  /**
+   * 
+   * @param {String} name 
+   * @param {String} icon 
+   * @param {String} tooltip 
+   * @param {()=>{}} func 
+   */
   createUIBtn(name, icon, tooltip, func) {
-    var x = 5 + 20 * Object.keys(this.UIBtns).length;
-    var btn = document.createElement('a');
-    btn.setAttribute("id", "ffboUIbtn-" + name);
-    btn.style.cssText = 'position: absolute; text-align: right; height: 15px; top: 25px; right: ' + x + 'px; font: 15px arial; z-index: 1999; border: 0px; none; color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; cursor: pointer';
-    btn.innerHTML = "<i class='fa " + icon + "' aria-hidden='true'></i>";
-    // this.dispatch[name] = undefined;
-    btn.addEventListener("click", (function () {
-      for (var f of this.UIBtns[name]['callbacks'])
-        f();
-    }).bind(this));
-    btn.addEventListener("mouseover", (function (event) {
-      event.preventDefault();
-      btn.style.color = "#fff";
-      this.show3dToolTip(tooltip);
-    }).bind(this));
-    btn.addEventListener("mouseleave", (function () {
-      btn.style.color = "#aaa";
-      this.hide3dToolTip();
-    }).bind(this));
-    this.UIBtns[name] = { dom: btn, callbacks: [] };
-    this.container.appendChild(this.UIBtns[name]['dom']);
-    if (func !== undefined) {
-      func = this.asarray(func);
-      for (var f of func) {
-        this.on(name, f);
-      }
+    let UIFolder;
+    try {
+      UIFolder = this.controlPanel.addFolder('UI Controls');
+    }catch(e){
+      UIFolder = this.controlPanel.__folders["UI Controls"];
     }
+    // constructor for new UI button
+    let newButton = function () {
+      this[name] = func;
+    };
+
+    let btn = new newButton();
+    UIFolder.add(btn,name).title(tooltip);
   }
   createToolTip() {
     this.toolTipDiv = document.createElement('div');
@@ -1583,12 +1674,6 @@ var _saveImage = (function () {
     window.URL.revokeObjectURL(url);
   };
 }());
-
-
-
-
-
-
 
 
 
