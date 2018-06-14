@@ -1,14 +1,46 @@
 # Neu3D SWC visualization for fruitfly
 
 
-## To test this in a live site
+## Installation
 ```
 npm install
-npx webpack --config webpack.config.js
+npm run build
 ```
 
-if using python3
+## Test
+Serve a HTML site from root of folder.
+
+If using python3, in project root
+
 ```
-cd dist
 python -m http.server
 ```
+
+## Usage
+The module can be imported according to ES6 syntax as follows:
+
+```javascript
+import {Neu3D} from 'neu3d';
+```
+
+Instantiate the visualization object by passing a `HTMLDivElement` with class `vis-3d` to it along with other optional configurations:
+
+```javascript
+var ffbomesh = new Neu3D.Neu3D(parentDiv,  // parent div object with class `vis-3d`
+                               undefined,  // optionally add initalization JSON data
+                               { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } },  // optional metadata
+                               false);     // display stats panel on top left
+
+window.ffbomesh = ffbomesh; // exposing to global namespace if desired
+
+$.getJSON("./data/data.json", (json) => {
+    ffbomesh.addJson({
+        ffbo_json: json,
+        showAfterLoadAll: true
+    });
+});
+```
+
+
+## Example
+See `index.html`.
