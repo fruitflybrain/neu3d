@@ -26,7 +26,7 @@ import {Neu3D} from 'neu3d';
 Instantiate the visualization object by passing a `HTMLDivElement` with class `vis-3d` to it along with other optional configurations:
 
 ```javascript
-var ffbomesh = new Neu3D.Neu3D(parentDiv,  // parent div object with class `vis-3d`
+var ffbomesh = new Neu3D(parentDiv,  // parent div object with class `vis-3d`
                                undefined,  // optionally add initalization JSON data
                                { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } },  // optional metadata
                                false);     // display stats panel on top left
@@ -42,5 +42,8 @@ $.getJSON("./data/data.json", (json) => {
 ```
 
 
-## Example
-See `index.html`.
+## Consumption Example
+1. Global 
+    See `index.html`. 
+2. ES6
+    See [Usage](#usage) section.
