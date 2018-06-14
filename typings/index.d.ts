@@ -2,9 +2,9 @@
 // Project:mesh3D
 // Definitions by: Tingkai Liu
 
-export = FFBOMesh3D;
+export = Neu3D;
 
-declare class FFBOMesh3D {
+declare class Neu3D {
     constructor(container:HTMLDivElement, data?:object, metadata?:object, stats?:boolean);
     container:HTMLDivElement;
     meshDict:any; // should be PropertyManager;
