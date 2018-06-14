@@ -91,7 +91,7 @@ function createMultiMaterialObject(geometry, materials) {
 }
 
 
-const Neur3D = class Neu3D {
+const Neu3D = class Neu3D {
   /**
    * 
    * @param {HTMLDivElement} container : parent div element
