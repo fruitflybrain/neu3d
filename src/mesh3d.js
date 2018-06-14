@@ -791,25 +791,113 @@ export class FFBOMesh3D {
           };
         }
       });
-      var color = unit['color'];
-      var geometry = new THREE.Geometry();
+      var color = unit['color']
+      var object = new THREE.Object3D();
+      var pointGeometry = undefined;
+      var mergedGeometry = undefined;
+      var geometry = undefined;
       for (var idx in swcObj) {
-        if (swcObj[idx].parent != -1) {
-          var c = swcObj[idx];
-          var p = swcObj[swcObj[idx].parent];
-          geometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
-          geometry.vertices.push(new THREE.Vector3(p.x, p.y, p.z));
-          geometry.colors.push(color);
-          geometry.colors.push(color);
-          this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
-          this.updateBoundingBox(c.x, c.y, c.z);
+        var c = swcObj[idx];
+        if (idx == Math.round(len / 2) && unit.position == undefined)
+          unit.position = new THREE.Vector3(c.x, c.y, c.z);
+        this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
+        this.updateBoundingBox(c.x, c.y, c.z);
+        if (c.parent != -1) {
+          var p = swcObj[c.parent];
+          if (this.settings.neuron3d) {
+            if (mergedGeometry == undefined)
+              mergedGeometry = new THREE.Geometry();
+            var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
+            if (!p.radius || !c.radius)
+              var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
+            else
+              var geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
+            geometry.translate(0, 0.5 * d.length(), 0);
+            geometry.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
+            geometry.lookAt(d.clone());
+            geometry.translate((c.x + c.x) / 2, -0.0 * d.length() + (c.y + c.y) / 2, (c.z + c.z) / 2);
+            mergedGeometry.merge(geometry);
+            geometry = null;
+            if (this.settings.neuron3dMode == 2) {
+              var geometry = new THREE.SphereGeometry(c.radius, 8, 8);
+              geometry.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
+              geometry.lookAt(d);
+              geometry.translate((c.x + c.x) / 2, (c.y + c.y) / 2, (c.z + c.z) / 2);
+              mergedGeometry.merge(geometry);
+              geometry = null;
+            }
+            else if (this.settings.neuron3dMode == 3) {
+              if (p.parent != -1) {
+                let p2 = swcObj[p.parent];
+                var a = new THREE.Vector3(0.9 * p.x + 0.1 * p2.x, 0.9 * p.y + 0.1 * p2.y, 0.9 * p.z + 0.1 * p2.z);
+                var b = new THREE.Vector3(0.9 * p.x + 0.1 * c.x, 0.9 * p.y + 0.1 * c.y, 0.9 * p.z + 0.1 * c.z);
+                var curve = new THREE.QuadraticBezierCurve3(a, new THREE.Vector3(p.x, p.y, p.z), b);
+                var geometry = new THREE.TubeGeometry(curve, 8, p.radius, 4, false);
+                mergedGeometry.merge(geometry);
+                geometry = null;
+              }
+            }
+          }
+          else {
+            if (geometry == undefined)
+              geometry = new THREE.Geometry();
+            geometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
+            geometry.vertices.push(new THREE.Vector3(p.x, p.y, p.z));
+            geometry.colors.push(color);
+            geometry.colors.push(color);
+          }
+        }
+        if (c.type == 1) {
+          if (c.radius)
+            var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
+          else
+            var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8);
+          sphereGeometry.translate(c.x, c.y, c.z);
+          var sphereMaterial = new THREE.MeshLambertMaterial({ color: color, transparent: true });
+          object.add(new THREE.Mesh(sphereGeometry, sphereMaterial));
+          unit['position'] = new THREE.Vector3(c.x, c.y, c.z);
+        }
+        if (c.type == -1) {
+          if (this.settings.synapseMode == true) {
+            if (mergedGeometry == undefined)
+              mergedGeometry = new THREE.Geometry();
+            if (c.radius)
+              var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
+            else
+              var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8);
+            sphereGeometry.translate(c.x, c.y, c.z);
+            //var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
+            //object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
+            mergedGeometry.merge(sphereGeometry);
+            unit['position'] = new THREE.Vector3(c.x, c.y, c.z);
+          }
+          else {
+            if (pointGeometry == undefined)
+              pointGeometry = new THREE.Geometry();
+            pointGeometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
+          }
         }
       }
-      var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
-      var object = new THREE.Object3D();
-      object.add(new THREE.LineSegments(geometry, material, THREE.LineSegments));
+      if (pointGeometry) {
+        var pointMaterial = new THREE.PointsMaterial({ color: color, size: this.settings.defaultSynapseRadius, lights: true });
+        var points = new THREE.Points(pointGeometry, pointMaterial);
+        object.add(points);
+      }
+      if (mergedGeometry) {
+        var material = new THREE.MeshLambertMaterial({ color: color, transparent: true });
+        //var modifier = new THREE.SimplifyModifier();
+        //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
+        var mesh = new THREE.Mesh(mergedGeometry, material);
+        //var mesh = new THREE.Mesh(simplified, material);
+        object.add(mesh);
+      }
+      if (geometry) {
+        var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
+        object.add(new THREE.LineSegments(geometry, material));
+      }
       object.visible = visibility;
       this._registerObject(key, unit, object);
+
     };
   }
   loadMorphJSONCallBack(key, unit, visibility) {
