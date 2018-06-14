@@ -1,23 +1,23 @@
 {
-  "name": "mesh3d",
+  "name": "neu3d",
   "version": "1.0.0",
   "description": "A npm package for rendering SWC files.",
   "private": true,
-  "main": "./src/mesh3D.js",
-  "types": "./src/mesh3D.d.ts",
+  "main": "./src/index.js",
+  "types": "./typings/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/TK-21st/mesh3D.git"
+    "url": "git+https://github.com/fruitflybrain/neu3d.git"
   },
-  "author": "Tingkai Liu, Chungheng Yeh",
+  "author": "Tingkai Liu, Chungheng Yeh, Nikul Ukani",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/TK-21st/mesh3D/issues"
+    "url": "https://github.com/fruitflybrain/neu3d/issues"
   },
-  "homepage": "https://github.com/TK-21st/mesh3D#readme",
+  "homepage": "https://github.com/fruitflybrain/neu3d#readme",
   "dependencies": {
     "bootstrap": "^4.1.1",
     "dat.gui": "^0.7.2",
@@ -33,6 +33,6 @@
     "css-loader": "^0.28.11",
     "style-loader": "^0.21.0",
     "webpack": "^4.11.1",
-    "webpack-cli": "^3.0.3"
+    "webpack-cli": "^3.0.3",
   }
 }

@@ -1,9 +1,10 @@
-const path = require('path');
-const webpack = require('webpack');
+import * as path from 'path';
+import * as webpack from 'webpack';
 
-module.exports = {
+export default {
   mode: 'development',
-  entry: './src/index.js',
+  entry: './index.js',
+  target: 'web',
   plugins: [
     new webpack.ProvidePlugin({
       THREE: 'three',
@@ -11,10 +12,11 @@ module.exports = {
     }),
   ],
   output: {
-    filename: 'mesh3D.min.js',
-    path: path.resolve(__dirname, 'dist')
+    filename: 'neu3d.min.js',
+    path: path.resolve(__dirname, 'lib')
   },
   module: {
+
     rules: [
       {
         test: /\.css$/,

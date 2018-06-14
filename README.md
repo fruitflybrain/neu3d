@@ -1,4 +1,4 @@
-# Mesh3D SWC visualization for fruitfly
+# Neu3D SWC visualization for fruitfly
 
 
 ## To test this in a live site

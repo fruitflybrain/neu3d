@@ -1,5 +1,5 @@
 import { PropertyManager } from './propertymanager';
-const THREE = require('../lib/three');
+const THREE = require('../etc/three');
 
 function guidGenerator() {
   var S4 = function() {

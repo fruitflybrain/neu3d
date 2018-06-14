@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+  <head>
+    <title>mesh3D.js test site</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.5/require.js"></script>
+
+    <link rel="stylesheet" href="./style/neu3d.css">
+    <!-- <script src="./lib/neu3d.min.js"></script> -->
+  </head>
+  <body>
+    <div id="vis-3d" class="vis-3d" style="width: 100%; height: 100%;"></div>
+    <script type="text/javascript">
+      require(['./lib/neu3d.min'], Neu3D => {
+        console.log(Neu3D);
+      })
+    </script>
+  </body>
+</html>
+<!-- 
+      const parentDiv = document.getElementById('vis-3d');
+      var ffbomesh = new Neu3D(parentDiv, undefined, { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } }, false);
+
+      window.ffbomesh = ffbomesh;
+
+      $.getJSON("./data/data.json", function (json) {
+        ffbomesh.addJson({
+          ffbo_json: json,
+          showAfterLoadAll: true
+        });
+      });
+
+
+      $(document).ready(() => {
+        ffbomesh.onWindowResize();
+      }); -->

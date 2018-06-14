@@ -4,9 +4,9 @@ import { PropertyManager } from './propertymanager';
 import { FFBOLightsHelper } from './lightshelper';
 
 const Detector = require("three/examples/js/Detector");
-const THREE = require('../lib/three');
+const THREE = require('../etc/three');
 
-import '../style/mesh3d.css';
+import '../style/neu3d.css';
 
 var isOnMobile = checkOnMobile();
 
@@ -91,7 +91,7 @@ function createMultiMaterialObject(geometry, materials) {
 }
 
 
-export class FFBOMesh3D {
+const Neur3D = class Neu3D {
   /**
    * 
    * @param {HTMLDivElement} container : parent div element
@@ -1173,7 +1173,7 @@ export class FFBOMesh3D {
     this.composer.render();
     if (this._take_screenshot) {
       this.renderer.domElement.toBlob(function (b) {
-        _saveImage(b, "ffbo_screenshot.png");
+        this._saveImage(b, "ffbo_screenshot.png");
       });
       this._take_screenshot = false;
     }
@@ -1643,16 +1643,20 @@ export class FFBOMesh3D {
     for (var key of this.uiVars.pinnedObjects)
       this.meshDict[key]['pinned'] = false;
   }
-  // createInfoPanel() {
-  //   this.infoDiv = document.createElement('div');
-  //   this.infoDiv.style.cssText = "position: absolute; text-align: left; height: 15px; top: 6px; right: 5px; font: 12px sans-serif; z-index: 999; padding-right: 5px; padding-left: 5px; border-right: 1px solid #888; border-left: 1px solid #888;pointer-events: none;  color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; font-weight: 100";
-  //   this.container.appendChild(this.infoDiv);
-  //   this.updateInfoPanel();
-  // }
-  // updateInfoPanel() {
-  //   this.infoDiv.innerHTML = "Number of Neurons: " + this.uiVars.frontNum;
-  //   //this.controlPanel.__controllers[0].setValue(this.uiVars.frontNum);
-  // }
+
+
+  _saveImage() {
+    var a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    return function (blob, fileName) {
+      let url = window.URL.createObjectURL(blob);
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    };
+  };
 
   /**
    * 
@@ -1720,49 +1724,7 @@ export class FFBOMesh3D {
     this.camera.up.copy(ffbomesh.camera.up);
     this.camera.lookAt(ffbomesh.controls.target);
   }
-}
-;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var _saveImage = (function () {
-  var a = document.createElement("a");
-  document.body.appendChild(a);
-  a.style = "display: none";
-  return function (blob, fileName) {
-    let url = window.URL.createObjectURL(blob);
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-}());
+};
 
 
 
@@ -1879,3 +1841,6 @@ THREE.Lut.prototype.addColorMap( 'no_purple', [
   [0.982456, '0x006AFF'],
   [1.000000, '0x005EFF'],
 ]);
+
+
+export { Neu3D };
