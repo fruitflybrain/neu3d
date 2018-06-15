@@ -295,6 +295,33 @@ const Neu3D = class Neu3D {
       }
     });
     
+    // add file input
+    let fileUploadInput = document.createElement('input');
+    fileUploadInput.id = "neu3d-file-upload";
+    fileUploadInput.setAttribute("type", "file");
+    fileUploadInput.style.visibility = 'hidden';
+    fileUploadInput.onchange = (evt) => {
+      console.log(evt);
+      $.each(evt.target.files, function (i, file) {
+        let reader = new FileReader();
+        reader.onload = $.proxy(function (file, event) {
+          if (file.name.match('.+(\.swc)$')) {
+            var name = file.name.split('.')[0];
+            var json = {};
+            json[name] = {
+              label: name,
+              dataStr: event.target.result,
+              filetype: 'swc'
+            };
+            ffbomesh.addJson({ ffbo_json: json });
+          }
+        }, this, file);
+        reader.readAsText(file);
+      });
+    }
+
+    this.container.appendChild(fileUploadInput);
+
     // <DEBUG>: this resize event is not working right now
     this.container.addEventListener('resize',()=>{
       console.log('div resize');
@@ -313,9 +340,6 @@ const Neu3D = class Neu3D {
       var register = this.callbackRegistry[key];
       register(func);
     }
-    // else if (key in this.UIBtns) {
-    //   this.UIBtns[key]['callbacks'].push(func);
-    // }
     else {
       console.log("callback keyword '" + key + "' not recognized.");
     }
@@ -323,11 +347,17 @@ const Neu3D = class Neu3D {
 
   initControlPanel(){
     let controlPanel = new dat.GUI({ autoPlace: false, resizable:true, scrollable: true });
-    //let controlPanel = new dat.GUI();
     let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Neuron Number');
     neuronNum.domElement.style["pointerEvents"] = "None";
-    // neuronNum.domElement.style["width"] = "20px";
-
+    
+    // create a function that loads custom files on click
+    function _loadBtn(){
+      this.loadFile = () => {
+        document.getElementById('neu3d-file-upload').click();
+      }
+    }
+    let _btn  = new _loadBtn;
+    controlPanel.add(_btn, 'loadFile').name('Load SWC File');
     // add ui btns
     let UIFolder = controlPanel.addFolder('UI Controls');
 
@@ -343,7 +373,11 @@ const Neu3D = class Neu3D {
     _createBtn("resetVisibleView", "fa-align-justify", "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
     _createBtn("hideAll", "fa-eye-slash", "Hide All", () => { this.hideAll() });
     _createBtn("showAll", "fa-eye", "Show All", () => { this.showAll() });
-    _createBtn("takeScreenshot", "fa-camera", "Download Screenshot", () => { this._take_screenshot = true; });
+    _createBtn("takeScreenshot", "fa-camera", "Download Screenshot", () => {
+      this.renderer.domElement.toBlob((b) => {
+        this._saveImage(b, "ffbo_screenshot.png");
+      });
+    });
 
     // add settings
     let f_vis = controlPanel.addFolder('Visualization Settings');
@@ -1172,7 +1206,7 @@ const Neu3D = class Neu3D {
     }
     this.composer.render();
     if (this._take_screenshot) {
-      this.renderer.domElement.toBlob(function (b) {
+      this.renderer.domElement.toBlob((b)=> {
         this._saveImage(b, "ffbo_screenshot.png");
       });
       this._take_screenshot = false;
@@ -1645,17 +1679,15 @@ const Neu3D = class Neu3D {
   }
 
 
-  _saveImage() {
+  _saveImage(blob,fileName) {
     var a = document.createElement("a");
     document.body.appendChild(a);
     a.style = "display: none";
-    return function (blob, fileName) {
-      let url = window.URL.createObjectURL(blob);
-      a.href = url;
-      a.download = fileName;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    };
+    let url = window.URL.createObjectURL(blob);
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   /**
