@@ -1,0 +1,7 @@
+.npmignore
+.gitignore
+*.zip
+npm-debug.log
+data/*
+index.html
+
