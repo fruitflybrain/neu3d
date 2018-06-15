@@ -322,7 +322,7 @@ const Neu3D = class Neu3D {
   }
 
   initControlPanel(){
-    let controlPanel = new dat.GUI({ autoPlace: false, resizable:true });
+    let controlPanel = new dat.GUI({ autoPlace: false, resizable:true, scrollable: true });
     //let controlPanel = new dat.GUI();
     let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Neuron Number');
     neuronNum.domElement.style["pointerEvents"] = "None";
