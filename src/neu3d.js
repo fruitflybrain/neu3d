@@ -320,7 +320,9 @@ const Neu3D = class Neu3D {
       });
     }
 
-    this.container.appendChild(fileUploadInput);
+    // this input has to be added as siblinig of vis-3d
+    // becuase vis-3d blocks click event propagation.
+    this.container.insertAdjacentElement('afterend',fileUploadInput);
 
     // <DEBUG>: this resize event is not working right now
     this.container.addEventListener('resize',()=>{
