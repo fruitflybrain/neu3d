@@ -373,11 +373,7 @@ const Neu3D = class Neu3D {
     _createBtn("resetVisibleView", "fa-align-justify", "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
     _createBtn("hideAll", "fa-eye-slash", "Hide All", () => { this.hideAll() });
     _createBtn("showAll", "fa-eye", "Show All", () => { this.showAll() });
-    _createBtn("takeScreenshot", "fa-camera", "Download Screenshot", () => {
-      this.renderer.domElement.toBlob((b) => {
-        this._saveImage(b, "ffbo_screenshot.png");
-      });
-    });
+    _createBtn("takeScreenshot", "fa-camera", "Download Screenshot", () => { this._take_screenshot = true;});
 
     // add settings
     let f_vis = controlPanel.addFolder('Visualization Settings');
@@ -1206,9 +1202,9 @@ const Neu3D = class Neu3D {
     }
     this.composer.render();
     if (this._take_screenshot) {
-      this.renderer.domElement.toBlob((b)=> {
-        this._saveImage(b, "ffbo_screenshot.png");
-      });
+      this.renderer.domElement.toBlob(function (b) {
+        _saveImage(b, "ffbo_screenshot.png")
+      })
       this._take_screenshot = false;
     }
     //this.renderer.render( this.scene, this.camera );
@@ -1678,18 +1674,6 @@ const Neu3D = class Neu3D {
       this.meshDict[key]['pinned'] = false;
   }
 
-
-  _saveImage(blob,fileName) {
-    var a = document.createElement("a");
-    document.body.appendChild(a);
-    a.style = "display: none";
-    let url = window.URL.createObjectURL(blob);
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
   /**
    * 
    * @param {String} name 
@@ -1758,22 +1742,22 @@ const Neu3D = class Neu3D {
   }
 };
 
+var _saveImage;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+window.onload = () => {
+  _saveImage = (function () {
+    var a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    return function (blob, fileName) {
+      let url = window.URL.createObjectURL(blob);
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    };
+  }());
+}
 
 
 
