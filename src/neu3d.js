@@ -91,7 +91,7 @@ function createMultiMaterialObject(geometry, materials) {
 }
 
 
-const Neu3D = class Neu3D {
+export default class Neu3D {
   /**
    * 
    * @param {HTMLDivElement} container : parent div element
@@ -301,7 +301,6 @@ const Neu3D = class Neu3D {
     fileUploadInput.setAttribute("type", "file");
     fileUploadInput.style.visibility = 'hidden';
     fileUploadInput.onchange = (evt) => {
-      console.log(evt);
       $.each(evt.target.files, function (i, file) {
         let reader = new FileReader();
         reader.onload = $.proxy(function (file, event) {
@@ -1859,6 +1858,3 @@ THREE.Lut.prototype.addColorMap( 'no_purple', [
   [0.982456, '0x006AFF'],
   [1.000000, '0x005EFF'],
 ]);
-
-
-export { Neu3D };
