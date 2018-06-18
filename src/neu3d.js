@@ -1,11 +1,11 @@
 import * as Stats from 'stats.js';
-import * as dat from 'dat.gui';
 import { PropertyManager } from './propertymanager';
 import { FFBOLightsHelper } from './lightshelper';
 
 const Detector = require("three/examples/js/Detector");
 const THREE = require('../etc/three');
 
+import dat from '../etc/dat.gui';
 import '../style/neu3d.css';
 
 var isOnMobile = checkOnMobile();
@@ -35,36 +35,6 @@ function getRandomIntInclusive(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
-
-
-/* 
- * overload dat.GUI library to enable tooltip
- */
-var __eachController = function (fnc) {
-  for (var controllerName in dat.controllers) {
-    if (dat.controllers.hasOwnProperty(controllerName)) {
-      fnc(dat.controllers[controllerName]);
-    }
-  }
-}
-
-var __setTitle = function (v) {
-  // __li is the root dom element of each controller
-  if (v) {
-    this.__li.setAttribute('title', v);
-  } else {
-    this.__li.removeAttribute('title')
-  }
-  return this;
-};
-
-__eachController(function (controller) {
-  if (!controller.prototype.hasOwnProperty('title')) {
-    controller.prototype.title = __setTitle;
-  }
-});
-
-
 
 
 /**
@@ -351,31 +321,21 @@ const Neu3D = class Neu3D {
     let controlPanel = new dat.GUI({ autoPlace: false, resizable:true, scrollable: true });
     let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Neuron Number');
     neuronNum.domElement.style["pointerEvents"] = "None";
-    
-    // create a function that loads custom files on click
-    function _loadBtn(){
-      this.loadFile = () => {
-        document.getElementById('neu3d-file-upload').click();
-      }
-    }
-    let _btn  = new _loadBtn;
-    controlPanel.add(_btn, 'loadFile').name('Load SWC File');
-    // add ui btns
-    let UIFolder = controlPanel.addFolder('UI Controls');
 
-    function _createBtn (name, icon, tooltip, func) {
+    function _createBtn (name, icon, iconAttrs, tooltip, func) {
       let newButton = function () {
         this[name] = func;
       };
       let btn = new newButton();
-      UIFolder.add(btn, name).title(tooltip);
+      controlPanel.add(btn, name).title(tooltip).icon(icon,"strip",iconAttrs);
     }
 
-    _createBtn("resetView", "fa-refresh", "Reset View", () => { this.resetView() });
-    _createBtn("resetVisibleView", "fa-align-justify", "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
-    _createBtn("hideAll", "fa-eye-slash", "Hide All", () => { this.hideAll() });
-    _createBtn("showAll", "fa-eye", "Show All", () => { this.showAll() });
-    _createBtn("takeScreenshot", "fa-camera", "Download Screenshot", () => { this._take_screenshot = true;});
+    _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { document.getElementById('neu3d-file-upload').click(); });
+    _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { this.resetView() });
+    _createBtn("resetVisibleView", "fa fa-align-justify",{}, "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
+    _createBtn("hideAll", "fa fa-eye-slash",{}, "Hide All", () => { this.hideAll() });
+    _createBtn("showAll", "fa fa-eye",{}, "Show All", () => { this.showAll() });
+    _createBtn("takeScreenshot", "fa fa-camera",{}, "Download Screenshot", () => { this._take_screenshot = true;});
 
     // add settings
     let f_vis = controlPanel.addFolder('Visualization Settings');
