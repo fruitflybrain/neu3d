@@ -322,7 +322,7 @@ export default class Neu3D {
   }
 
   initControlPanel(){
-    let controlPanel = new dat.GUI({ autoPlace: false, resizable:true, scrollable: true });
+    let controlPanel = new dat.GUI({ autoPlace: false, resizable:true, scrollable: true, load: datGuiPresets});
     let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Neuron Number');
     neuronNum.domElement.style["pointerEvents"] = "None";
 
@@ -348,32 +348,51 @@ export default class Neu3D {
     _createBtn("takeScreenshot", "fa fa-camera",{}, "Download Screenshot", () => { this._take_screenshot = true;});
 
     // add settings
-    let f_vis = controlPanel.addFolder('Visualization Settings');
-    let f0 = f_vis.addFolder('Mode');
-    f0.add(this.settings, 'neuron3d');
+    let f_vis = controlPanel.addFolder('Settings');
+    let f0 = f_vis.addFolder('Display Mode');
+    f0.add(this.settings, 'neuron3d').name("Enable 3D Mode");
     f0.add(this.settings, 'neuron3dMode', [1, 2, 3]);
     f0.add(this.settings, 'synapseMode');
 
     let f1 = f_vis.addFolder('Visualization');
-    f1.add(this.settings, 'meshWireframe');
-    f1.add(this.settings, 'defaultOpacity', 0.0, 1.0);
-    f1.add(this.settings, 'synapseOpacity', 0.0, 1.0);
-    f1.add(this.settings, 'nonHighlightableOpacity', 0.0, 1.0);
-    f1.add(this.settings, 'lowOpacity', 0.0, 1.0);
-    f1.add(this.settings, 'pinOpacity', 0.0, 1.0);
-    f1.add(this.settings, 'pinLowOpacity', 0.0, 1.0);
-    f1.add(this.settings, 'highlightedObjectOpacity', 0.0, 1.0);
-    f1.add(this.settings, 'backgroundOpacity', 0.0, 1.0);
-    f1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0);
-    f1.addColor(this.settings, 'backgroundColor');
+    f1.add(this.settings, 'meshWireframe').name("Display Wireframe");
+    f1.addColor(this.settings, 'backgroundColor').name("Background");
+    let f1_1 = f1.addFolder('Opacity');
+
+    f1_1.add(this.settings, 'defaultOpacity', 0.0, 1.0);
+    f1_1.add(this.settings, 'synapseOpacity', 0.0, 1.0);
+    f1_1.add(this.settings, 'nonHighlightableOpacity', 0.0, 1.0);
+    f1_1.add(this.settings, 'lowOpacity', 0.0, 1.0);
+    f1_1.add(this.settings, 'pinOpacity', 0.0, 1.0);
+    f1_1.add(this.settings, 'pinLowOpacity', 0.0, 1.0);
+    f1_1.add(this.settings, 'highlightedObjectOpacity', 0.0, 1.0);
+    f1_1.add(this.settings, 'backgroundOpacity', 0.0, 1.0);
+    f1_1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0);
+    
+    let f1_2 = f1.addFolder('Advanced');
+
+    f1_2.add(this.settings.toneMappingPass, 'brightness').name("ToneMap Brightness");
+    f1_2.add(this.settings.bloomPass, 'radius', 0.0, 10.0).name("BloomPass Radius");;
+    f1_2.add(this.settings.bloomPass, 'strength', 0.0, 1.0).name("BloomPass Strength");;
+    f1_2.add(this.settings.bloomPass, 'threshold', 0.0, 2.0).name("BloomPass Threshold");;
+    f1_2.add(this.settings.effectFXAA, 'enabled').name("FXAA");
+    f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO");
+
 
     let f2 = f_vis.addFolder('Size');
     f2.add(this.settings, 'defaultRadius');
     f2.add(this.settings, 'defaultSomaRadius');
     f2.add(this.settings, 'defaultSynapseRadius');
 
-    let f3 = f_vis.addFolder('Animation');
-    f3.add(this.settings, 'meshOscAmp', 0.0, 1.0);
+    // let f3 = f_vis.addFolder('Animation');
+    // f3.add(this.states, 'animate');
+    // f3.add(this.settings, 'meshOscAmp', 0.0, 1.0);
+
+    controlPanel.remember(this.settings);
+    controlPanel.remember(this.settings.toneMappingPass);
+    controlPanel.remember(this.settings.bloomPass);
+    controlPanel.remember(this.settings.effectFXAA);
+    controlPanel.remember(this.settings.backrenderSSAO);
 
     controlPanel.open();
     return controlPanel;
@@ -1738,7 +1757,151 @@ window.onload = () => {
 
 
 
-
+var datGuiPresets = {
+  "preset": "Default",
+  "closed": false,
+  "remembered": {
+    "Low": {
+      "0": {
+        "neuron3d": false,
+        "neuron3dMode": "1",
+        "synapseMode": true,
+        "meshWireframe": true,
+        "backgroundColor": "#260226",
+        "defaultOpacity": 0.7,
+        "synapseOpacity": 1,
+        "nonHighlightableOpacity": 0.1,
+        "lowOpacity": 0.1,
+        "pinOpacity": 0.9,
+        "pinLowOpacity": 0.15,
+        "highlightedObjectOpacity": 1,
+        "backgroundOpacity": 1,
+        "backgroundWireframeOpacity": 0.07,
+        "defaultRadius": 0.5,
+        "defaultSomaRadius": 3,
+        "defaultSynapseRadius": 0.2
+      },
+      "1": {
+        "brightness": 0.95
+      },
+      "2": {
+        "radius": 0.2,
+        "strength": 0.2,
+        "threshold": 0.3
+      },
+      "3": {
+        "enabled": true
+      },
+      "4": {
+        "enabled": false
+      }
+    },
+    "High": {
+      "0": {
+        "neuron3d": true,
+        "neuron3dMode": "3",
+        "synapseMode": true,
+        "meshWireframe": true,
+        "backgroundColor": "#260226",
+        "defaultOpacity": 0.7,
+        "synapseOpacity": 1,
+        "nonHighlightableOpacity": 0.1,
+        "lowOpacity": 0.1,
+        "pinOpacity": 0.9,
+        "pinLowOpacity": 0.15,
+        "highlightedObjectOpacity": 1,
+        "backgroundOpacity": 1,
+        "backgroundWireframeOpacity": 0.07,
+        "defaultRadius": 0.5,
+        "defaultSomaRadius": 3,
+        "defaultSynapseRadius": 0.2
+      },
+      "1": {
+        "brightness": 0.95
+      },
+      "2": {
+        "radius": 0.2,
+        "strength": 0.2,
+        "threshold": 0.3
+      },
+      "3": {
+        "enabled": true
+      },
+      "4": {
+        "enabled": true
+      }
+    },
+    "Default": {
+      "0": {
+        "neuron3d": true,
+        "neuron3dMode": "2",
+        "synapseMode": true,
+        "meshWireframe": true,
+        "backgroundColor": "#260226",
+        "defaultOpacity": 0.7,
+        "synapseOpacity": 1,
+        "nonHighlightableOpacity": 0.1,
+        "lowOpacity": 0.1,
+        "pinOpacity": 0.9,
+        "pinLowOpacity": 0.15,
+        "highlightedObjectOpacity": 1,
+        "backgroundOpacity": 1,
+        "backgroundWireframeOpacity": 0.07,
+        "defaultRadius": 0.5,
+        "defaultSomaRadius": 3,
+        "defaultSynapseRadius": 0.2
+      },
+      "1": {
+        "brightness": 0.95
+      },
+      "2": {
+        "radius": 0.2,
+        "strength": 0.2,
+        "threshold": 0.3
+      },
+      "3": {
+        "enabled": true
+      },
+      "4": {
+        "enabled": true
+      }
+    }
+  },
+  "folders": {
+    "Settings": {
+      "preset": "Default",
+      "closed": true,
+      "folders": {
+        "Display Mode": {
+          "preset": "Default",
+          "closed": true,
+          "folders": {}
+        },
+        "Visualization": {
+          "preset": "Default",
+          "closed": true,
+          "folders": {
+            "Opacity": {
+              "preset": "Default",
+              "closed": true,
+              "folders": {}
+            },
+            "Advanced": {
+              "preset": "Default",
+              "closed": true,
+              "folders": {}
+            }
+          }
+        },
+        "Size": {
+          "preset": "Default",
+          "closed": true,
+          "folders": {}
+        }
+      }
+    }
+  }
+}
 
 
 
