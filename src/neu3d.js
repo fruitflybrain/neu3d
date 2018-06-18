@@ -2,6 +2,11 @@ import * as Stats from 'stats.js';
 import { PropertyManager } from './propertymanager';
 import { FFBOLightsHelper } from './lightshelper';
 
+// add FontAwesome
+import fontawesome from '@fortawesome/fontawesome';
+import regular from '@fortawesome/fontawesome-free-solid';
+
+
 const Detector = require("three/examples/js/Detector");
 const THREE = require('../etc/three');
 
@@ -329,11 +334,17 @@ export default class Neu3D {
       controlPanel.add(btn, name).title(tooltip).icon(icon,"strip",iconAttrs);
     }
 
+    fontawesome.library.add(regular.faUpload);
     _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { document.getElementById('neu3d-file-upload').click(); });
+    fontawesome.library.add(regular.faSync);
     _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { this.resetView() });
+    fontawesome.library.add(regular.faAlignJustify);
     _createBtn("resetVisibleView", "fa fa-align-justify",{}, "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
+    fontawesome.library.add(regular.faEyeSlash);
     _createBtn("hideAll", "fa fa-eye-slash",{}, "Hide All", () => { this.hideAll() });
+    fontawesome.library.add(regular.faEye);
     _createBtn("showAll", "fa fa-eye",{}, "Show All", () => { this.showAll() });
+    fontawesome.library.add(regular.faCamera);
     _createBtn("takeScreenshot", "fa fa-camera",{}, "Download Screenshot", () => { this._take_screenshot = true;});
 
     // add settings
