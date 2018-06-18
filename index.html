@@ -11,7 +11,19 @@
     <div id="vis-3d" class="vis-3d" style="width: 100%; height: 100%;"></div>
     <script>
       const parentDiv = document.getElementById('vis-3d');
-      var ffbomesh = new Neu3D(parentDiv, undefined, { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } }, false);
+      let options = {
+        'stats': false,
+        'datGUI': {
+          autoPlace: false,
+          resizable: false,
+          closed: true,
+          hideable: true
+        }
+      }
+      var ffbomesh = new Neu3D(parentDiv,
+                               undefined,
+                               { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } },
+                               options);
 
       window.ffbomesh = ffbomesh;
 

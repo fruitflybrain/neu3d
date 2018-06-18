@@ -4,7 +4,10 @@ import { FFBOLightsHelper } from './lightshelper';
 
 // add FontAwesome
 import fontawesome from '@fortawesome/fontawesome';
-import regular from '@fortawesome/fontawesome-free-solid';
+import solid from '@fortawesome/fontawesome-free-solid';
+import regular from '@fortawesome/fontawesome-free-regular';
+fontawesome.library.add(regular);
+fontawesome.library.add(solid);
 
 
 const Detector = require("three/examples/js/Detector");
@@ -72,9 +75,9 @@ export default class Neu3D {
    * @param {HTMLDivElement} container : parent div element
    * @param {JSON | undefined } data : optionally add initalization data
    * @param {JSON | undefined } metadata : optional metadata
-   * @param {boolean} [stats=false] : whether to show rendering stats panel overlay
+   * @param {Object} [options={}] : additional options 
    */
-  constructor(container, data, metadata, stats = false) {
+  constructor(container, data, metadata, options={}) {
     this.container = container;
     /* default metadata */
     this._metadata = {
@@ -135,8 +138,8 @@ export default class Neu3D {
     this._labelToRid = {};
     this.raycaster = new THREE.Raycaster();
     this.raycaster.linePrecision = 3;
-    this.stats = new Stats();
-    if (stats) {
+    if (options['stats']) {
+      this.stats = new Stats();
       this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
       this.stats.dom.style.position = "relative";
       this.container.appendChild(this.stats.dom);
@@ -154,7 +157,8 @@ export default class Neu3D {
     this.loadingManager = this.initLoadingManager();
     let controlPanelDiv = document.createElement('div');
     controlPanelDiv.id = 'vis-3d-settings';
-    this.controlPanel = this.initControlPanel();
+
+    this.controlPanel = this.initControlPanel(options['datGUI']);
     controlPanelDiv.appendChild(this.controlPanel.domElement);
     this.container.appendChild(controlPanelDiv);
 
@@ -321,8 +325,22 @@ export default class Neu3D {
     }
   }
 
-  initControlPanel(){
-    let controlPanel = new dat.GUI({ autoPlace: false, resizable:true, scrollable: true, load: datGuiPresets});
+  initControlPanel(options={}){
+    let GUIOptions =  {
+      autoPlace: (options.autoPlace) ? options.autoPlace : false, 
+      resizable: (options.resizable) ? options.resizable : true, 
+      scrollable: (options.scrollable) ? options.scrollable : true, 
+      closeOnTop: (options.closeOnTop) ? options.closeOnTop : true, 
+      load: datGuiPresets
+    };
+    for (let key in options){
+      if (!(key in GUIOptions)){
+        GUIOptions[key] = options[key];
+      }
+    }
+    let controlPanel = new dat.GUI(GUIOptions);
+    window.panel = controlPanel;
+
     let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Neuron Number');
     neuronNum.domElement.style["pointerEvents"] = "None";
 
@@ -334,18 +352,14 @@ export default class Neu3D {
       controlPanel.add(btn, name).title(tooltip).icon(icon,"strip",iconAttrs);
     }
 
-    fontawesome.library.add(regular.faUpload);
     _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { document.getElementById('neu3d-file-upload').click(); });
-    fontawesome.library.add(regular.faSync);
     _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { this.resetView() });
-    fontawesome.library.add(regular.faAlignJustify);
     _createBtn("resetVisibleView", "fa fa-align-justify",{}, "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
-    fontawesome.library.add(regular.faEyeSlash);
     _createBtn("hideAll", "fa fa-eye-slash",{}, "Hide All", () => { this.hideAll() });
-    fontawesome.library.add(regular.faEye);
     _createBtn("showAll", "fa fa-eye",{}, "Show All", () => { this.showAll() });
-    fontawesome.library.add(regular.faCamera);
     _createBtn("takeScreenshot", "fa fa-camera",{}, "Download Screenshot", () => { this._take_screenshot = true;});
+    _createBtn("removeUnpin", "fa fa-trash", {}, "Remove Unpinned Neurons", ()=> {this.removeUnpinned();})
+    _createBtn("removeUnpin", "fa fa-map-upin", {}, "Unpin All", () => { this.unpinAll(); })
 
     // add settings
     let f_vis = controlPanel.addFolder('Settings');
@@ -397,7 +411,7 @@ export default class Neu3D {
     controlPanel.open();
     return controlPanel;
   }
-  
+
   initCamera() {
     var height = this.container.clientHeight;
     var width = this.container.clientWidth;
@@ -749,12 +763,16 @@ export default class Neu3D {
     this.states.animate = false;
   }
   animate() {
-    this.stats.begin();
+    if (this.stats){
+      this.stats.begin();
+    }
     this.controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
     if (this.states.mouseOver && this.dispatch.syncControls)
       this.dispatch.syncControls(this);
     this.render();
-    this.stats.end();
+    if (this.stats){
+      this.stats.end();
+    }
     requestAnimationFrame(this.animate.bind(this));
   }
   loadMeshCallBack(key, unit, visibility) {
@@ -1567,6 +1585,12 @@ export default class Neu3D {
       if (!(id[i] in this.meshDict))
         continue;
       delete this.meshDict[id[i]];
+    }
+  }
+  removeUnpinned() {
+    for (let key of Object.keys(this.meshDict)) {
+      if (!this.meshDict[key]['background'] && !this.meshDict[key]['pinned'])
+        delete this.meshDict[key];
     }
   }
 
