@@ -16,7 +16,7 @@ module.exports = {
     library: 'Neu3D',
     libraryTarget: 'umd',
     umdNamedDefine:true,
-    libraryExport: 'default',
+    libraryExport: 'Neu3D',
     path: path.resolve(__dirname, 'lib')
   },
   module: {

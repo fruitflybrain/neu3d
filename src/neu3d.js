@@ -69,7 +69,7 @@ function createMultiMaterialObject(geometry, materials) {
 }
 
 
-export default class Neu3D {
+export class Neu3D {
   /**
    * 
    * @param {HTMLDivElement} container : parent div element
@@ -587,7 +587,6 @@ export default class Neu3D {
       this.controls.target0.set(0, 0, 0);
       this.boundingBox = { 'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000 };
     }
-    //this.controls.reset();
   }
   _configureCallbacks() {
     this.settings.on("change", function (e) {
