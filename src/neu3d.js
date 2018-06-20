@@ -69,7 +69,7 @@ function createMultiMaterialObject(geometry, materials) {
 }
 
 
-export default class Neu3D {
+export class Neu3D {
   /**
    * 
    * @param {HTMLDivElement} container : parent div element
@@ -587,7 +587,6 @@ export default class Neu3D {
       this.controls.target0.set(0, 0, 0);
       this.boundingBox = { 'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000 };
     }
-    //this.controls.reset();
   }
   _configureCallbacks() {
     this.settings.on("change", function (e) {
@@ -738,18 +737,7 @@ export default class Neu3D {
       obj.boundingBox.maxZ = z;
   }
   updateBoundingBox(x, y, z) {
-    if (x < this.boundingBox.minX)
-      this.boundingBox.minX = x;
-    if (x > this.boundingBox.maxX)
-      this.boundingBox.maxX = x;
-    if (y < this.boundingBox.minY)
-      this.boundingBox.minY = y;
-    if (y > this.boundingBox.maxY)
-      this.boundingBox.maxY = y;
-    if (z < this.boundingBox.minZ)
-      this.boundingBox.minZ = z;
-    if (z > this.boundingBox.maxZ)
-      this.boundingBox.maxZ = z;
+    this.updateObjectBoundingBox(this, x, y, z)
   }
   setAnim(data) {
     for (var key in data) {
