@@ -19,26 +19,7 @@
   right: 20px;
 }
 
-.dg .c input[type=text] {
-  background: #00000000;
-  outline: none;
-}
 
-.dg .cr.number input[type=text] {
-  color: #eee;
-  font-size: 11px;
-}
-
-.dg li.save-row {
-  line-height: 25px;
-  background: #000000;
-  border: 0;
-}
-
-.dg li.save-row select {
-  margin-left: 5px;
-  width: 108px;
-}
 
 .semi-square {
   -webkit-border-radius: 5px;
@@ -64,7 +45,71 @@
   width: 268px;
 }
 
-.dg .cr.number {
+.noneurons .c input[type=text] {
+  background: #00000000;
+  outline: none;
+  color: #eee;
+  font-size: 11px;
+}
+
+.noneurons .cr.number input[type=text] {
+  color: #eee;
+  font-size: 11px;
+}
+
+.dg li.save-row {
+  line-height: 25px;
+  background: #000000;
+  border: 0;
+}
+
+.noneurons li:not(.folder) {
+  border-bottom: 0px solid #2c2c2c;
+}
+
+
+.dg.main .close-button:hover {
+  background-color: #ffffff00;
+  color: #cccccc;
+}
+
+
+.neu3dbutton:hover{
+  background: #ffffff00;
+  color: #ffffff;
+}
+
+.neu3dbutton {
+  background: #ffffff00;
+  color: #cccccc;
+  font-size: 15px;
+}
+
+.noneurons .property-name {
+  cursor: default;
+  float: left;
+  clear: left;
+  width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.noneurons .c {
+  float: left;
+  width: 10%;
+  position: relative;
+}
+
+/*
+
+
+
+.dg li.save-row select {
+  margin-left: 5px;
+  width: 108px;
+}
+
+.dg:not(.folder) .cr.number {
   border-left: 0px solid #2FA1D6;
   background: #ffffff00;
 }
@@ -84,18 +129,18 @@
   color: #cccccc;
 }
 
-.dg .cr.function:hover, .dg .cr.boolean:hover {
+.dg:not(.folder) .cr.function:hover, .dg .cr.boolean:hover {
   background: #ffffff00;
   color: #ffffff;
 }
 
-.dg .cr.function, .dg .cr.boolean {
+.dg:not(.folder) .cr.function {
   background: #ffffff00;
   color: #cccccc;
   font-size: 15px;
 }
 
-.dg .property-name {
+.dg:not(.folder) .property-name {
   cursor: default;
   float: left;
   clear: left;
@@ -103,3 +148,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.dg:not(.folder) .c {
+  float: left;
+  width: 10%;
+  position: relative;
+}*/

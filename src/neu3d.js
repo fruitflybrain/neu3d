@@ -343,13 +343,15 @@ export class Neu3D {
 
     let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Number of Neurons: ');
     neuronNum.domElement.style["pointerEvents"] = "None";
-
+    neuronNum.domElement.parentNode.parentNode.classList.add('noneurons');
     function _createBtn (name, icon, iconAttrs, tooltip, func) {
       let newButton = function () {
         this[name] = func;
       };
       let btn = new newButton();
-      controlPanel.add(btn, name).title(tooltip).icon(icon,"strip",iconAttrs);
+      var buttonid = controlPanel.add(btn, name).title(tooltip).icon(icon,"strip",iconAttrs);
+      console.log(buttonid);
+      buttonid.domElement.classList.add('neu3dbutton');
     }
 
     _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { document.getElementById('neu3d-file-upload').click(); });
