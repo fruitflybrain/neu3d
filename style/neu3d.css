@@ -48,12 +48,12 @@
 .noneurons .c input[type=text] {
   background: #00000000;
   outline: none;
-  color: #eee;
+  color: #eee !important;
   font-size: 11px;
 }
 
 .noneurons .cr.number input[type=text] {
-  color: #eee;
+  color: #eee !important;
   font-size: 11px;
 }
 
@@ -63,24 +63,26 @@
   border: 0;
 }
 
-.noneurons li:not(.folder) {
-  border-bottom: 0px solid #2c2c2c;
+.noneurons {
+  background-color: #ffffff00 !important;
+  border-bottom: 0px solid #2c2c2c !important;
+  border-left: 0px solid #2FA1D6 !important;
 }
 
 
 .dg.main .close-button:hover {
-  background-color: #ffffff00;
+  /*background-color: #ffffff00;*/
   color: #cccccc;
 }
 
 
 .neu3dbutton:hover{
-  background: #ffffff00;
+  background: #ffffff00 !important;
   color: #ffffff;
 }
 
 .neu3dbutton {
-  background: #ffffff00;
+  background: #ffffff00 !important;
   color: #cccccc;
   font-size: 15px;
 }
@@ -89,15 +91,19 @@
   cursor: default;
   float: left;
   clear: left;
-  width: 90%;
+  width: 60%;
+  text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .noneurons .c {
   float: left;
-  width: 10%;
+  width: calc(40% - 8px);
+  color: #eee !important;
   position: relative;
+  text-align: center;
+  margin-left: 8px;
 }
 
 /*
