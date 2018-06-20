@@ -20,7 +20,7 @@ python -m http.server
 The module can be imported according to ES6 syntax as follows:
 
 ```javascript
-import Neu3D from 'neu3d';
+import { Neu3D } from 'neu3d';
 ```
 
 Instantiate the visualization object by passing a `HTMLDivElement` with class `vis-3d` to it along with other optional configurations:
@@ -48,7 +48,8 @@ $.getJSON("./data/data.json", (json) => {
     The class `Neu3D` is available if script is loaded as script tag. See `index.html`.
 2. ES6
     See [Usage](#usage) section.
-
+3. TypeScript
+   `import Neu3D = require('neu3d');`
 ## Authors
 
 This library is developed and maintained by:
