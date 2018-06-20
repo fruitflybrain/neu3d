@@ -341,7 +341,7 @@ export class Neu3D {
     let controlPanel = new dat.GUI(GUIOptions);
     window.panel = controlPanel;
 
-    let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Neuron Number');
+    let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Number of Neurons: ');
     neuronNum.domElement.style["pointerEvents"] = "None";
 
     function _createBtn (name, icon, iconAttrs, tooltip, func) {

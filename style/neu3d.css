@@ -18,3 +18,88 @@
   top: 0px;
   right: 20px;
 }
+
+.dg .c input[type=text] {
+  background: #00000000;
+  outline: none;
+}
+
+.dg .cr.number input[type=text] {
+  color: #eee;
+  font-size: 11px;
+}
+
+.dg li.save-row {
+  line-height: 25px;
+  background: #000000;
+  border: 0;
+}
+
+.dg li.save-row select {
+  margin-left: 5px;
+  width: 108px;
+}
+
+.semi-square {
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+}
+
+.blue    { background-color: #3b8ec2; }
+
+.styled-select {
+  background: url(http://i62.tinypic.com/15xvbd5.png) no-repeat 96% 0;
+  height: 29px;
+  overflow: hidden;
+  width: 240px;
+}
+
+.styled-select select {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  height: 29px;
+  padding: 5px; /* If you add too much padding here, the options won't show in IE */
+  width: 268px;
+}
+
+.dg .cr.number {
+  border-left: 0px solid #2FA1D6;
+  background: #ffffff00;
+}
+
+.dg li.save-row {
+  line-height: 25px;
+  background: #000000;
+  border: 0;
+}
+
+.dg li:not(.folder) {
+    border-bottom: 0px solid #2c2c2c;
+}
+
+.dg.main .close-button:hover {
+  background-color: #ffffff00;
+  color: #cccccc;
+}
+
+.dg .cr.function:hover, .dg .cr.boolean:hover {
+  background: #ffffff00;
+  color: #ffffff;
+}
+
+.dg .cr.function, .dg .cr.boolean {
+  background: #ffffff00;
+  color: #cccccc;
+  font-size: 15px;
+}
+
+.dg .property-name {
+  cursor: default;
+  float: left;
+  clear: left;
+  width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
