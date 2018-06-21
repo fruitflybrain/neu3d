@@ -117,8 +117,7 @@ export class Neu3D {
     this.states = new PropertyManager({
       mouseOver: false,
       pinned: false,
-      highlight: false,
-      animate: false
+      highlight: false
     });
     this.meshDict = new PropertyManager();
     this.uiVars = new PropertyManager({
@@ -741,17 +740,6 @@ export class Neu3D {
   updateBoundingBox(x, y, z) {
     this.updateObjectBoundingBox(this, x, y, z)
   }
-  setAnim(data) {
-    for (var key in data) {
-      if (this.meshDict[key].object === undefined)
-        continue;
-      this.animOpacity[key] = data[key];
-    }
-    this.states.animate = true;
-  }
-  stopAnim() {
-    this.states.animate = false;
-  }
   animate() {
     if (this.stats){
       this.stats.begin();
@@ -1160,34 +1148,23 @@ export class Neu3D {
       this.dispatch['resize']();
   }
   render() {
-    if (this.states.animate) {
-      for (var key in this.meshDict) {
-        if (this.meshDict[key].object === undefined)
-          continue;
-        var x = this.meshDict[key].object.children;
-        for (var i in x)
-          x[i].material.opacity = this.animOpacity[key] || 0;
-      }
-    }
-    else if (this.states.highlight) {
-    }
-    else {
-      for (var key in this.meshDict) {
-        if (this.meshDict[key].object != undefined) {
-          var x = new Date().getTime();
-          if (this.meshDict[key]['background']) {
-            var obj = this.meshDict[key].object.children;
-            //for ( var i = 0; i < obj.length; ++i )
-            obj[0].material.opacity = this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005));
-            obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
-          }
-          else {
-            //this.meshDict[key].object.children[0].material.opacity = 0.3 - 0.3*Math.sin(x * .0005);
-            //this.meshDict[key].object.children[0].material.opacity = 0.8;
-          }
+
+    for (var key in this.meshDict) {
+      if (this.meshDict[key].object != undefined) {
+        var x = new Date().getTime();
+        if (this.meshDict[key]['background']) {
+          var obj = this.meshDict[key].object.children;
+          //for ( var i = 0; i < obj.length; ++i )
+          obj[0].material.opacity = this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005));
+          obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
+        }
+        else {
+          //this.meshDict[key].object.children[0].material.opacity = 0.3 - 0.3*Math.sin(x * .0005);
+          //this.meshDict[key].object.children[0].material.opacity = 0.8;
         }
       }
     }
+
     /*
     * show label of mesh object when it intersects with cursor
     */
