@@ -10,6 +10,7 @@ function setTitle (v) {
     } else {
         this.__li.removeAttribute('title')
     }
+    
     return this;
 };
 
@@ -21,7 +22,10 @@ function setTitle (v) {
  */
 function setCommandIcon(faName,displayType='strip',attrs={}) {
     // __li is the root dom element of each controller
-    this.__li.classList.add("neu3dbutton");
+    this.__li.classList.add("neu3dbutton",'tooltip');
+
+    
+    
     if (faName) {
         this.__li.setAttribute('icon', faName);
         let faicon;

@@ -307,6 +307,17 @@ export class Neu3D {
       this.onWindowResize();
     })
     window.onresize = this.onWindowResize.bind(this);
+    $.each( $( ".tooltip" ), function() {
+      let element = document.createElement('SPAN');
+      console.log('continuing');
+      element.classList.add('tooltiptext');
+      element.innerHTML = this.getAttribute('title');
+      //this.__li.innerHTML += element.outerHTML;
+      this.appendChild(element);
+      console.log(this);
+      console.log(element);
+      this.removeAttribute('title');
+    });
 
   } // ENDOF Constructor
 
@@ -339,7 +350,7 @@ export class Neu3D {
     }
     let controlPanel = new dat.GUI(GUIOptions);
     window.panel = controlPanel;
-
+    $(panel.__closeButton).hide();
     let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Number of Neurons: ');
     neuronNum.domElement.style["pointerEvents"] = "None";
     neuronNum.domElement.parentNode.parentNode.classList.add('noneurons');
@@ -349,8 +360,7 @@ export class Neu3D {
       };
       let btn = new newButton();
       var buttonid = controlPanel.add(btn, name).title(tooltip).icon(icon,"strip",iconAttrs);
-      console.log(buttonid);
-      buttonid.domElement.classList.add('neu3dbutton');
+      
     }
 
     _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { document.getElementById('neu3d-file-upload').click(); });
@@ -361,6 +371,7 @@ export class Neu3D {
     _createBtn("takeScreenshot", "fa fa-camera",{}, "Download Screenshot", () => { this._take_screenshot = true;});
     _createBtn("removeUnpin", "fa fa-trash", {}, "Remove Unpinned Neurons", ()=> {this.removeUnpinned();})
     _createBtn("removeUnpin", "fa fa-map-upin", {}, "Unpin All", () => { this.unpinAll(); })
+    _createBtn("showSettings", "fa fa-cogs", {}, "Display Settings", () => { controlPanel.__closeButton.click(); })
 
     // add settings
     let f_vis = controlPanel.addFolder('Settings');
@@ -410,6 +421,7 @@ export class Neu3D {
     controlPanel.remember(this.settings.backrenderSSAO);
 
     controlPanel.open();
+    
     return controlPanel;
   }
 

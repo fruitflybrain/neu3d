@@ -106,57 +106,33 @@
   margin-left: 8px;
 }
 
-/*
-
-
-
-.dg li.save-row select {
-  margin-left: 5px;
-  width: 108px;
-}
-
-.dg:not(.folder) .cr.number {
-  border-left: 0px solid #2FA1D6;
-  background: #ffffff00;
-}
-
-.dg li.save-row {
-  line-height: 25px;
-  background: #000000;
-  border: 0;
-}
-
-.dg li:not(.folder) {
-    border-bottom: 0px solid #2c2c2c;
-}
-
-.dg.main .close-button:hover {
-  background-color: #ffffff00;
-  color: #cccccc;
-}
-
-.dg:not(.folder) .cr.function:hover, .dg .cr.boolean:hover {
-  background: #ffffff00;
-  color: #ffffff;
-}
-
-.dg:not(.folder) .cr.function {
-  background: #ffffff00;
-  color: #cccccc;
-  font-size: 15px;
-}
-
-.dg:not(.folder) .property-name {
-  cursor: default;
-  float: left;
-  clear: left;
-  width: 90%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dg:not(.folder) .c {
-  float: left;
-  width: 10%;
+.tooltip {
   position: relative;
-}*/
+  display: inline-block;
+  border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+}
+
+/* Tooltip text */
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+
+  /* Position the tooltip text - see examples below! */
+  position: absolute;
+  z-index: 1;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+
+.tooltip .tooltiptext {
+  top: -5px;
+  right: 105%; 
+}
