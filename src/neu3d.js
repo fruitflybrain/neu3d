@@ -303,19 +303,19 @@ export class Neu3D {
 
     // <DEBUG>: this resize event is not working right now
     this.container.addEventListener('resize',()=>{
-      console.log('div resize');
+      // console.log('div resize');
       this.onWindowResize();
     })
     window.onresize = this.onWindowResize.bind(this);
     $.each( $( ".tooltip" ), function() {
       let element = document.createElement('SPAN');
-      console.log('continuing');
+      // console.log('continuing');
       element.classList.add('tooltiptext');
       element.innerHTML = this.getAttribute('title');
       //this.__li.innerHTML += element.outerHTML;
       this.appendChild(element);
-      console.log(this);
-      console.log(element);
+      // console.log(this);
+      // console.log(element);
       this.removeAttribute('title');
     });
 
