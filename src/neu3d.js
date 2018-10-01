@@ -85,6 +85,8 @@ export class Neu3D {
       "maxColorNum": 1747591,
       "allowPin": true,
       "allowHighlight": true,
+      "enablePositionReset": false,
+      "resetPosition": { 'x': 0., 'y': 0., 'z': 0. },
     };
     if (metadata !== undefined)
       for (var key in this._metadata)
@@ -430,12 +432,19 @@ export class Neu3D {
     var width = this.container.clientWidth;
     this.fov = 20;
     this.prevhfov = 2 * Math.atan(Math.tan(Math.PI * this.fov / 2 / 180) * width / height);
-    let camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 20000);
+    let camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 1000000 );
     camera.position.z = 1800;
     if (width < 768 && width / height < 1)
       camera.position.z = 3800;
     if (width < 768 && width / height >= 1)
       camera.position.z = 2600;
+
+    if (this._metadata["enablePositionReset"] == true) {
+      camera.position.z = this._metadata["resetPosition"]['z'];
+      camera.position.y = this._metadata["resetPosition"]['y'];
+      camera.position.x = this._metadata["resetPosition"]['x'];
+    }
+
     return camera;
   }
 
@@ -1609,6 +1618,11 @@ export class Neu3D {
     }
   }
   resetView() {
+    if (this._metadata["enablePositionReset"] == true) {
+      this.camera.position.z = this._metadata["resetPosition"]['z'];
+      this.camera.position.y = this._metadata["resetPosition"]['y'];
+      this.camera.position.x = this._metadata["resetPosition"]['x'];
+    }
     this.controls.target0.x = 0.5 * (this.boundingBox.minX + this.boundingBox.maxX);
     this.controls.target0.y = 0.5 * (this.boundingBox.minY + this.boundingBox.maxY);
     this.controls.reset();

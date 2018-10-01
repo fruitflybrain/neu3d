@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Neu3d Test</title>
+    <script type="text/javascript" src=" https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <!-- <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp"
+      crossorigin="anonymous"> -->
+    <script src=../lib/neu3d.min.js"> </script>
+  </head>
+  <body>
+    <div id="vis-3d" class="vis-3d" style="width: 100%; height: 100%;"></div>
+    <script>
+      const parentDiv = document.getElementById('vis-3d');
+      let options = {
+        'stats': false,
+        'datGUI': {
+          autoPlace: false,
+          resizable: false,
+          closed: true,
+          hideable: true
+        }
+      }
+      var ffbomesh = new Neu3D(parentDiv,
+                               undefined,
+                               { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } },
+                               options);
+
+      window.ffbomesh = ffbomesh;
+
+      $.getJSON("../data/data.json", function (json) {
+        ffbomesh.addJson({
+          ffbo_json: json,
+          showAfterLoadAll: true
+        });
+      });
+
+
+      $(document).ready(() => {
+        ffbomesh.onWindowResize();
+        document.getElementById('neu3d-file-upload').click();
+      });
+    </script>
+  </body>
+</html>
