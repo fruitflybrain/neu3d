@@ -87,6 +87,7 @@ export class Neu3D {
       "allowHighlight": true,
       "enablePositionReset": false,
       "resetPosition": { 'x': 0., 'y': 0., 'z': 0. },
+      "upSign": 1.,
     };
     if (metadata !== undefined)
       for (var key in this._metadata)
@@ -443,6 +444,7 @@ export class Neu3D {
       camera.position.z = this._metadata["resetPosition"]['z'];
       camera.position.y = this._metadata["resetPosition"]['y'];
       camera.position.x = this._metadata["resetPosition"]['x'];
+      camera.up.y = this._metadata["upSign"];
     }
 
     return camera;
@@ -1622,6 +1624,7 @@ export class Neu3D {
       this.camera.position.z = this._metadata["resetPosition"]['z'];
       this.camera.position.y = this._metadata["resetPosition"]['y'];
       this.camera.position.x = this._metadata["resetPosition"]['x'];
+      this.camera.up.y = this._metadata["upSign"];
     }
     this.controls.target0.x = 0.5 * (this.boundingBox.minX + this.boundingBox.maxX);
     this.controls.target0.y = 0.5 * (this.boundingBox.minY + this.boundingBox.maxY);
