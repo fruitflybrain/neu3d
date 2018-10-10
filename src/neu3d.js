@@ -122,6 +122,9 @@ export class Neu3D {
       pinned: false,
       highlight: false
     });
+    this.activityData = {};
+    this.it1 = {};
+    this.it2 = {};
     this.meshDict = new PropertyManager();
     this.uiVars = new PropertyManager({
       pinnedObjects: new Set(),
@@ -427,6 +430,37 @@ export class Neu3D {
     
     return controlPanel;
   }
+
+  clearActivity() {
+    clearInterval(this.it1);
+    clearInterval(this.it2);
+  }
+
+  animateActivity(activityData, t_i, interval, interpolation_interval) {
+    this.activityData = activityData;
+    var t = t_i || 0; 
+    var t_max = activityData[Object.keys(activityData)[0]].length;
+    var interp = 0;
+    this.it1 = setInterval(frame, interval);
+    this.it2 = setInterval(intFrame, interpolation_interval);
+    function intFrame() {
+        interp += interpolation_interval / interval;
+        var t_current = t;
+        var t_next = t+1;
+        if (t_next == t_max)
+        t_next = 0;
+        for (var key in activityData) {
+            ffbomesh.meshDict[key]['opacity'] = activityData[key][t_current] * (1-interp) + activityData[key][t_next] * (interp);
+        }
+        ffbomesh.resetOpacity();
+    }
+    function frame() {
+        interp = 0;
+        t = t + 1;
+        if (t == t_max)
+        t = 0;
+    }
+}
 
   initCamera() {
     var height = this.container.clientHeight;
@@ -1555,8 +1589,6 @@ export class Neu3D {
       else {
         if (this.meshDict[key]['opacity'] >= 0.)
         {
-          console.log('Spotted positive opacity...');
-          console.log(this.meshDict[key]['opacity'] * this.settings.backgroundOpacity);
           this.meshDict[key].object.children[0].material.opacity = this.meshDict[key]['opacity'] * this.settings.backgroundOpacity;
           this.meshDict[key].object.children[1].material.opacity = this.meshDict[key]['opacity'] * this.settings.backgroundWireframeOpacity;
         }
