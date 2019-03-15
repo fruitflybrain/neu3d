@@ -355,7 +355,6 @@ export class Neu3D {
       }
     }
     let controlPanel = new dat.GUI(GUIOptions);
-    window.panel = controlPanel;
     $(panel.__closeButton).hide();
     let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Number of Neurons: ');
     neuronNum.domElement.style["pointerEvents"] = "None";
