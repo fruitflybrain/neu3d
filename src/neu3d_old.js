@@ -543,461 +543,460 @@ Neu3D.prototype.execCommand = function(json) {
 }
 
 Neu3D.prototype.addJson = function(json) {
-return new Promise((function(resolve) {
-    if ( (json === undefined) || !("ffbo_json" in json) ) {
-    console.log( 'mesh json is undefined' );
-    return;
-    }
-    var metadata = {
-    "type": undefined,
-    "visibility": true,
-    "colormap": this._metadata.colormap,
-    "colororder": "random",
-    "showAfterLoadAll": false,
-    }
-    for (var key in metadata)
-    if ( (key in json) && (json[key] !== undefined) )
-        metadata[key] = json[key];
+  return new Promise((function(resolve) {
+      if ( (json === undefined) || !("ffbo_json" in json) ) {
+      console.log( 'mesh json is undefined' );
+      return;
+      }
+      var metadata = {
+      "type": undefined,
+      "visibility": true,
+      "colormap": this._metadata.colormap,
+      "colororder": "random",
+      "showAfterLoadAll": false,
+      }
+      for (var key in metadata)
+      if ( (key in json) && (json[key] !== undefined) )
+          metadata[key] = json[key];
 
-    if ( ('reset' in json) && json.reset )
-    this.reset();
-    /* set colormap */
-    var keyList = Object.keys(json.ffbo_json);
-    var colorNum, id2float, lut;
+      if ( ('reset' in json) && json.reset )
+      this.reset();
+      /* set colormap */
+      var keyList = Object.keys(json.ffbo_json);
+      var colorNum, id2float, lut;
 
-    if ( metadata.colororder === "order" ) {
-    colorNum = keyList.length;
-    id2float = function(i) {return i/colorNum};
-    } else {
-    colorNum = this.maxColorNum;
-    id2float = function(i) {return getRandomIntInclusive(1, colorNum)/colorNum};
-    }
+      if ( metadata.colororder === "order" ) {
+      colorNum = keyList.length;
+      id2float = function(i) {return i/colorNum};
+      } else {
+      colorNum = this.maxColorNum;
+      id2float = function(i) {return getRandomIntInclusive(1, colorNum)/colorNum};
+      }
 
-    if ( metadata.colororder === "order" && (colorNum !== this.maxColorNum || metadata.colormap !== "rainbow_gist") ) {
-    colorNum = keyList.length;
-    lut = new THREE.Lut( metadata.colormap, colorNum);
-    lut.setMin( 0 );
-    lut.setMax( 1 );
-    } else
-    lut = this.lut;
-    if ( metadata.showAfterLoadAll )
-    this.groups.front.visible = false;
+      if ( metadata.colororder === "order" && (colorNum !== this.maxColorNum || metadata.colormap !== "rainbow_gist") ) {
+      colorNum = keyList.length;
+      lut = new THREE.Lut( metadata.colormap, colorNum);
+      lut.setMin( 0 );
+      lut.setMax( 1 );
+      } else
+      lut = this.lut;
+      if ( metadata.showAfterLoadAll )
+      this.groups.front.visible = false;
 
-    for ( var i = 0; i < keyList.length; ++i ) {
-    var key = keyList[i];
-    if (key in this.meshDict ) {
-        console.log( 'mesh object already exists... skip rendering...' )
-        continue;
-    }
-    var unit = new PropertyManager(json.ffbo_json[key]);
-    unit.boundingBox = Object.assign( {}, this.defaultBoundingBox );
+      for ( var i = 0; i < keyList.length; ++i ) {
+      var key = keyList[i];
+      if (key in this.meshDict ) {
+          console.log( 'mesh object already exists... skip rendering...' )
+          continue;
+      }
+      var unit = new PropertyManager(json.ffbo_json[key]);
+      unit.boundingBox = Object.assign( {}, this.defaultBoundingBox );
 
-    setAttrIfNotDefined(unit, 'highlight', true);
-    setAttrIfNotDefined(unit, 'visibility', true);
-    setAttrIfNotDefined(unit, 'background', false);
-    setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
-    setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
+      setAttrIfNotDefined(unit, 'highlight', true);
+      setAttrIfNotDefined(unit, 'visibility', true);
+      setAttrIfNotDefined(unit, 'background', false);
+      setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
+      setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
 
-    if (Array.isArray(unit.color))
-        unit.color = new THREE.Color(...unit.color);
+      if (Array.isArray(unit.color))
+          unit.color = new THREE.Color(...unit.color);
 
-    /* read mesh */
-    if ( metadata.type === "morphology_json" ) {
-        this.loadMorphJSONCallBack(key, unit, metadata.visibility).bind(this)();
-    } else if ( ('dataStr' in unit) && ('filename' in unit) ) {
-        console.log( 'mesh object has both data string and filename... should only have one... skip rendering' );
-        continue;
-    } else if ( 'filename' in unit ) {
-        unit['filetype'] = unit.filename.split('.').pop();
-        var loader = new THREE.FileLoader( this.loadingManager );
-        if (unit['filetype'] == "json")
-        loader.load(unit.filename, this.loadMeshCallBack(key, unit, metadata.visibility).bind(this));
-        else if (unit['filetype'] == "swc" )
-        loader.load(unit.filename, this.loadSWCCallBack(key, unit, metadata.visibility).bind(this));
-        else {
-        console.log( 'mesh object has unrecognized data format... skip rendering' );
-        continue;
-        }
-    } else if ( 'dataStr' in unit ) {
-        if (unit['filetype']  == "json")
-        this.ladMeshCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
-        else if (unit['filetype'] == "swc" )
-        this.loadSWCCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
-        else {
-        console.log( 'mesh object has unrecognized data format... skip rendering' );
-        continue;
-        }
-    } else {
-        console.log( 'mesh object has neither filename nor data string... skip rendering' );
-        continue;
-    }
-    }
-    resolve();
-}).bind(this));
+      /* read mesh */
+      if ( metadata.type === "morphology_json" ) {
+          this.loadMorphJSONCallBack(key, unit, metadata.visibility).bind(this)();
+      } else if ( ('dataStr' in unit) && ('filename' in unit) ) {
+          console.log( 'mesh object has both data string and filename... should only have one... skip rendering' );
+          continue;
+      } else if ( 'filename' in unit ) {
+          unit['filetype'] = unit.filename.split('.').pop();
+          var loader = new THREE.FileLoader( this.loadingManager );
+          if (unit['filetype'] == "json")
+          loader.load(unit.filename, this.loadMeshCallBack(key, unit, metadata.visibility).bind(this));
+          else if (unit['filetype'] == "swc" )
+          loader.load(unit.filename, this.loadSWCCallBack(key, unit, metadata.visibility).bind(this));
+          else {
+          console.log( 'mesh object has unrecognized data format... skip rendering' );
+          continue;
+          }
+      } else if ( 'dataStr' in unit ) {
+          if (unit['filetype']  == "json")
+          this.ladMeshCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
+          else if (unit['filetype'] == "swc" )
+          this.loadSWCCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
+          else {
+          console.log( 'mesh object has unrecognized data format... skip rendering' );
+          continue;
+          }
+      } else {
+          console.log( 'mesh object has neither filename nor data string... skip rendering' );
+          continue;
+      }
+      }
+      resolve();
+  }).bind(this));
 }
 
 Neu3D.prototype.computeVisibleBoundingBox = function(includeBackground=false){
-this.visibleBoundingBox = Object.assign( {}, this.defaultBoundingBox );
-updated = false;
-for(var key in this.meshDict){
-    if( this.meshDict[key].background)
-    continue;
-    if( this.meshDict[key].visibility ){
-    updated = true;
-    if ( this.meshDict[key].boundingBox.minX < this.visibleBoundingBox.minX )
-        this.visibleBoundingBox.minX = this.meshDict[key].boundingBox.minX;
-    if ( this.meshDict[key].boundingBox.maxX > this.visibleBoundingBox.maxX )
-        this.visibleBoundingBox.maxX = this.meshDict[key].boundingBox.maxX;
-    if ( this.meshDict[key].boundingBox.minY < this.visibleBoundingBox.minY )
-        this.visibleBoundingBox.minY = this.meshDict[key].boundingBox.minY;
-    if ( this.meshDict[key].boundingBox.maxY > this.visibleBoundingBox.maxY )
-        this.visibleBoundingBox.maxY = this.meshDict[key].boundingBox.maxY;
-    if ( this.meshDict[key].boundingBox.maxZ < this.visibleBoundingBox.minZ )
-        this.visibleBoundingBox.minZ = this.meshDict[key].boundingBox.minZ;
-    if ( this.meshDict[key].boundingBox.maxZ > this.visibleBoundingBox.maxZ )
-        this.visibleBoundingBox.maxZ = this.meshDict[key].boundingBox.maxZ;
-    }
-}
-if(!updated)
-    Object.assign(this.visibleBoundingBox, this.boundingBox);
+  this.visibleBoundingBox = Object.assign( {}, this.defaultBoundingBox );
+  updated = false;
+  for(var key in this.meshDict){
+      if( this.meshDict[key].background)
+      continue;
+      if( this.meshDict[key].visibility ){
+      updated = true;
+      if ( this.meshDict[key].boundingBox.minX < this.visibleBoundingBox.minX )
+          this.visibleBoundingBox.minX = this.meshDict[key].boundingBox.minX;
+      if ( this.meshDict[key].boundingBox.maxX > this.visibleBoundingBox.maxX )
+          this.visibleBoundingBox.maxX = this.meshDict[key].boundingBox.maxX;
+      if ( this.meshDict[key].boundingBox.minY < this.visibleBoundingBox.minY )
+          this.visibleBoundingBox.minY = this.meshDict[key].boundingBox.minY;
+      if ( this.meshDict[key].boundingBox.maxY > this.visibleBoundingBox.maxY )
+          this.visibleBoundingBox.maxY = this.meshDict[key].boundingBox.maxY;
+      if ( this.meshDict[key].boundingBox.maxZ < this.visibleBoundingBox.minZ )
+          this.visibleBoundingBox.minZ = this.meshDict[key].boundingBox.minZ;
+      if ( this.meshDict[key].boundingBox.maxZ > this.visibleBoundingBox.maxZ )
+          this.visibleBoundingBox.maxZ = this.meshDict[key].boundingBox.maxZ;
+      }
+  }
+  if(!updated)
+      Object.assign(this.visibleBoundingBox, this.boundingBox);
 }
 
 Neu3D.prototype.updateObjectBoundingBox = function(obj, x, y, z) {
-if ( x < obj.boundingBox.minX )
-    obj.boundingBox.minX = x;
-if ( x > obj.boundingBox.maxX )
-    obj.boundingBox.maxX = x;
-if ( y < obj.boundingBox.minY )
-    obj.boundingBox.minY = y;
-if ( y > obj.boundingBox.maxY )
-    obj.boundingBox.maxY = y;
-if ( z < obj.boundingBox.minZ )
-    obj.boundingBox.minZ = z;
-if ( z > obj.boundingBox.maxZ )
-    obj.boundingBox.maxZ = z;
+  if ( x < obj.boundingBox.minX )
+      obj.boundingBox.minX = x;
+  if ( x > obj.boundingBox.maxX )
+      obj.boundingBox.maxX = x;
+  if ( y < obj.boundingBox.minY )
+      obj.boundingBox.minY = y;
+  if ( y > obj.boundingBox.maxY )
+      obj.boundingBox.maxY = y;
+  if ( z < obj.boundingBox.minZ )
+      obj.boundingBox.minZ = z;
+  if ( z > obj.boundingBox.maxZ )
+      obj.boundingBox.maxZ = z;
 }
 
 Neu3D.prototype.updateBoundingBox = function(x,y,z) {
-if ( x < this.boundingBox.minX )
-    this.boundingBox.minX = x;
-if ( x > this.boundingBox.maxX )
-    this.boundingBox.maxX = x;
-if ( y < this.boundingBox.minY )
-    this.boundingBox.minY = y;
-if ( y > this.boundingBox.maxY )
-    this.boundingBox.maxY = y;
-if ( z < this.boundingBox.minZ )
-    this.boundingBox.minZ = z;
-if ( z > this.boundingBox.maxZ )
-    this.boundingBox.maxZ = z;
+  if ( x < this.boundingBox.minX )
+      this.boundingBox.minX = x;
+  if ( x > this.boundingBox.maxX )
+      this.boundingBox.maxX = x;
+  if ( y < this.boundingBox.minY )
+      this.boundingBox.minY = y;
+  if ( y > this.boundingBox.maxY )
+      this.boundingBox.maxY = y;
+  if ( z < this.boundingBox.minZ )
+      this.boundingBox.minZ = z;
+  if ( z > this.boundingBox.maxZ )
+      this.boundingBox.maxZ = z;
 }
 
 Neu3D.prototype.setAnim = function(data) {
-for (var key in data) {
-    if (this.meshDict[key].object === undefined)
-    continue;
-    this.animOpacity[key] = data[key];
-}
-this.states.animate = true;
-}
-Neu3D.prototype.stopAnim = function() {
-this.states.animate = false;
-}
-Neu3D.prototype.animate = function() {
+  for (var key in data) {
+      if (this.meshDict[key].object === undefined)
+      continue;
+      this.animOpacity[key] = data[key];
+  }
+  this.states.animate = true;
+  }
+  Neu3D.prototype.stopAnim = function() {
+  this.states.animate = false;
+  }
+  Neu3D.prototype.animate = function() {
 
-this.stats.begin()
+  this.stats.begin()
 
-this.controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
-if( this.states.mouseOver && this.dispatch.syncControls)
-    this.dispatch.syncControls(this)
+  this.controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
+  if( this.states.mouseOver && this.dispatch.syncControls)
+      this.dispatch.syncControls(this)
 
-this.render();
+  this.render();
 
-this.stats.end()
+  this.stats.end()
 
-requestAnimationFrame( this.animate.bind(this) );
-
+  requestAnimationFrame( this.animate.bind(this) );
 }
 
 Neu3D.prototype.loadMeshCallBack = function(key, unit, visibility) {
-return function (jsonString) {
-    var json = JSON.parse(jsonString);
-    var color = unit['color'];
-    var geometry = new THREE.Geometry();
-    var vtx = json['vertices'];
-    var idx = json['faces'];
-    for (var j = 0; j < vtx.length / 3; j++) {
-    var x = parseFloat(vtx[3*j+0]);
-    var y = parseFloat(vtx[3*j+1]);
-    var z = parseFloat(vtx[3*j+2]);
-    geometry.vertices.push(new THREE.Vector3(x,y,z));
-    this.updateObjectBoundingBox(unit, x, y, z);
-    this.updateBoundingBox(x,y,z);
-    }
-    for (var j = 0; j < idx.length/3; j++) {
-    geometry.faces.push(
-        new THREE.Face3(
-            parseInt(idx[3*j+0]),
-            parseInt(idx[3*j+1]),
-            parseInt(idx[3*j+2])
-        )
-    );
-    }
+  return function (jsonString) {
+      var json = JSON.parse(jsonString);
+      var color = unit['color'];
+      var geometry = new THREE.Geometry();
+      var vtx = json['vertices'];
+      var idx = json['faces'];
+      for (var j = 0; j < vtx.length / 3; j++) {
+      var x = parseFloat(vtx[3*j+0]);
+      var y = parseFloat(vtx[3*j+1]);
+      var z = parseFloat(vtx[3*j+2]);
+      geometry.vertices.push(new THREE.Vector3(x,y,z));
+      this.updateObjectBoundingBox(unit, x, y, z);
+      this.updateBoundingBox(x,y,z);
+      }
+      for (var j = 0; j < idx.length/3; j++) {
+      geometry.faces.push(
+          new THREE.Face3(
+              parseInt(idx[3*j+0]),
+              parseInt(idx[3*j+1]),
+              parseInt(idx[3*j+2])
+          )
+      );
+      }
 
-    geometry.mergeVertices();
-    geometry.computeFaceNormals();
-    geometry.computeVertexNormals();
+      geometry.mergeVertices();
+      geometry.computeFaceNormals();
+      geometry.computeVertexNormals();
 
-    var materials  = [
-    //new THREE.MeshPhongMaterial( { color: color, flatShading: true, shininess: 0, transparent: true } ),
-    new THREE.MeshLambertMaterial( { color: color, transparent: true, side: 2, flatShading: true} ),
-    new THREE.MeshBasicMaterial( { color: color, wireframe: true, transparent: true} )
-    ];
+      var materials  = [
+      //new THREE.MeshPhongMaterial( { color: color, flatShading: true, shininess: 0, transparent: true } ),
+      new THREE.MeshLambertMaterial( { color: color, transparent: true, side: 2, flatShading: true} ),
+      new THREE.MeshBasicMaterial( { color: color, wireframe: true, transparent: true} )
+      ];
 
 
-    var object = createMultiMaterialObject( geometry, materials );
-    if(! this.settings.meshWireframe )
-    object.children[1].visible = false;
-    object.visible = visibility;
+      var object = createMultiMaterialObject( geometry, materials );
+      if(! this.settings.meshWireframe )
+      object.children[1].visible = false;
+      object.visible = visibility;
 
-    this._registerObject(key, unit, object);
-};
+      this._registerObject(key, unit, object);
+  };
 
 };
 
 Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
-return function(swcString) {
-    /*
-    * process string
-    */
-    swcString = swcString.replace(/\r\n/g, "\n");
-    var swcLine = swcString.split("\n");
-    var len = swcLine.length;
-    var swcObj = {};
+  return function(swcString) {
+      /*
+      * process string
+      */
+      swcString = swcString.replace(/\r\n/g, "\n");
+      var swcLine = swcString.split("\n");
+      var len = swcLine.length;
+      var swcObj = {};
 
-    swcLine.forEach(function (e) {
-    var seg = e.split(' ');
-    if (seg.length == 7) {
-        swcObj[parseInt(seg[0])] = {
-        'type'   : parseInt  (seg[1]),
-        'x'    : parseFloat(seg[2]),
-        'y'    : parseFloat(seg[3]),
-        'z'    : parseFloat(seg[4]),
-        'radius' : parseFloat(seg[5]),
-        'parent' : parseInt  (seg[6]),
-        };
-    }
-    });
+      swcLine.forEach(function (e) {
+      var seg = e.split(' ');
+      if (seg.length == 7) {
+          swcObj[parseInt(seg[0])] = {
+          'type'   : parseInt  (seg[1]),
+          'x'    : parseFloat(seg[2]),
+          'y'    : parseFloat(seg[3]),
+          'z'    : parseFloat(seg[4]),
+          'radius' : parseFloat(seg[5]),
+          'parent' : parseInt  (seg[6]),
+          };
+      }
+      });
 
-    var color = unit['color'];
-    var geometry  = new THREE.Geometry();
+      var color = unit['color'];
+      var geometry  = new THREE.Geometry();
 
-    for (var idx in swcObj ) {
-    if (swcObj[idx].parent != -1) {
-        var c = swcObj[idx];
-        var p = swcObj[swcObj[idx].parent];
-        geometry.vertices.push(new THREE.Vector3(c.x,c.y,c.z));
-        geometry.vertices.push(new THREE.Vector3(p.x,p.y,p.z));
-        geometry.colors.push(color);
-        geometry.colors.push(color);
-        this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
-        this.updateBoundingBox(c.x, c.y, c.z);
-    }
-    }
-    var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
-    var object = new THREE.Object3D();
-    object.add(new THREE.LineSegments(geometry, material, THREE.LineSegments));
-    object.visible = visibility;
+      for (var idx in swcObj ) {
+      if (swcObj[idx].parent != -1) {
+          var c = swcObj[idx];
+          var p = swcObj[swcObj[idx].parent];
+          geometry.vertices.push(new THREE.Vector3(c.x,c.y,c.z));
+          geometry.vertices.push(new THREE.Vector3(p.x,p.y,p.z));
+          geometry.colors.push(color);
+          geometry.colors.push(color);
+          this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
+          this.updateBoundingBox(c.x, c.y, c.z);
+      }
+      }
+      var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
+      var object = new THREE.Object3D();
+      object.add(new THREE.LineSegments(geometry, material, THREE.LineSegments));
+      object.visible = visibility;
 
-    this._registerObject(key, unit, object);
+      this._registerObject(key, unit, object);
 
-};
+  };
 };
 
 Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
-return function() {
-    /*
-    * process string
-    */
-    var swcObj = {};
-    var len = unit['sample'].length;
-    for (var j = 0; j < len; j++) {
-    swcObj[parseInt(unit['sample'][j])] = {
-        'type'   : parseInt  (unit['identifier'][j]),
-        'x'    : parseFloat(unit['x'][j]),
-        'y'    : parseFloat(unit['y'][j]),
-        'z'    : parseFloat(unit['z'][j]),
-        'radius' : parseFloat(unit['r'][j]),
-        'parent' : parseInt  (unit['parent'][j]),
-    };
-    }
+  return function() {
+      /*
+      * process string
+      */
+      var swcObj = {};
+      var len = unit['sample'].length;
+      for (var j = 0; j < len; j++) {
+      swcObj[parseInt(unit['sample'][j])] = {
+          'type'   : parseInt  (unit['identifier'][j]),
+          'x'    : parseFloat(unit['x'][j]),
+          'y'    : parseFloat(unit['y'][j]),
+          'z'    : parseFloat(unit['z'][j]),
+          'radius' : parseFloat(unit['r'][j]),
+          'parent' : parseInt  (unit['parent'][j]),
+      };
+      }
 
-    var color = unit['color'];
-    var object = new THREE.Object3D();
-    var pointGeometry = undefined;
-    var mergedGeometry = undefined;
-    var geometry = undefined;
+      var color = unit['color'];
+      var object = new THREE.Object3D();
+      var pointGeometry = undefined;
+      var mergedGeometry = undefined;
+      var geometry = undefined;
 
-    for (var idx in swcObj ) {
-    var c = swcObj[idx];
-    if(idx == Math.round(len/2) && unit.position == undefined)
-        unit.position = new THREE.Vector3(c.x, c.y, c.z);
-    this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
-    this.updateBoundingBox(c.x,c.y,c.z);
-    if (c.parent != -1) {
-        var p = swcObj[c.parent];
-        if(this.settings.neuron3d){
-        if(mergedGeometry == undefined)
-            mergedGeometry = new THREE.Geometry()
-        var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
-        if(!p.radius || !c.radius)
-            var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
-        else
-            var geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
-        geometry.translate(0, 0.5*d.length(),0);
-        geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
-        geometry.lookAt(d.clone());
-        geometry.translate((c.x+c.x)/2 , -0.0*d.length()+(c.y + c.y)/2, (c.z + c.z)/2 );
+      for (var idx in swcObj ) {
+      var c = swcObj[idx];
+      if(idx == Math.round(len/2) && unit.position == undefined)
+          unit.position = new THREE.Vector3(c.x, c.y, c.z);
+      this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
+      this.updateBoundingBox(c.x,c.y,c.z);
+      if (c.parent != -1) {
+          var p = swcObj[c.parent];
+          if(this.settings.neuron3d){
+          if(mergedGeometry == undefined)
+              mergedGeometry = new THREE.Geometry()
+          var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
+          if(!p.radius || !c.radius)
+              var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
+          else
+              var geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
+          geometry.translate(0, 0.5*d.length(),0);
+          geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
+          geometry.lookAt(d.clone());
+          geometry.translate((c.x+c.x)/2 , -0.0*d.length()+(c.y + c.y)/2, (c.z + c.z)/2 );
 
-        mergedGeometry.merge(geometry);
-        geometry = null;
+          mergedGeometry.merge(geometry);
+          geometry = null;
 
-        if (this.settings.neuron3dMode == 2) {
-            var geometry = new THREE.SphereGeometry(c.radius, 8, 8);
-            geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
-            geometry.lookAt(d);
-            geometry.translate((c.x+c.x)/2 , (c.y + c.y)/2, (c.z + c.z)/2 );
+          if (this.settings.neuron3dMode == 2) {
+              var geometry = new THREE.SphereGeometry(c.radius, 8, 8);
+              geometry.applyMatrix( new THREE.Matrix4().makeRotationX( Math.PI / 2 ) );
+              geometry.lookAt(d);
+              geometry.translate((c.x+c.x)/2 , (c.y + c.y)/2, (c.z + c.z)/2 );
 
-            mergedGeometry.merge(geometry);
-            geometry = null;
-        } else if (this.settings.neuron3dMode == 3) {
-            if (p.parent != -1) {
-            p2 = swcObj[p.parent];
-            var a = new THREE.Vector3(0.9*p.x + 0.1*p2.x, 0.9*p.y + 0.1*p2.y, 0.9*p.z + 0.1*p2.z);
-            var b = new THREE.Vector3(0.9*p.x + 0.1*c.x, 0.9*p.y + 0.1*c.y, 0.9*p.z + 0.1*c.z);
-            var curve = new THREE.QuadraticBezierCurve3(a, new THREE.Vector3( p.x, p.y, p.z ), b);
+              mergedGeometry.merge(geometry);
+              geometry = null;
+          } else if (this.settings.neuron3dMode == 3) {
+              if (p.parent != -1) {
+              p2 = swcObj[p.parent];
+              var a = new THREE.Vector3(0.9*p.x + 0.1*p2.x, 0.9*p.y + 0.1*p2.y, 0.9*p.z + 0.1*p2.z);
+              var b = new THREE.Vector3(0.9*p.x + 0.1*c.x, 0.9*p.y + 0.1*c.y, 0.9*p.z + 0.1*c.z);
+              var curve = new THREE.QuadraticBezierCurve3(a, new THREE.Vector3( p.x, p.y, p.z ), b);
 
-            var geometry = new THREE.TubeGeometry( curve, 8, p.radius, 4, false );
-            mergedGeometry.merge(geometry);
-            geometry = null;
-            }
-        }
-        } else {
-        if (geometry == undefined)
-            geometry = new THREE.Geometry();
-        geometry.vertices.push(new THREE.Vector3(c.x,c.y,c.z));
-        geometry.vertices.push(new THREE.Vector3(p.x,p.y,p.z));
-        geometry.colors.push(color);
-        geometry.colors.push(color);
-        }
-    }
-    if (c.type == 1) {
-        if(c.radius)
-        var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
-        else
-        var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8 );
-        sphereGeometry.translate( c.x, c.y, c.z );
-        var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
-        object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
-        unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
-    }
-    if (c.type == -1) {
-        if(this.settings.synapseMode==1){
-        if(mergedGeometry == undefined)
-            mergedGeometry = new THREE.Geometry()
+              var geometry = new THREE.TubeGeometry( curve, 8, p.radius, 4, false );
+              mergedGeometry.merge(geometry);
+              geometry = null;
+              }
+          }
+          } else {
+          if (geometry == undefined)
+              geometry = new THREE.Geometry();
+          geometry.vertices.push(new THREE.Vector3(c.x,c.y,c.z));
+          geometry.vertices.push(new THREE.Vector3(p.x,p.y,p.z));
+          geometry.colors.push(color);
+          geometry.colors.push(color);
+          }
+      }
+      if (c.type == 1) {
+          if(c.radius)
+          var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
+          else
+          var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8 );
+          sphereGeometry.translate( c.x, c.y, c.z );
+          var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
+          object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
+          unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
+      }
+      if (c.type == -1) {
+          if(this.settings.synapseMode==1){
+          if(mergedGeometry == undefined)
+              mergedGeometry = new THREE.Geometry()
 
-        if(c.radius)
-            var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
-        else
-            var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8 );
-        sphereGeometry.translate( c.x, c.y, c.z );
-        //var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
-        //object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
-        mergedGeometry.merge(sphereGeometry);
-        unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
-        } else {
-        if(pointGeometry == undefined)
-            pointGeometry = new THREE.Geometry();
-        pointGeometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
-        }
-    }
-    }
-    if(pointGeometry){
-    var pointMaterial = new THREE.PointsMaterial( { color: color, size:this.settings.defaultSynapseRadius, lights:true } );
-    var points = new THREE.Points(pointGeometry, pointMaterial);
-    object.add(points);
-    }
-    if(mergedGeometry){
-    var material = new THREE.MeshLambertMaterial( {color: color, transparent: true});
-    //var modifier = new THREE.SimplifyModifier();
+          if(c.radius)
+              var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
+          else
+              var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8 );
+          sphereGeometry.translate( c.x, c.y, c.z );
+          //var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
+          //object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
+          mergedGeometry.merge(sphereGeometry);
+          unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
+          } else {
+          if(pointGeometry == undefined)
+              pointGeometry = new THREE.Geometry();
+          pointGeometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
+          }
+      }
+      }
+      if(pointGeometry){
+      var pointMaterial = new THREE.PointsMaterial( { color: color, size:this.settings.defaultSynapseRadius, lights:true } );
+      var points = new THREE.Points(pointGeometry, pointMaterial);
+      object.add(points);
+      }
+      if(mergedGeometry){
+      var material = new THREE.MeshLambertMaterial( {color: color, transparent: true});
+      //var modifier = new THREE.SimplifyModifier();
 
-    //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
-    var mesh = new THREE.Mesh(mergedGeometry, material);
-    //var mesh = new THREE.Mesh(simplified, material);
+      //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
+      var mesh = new THREE.Mesh(mergedGeometry, material);
+      //var mesh = new THREE.Mesh(simplified, material);
 
-    object.add(mesh);
-    }
-    if(geometry){
-    var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
-    object.add(new THREE.LineSegments(geometry, material));
-    }
-    object.visible = visibility;
-    this._registerObject(key, unit, object);
+      object.add(mesh);
+      }
+      if(geometry){
+      var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
+      object.add(new THREE.LineSegments(geometry, material));
+      }
+      object.visible = visibility;
+      this._registerObject(key, unit, object);
 
-    /* delete morpology data */
-    delete unit['identifier'];
-    delete unit['x'];
-    delete unit['y'];
-    delete unit['z'];
-    delete unit['r'];
-    delete unit['parent'];
-    delete unit['sample'];
-    delete unit['type'];
-};
+      /* delete morpology data */
+      delete unit['identifier'];
+      delete unit['x'];
+      delete unit['y'];
+      delete unit['z'];
+      delete unit['r'];
+      delete unit['parent'];
+      delete unit['sample'];
+      delete unit['type'];
+  };
 };
 
 Neu3D.prototype._registerObject = function(key, unit, object) {
 
-object.rid = key; // needed rid for raycaster reference
+  object.rid = key; // needed rid for raycaster reference
 
-unit['rid'] = key;
-unit['object'] = object;
-unit['pinned'] = false;
+  unit['rid'] = key;
+  unit['object'] = object;
+  unit['pinned'] = false;
 
-if (!unit.hasOwnProperty('position')) {
-    unit['position'] = new THREE.Vector3(
-    0.5 * (unit.boundingBox.minX + unit.boundingBox.maxX),
-    0.5 * (unit.boundingBox.minY + unit.boundingBox.maxY),
-    0.5 * (unit.boundingBox.minZ + unit.boundingBox.maxZ)
-    );
-}
+  if (!unit.hasOwnProperty('position')) {
+      unit['position'] = new THREE.Vector3(
+      0.5 * (unit.boundingBox.minX + unit.boundingBox.maxX),
+      0.5 * (unit.boundingBox.minY + unit.boundingBox.maxY),
+      0.5 * (unit.boundingBox.minZ + unit.boundingBox.maxZ)
+      );
+  }
 
-// TODO: move the code below to a function
-if(!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')){
-    if ( this.settings.defaultOpacity !== 1)
-    for (var i=0; i < unit['object'].children.length; i++)
-        unit['object'].children[i].material.opacity = this.settings.defaultOpacity;
-} else {
-    if ( this.settings.synapseOpacity !== 1)
-    for (var i=0; i < unit['object'].children.length; i++)
-        unit['object'].children[i].material.opacity = this.settings.synapseOpacity;
-}
+  // TODO: move the code below to a function
+  if(!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')){
+      if ( this.settings.defaultOpacity !== 1)
+      for (var i=0; i < unit['object'].children.length; i++)
+          unit['object'].children[i].material.opacity = this.settings.defaultOpacity;
+  } else {
+      if ( this.settings.synapseOpacity !== 1)
+      for (var i=0; i < unit['object'].children.length; i++)
+          unit['object'].children[i].material.opacity = this.settings.synapseOpacity;
+  }
 
-this.meshDict[key] = unit;
+  this.meshDict[key] = unit;
 }
 
 Neu3D.prototype.onDocumentMouseClick = function( event ) {
-if (event !== undefined)
-    event.preventDefault();
+  if (event !== undefined)
+      event.preventDefault();
 
-// if (!this.controls.checkStateIsNone())
-//     return;
+  // if (!this.controls.checkStateIsNone())
+  //     return;
 
-var intersected = this.getIntersection([this.groups.front]);
+  var intersected = this.getIntersection([this.groups.front]);
 
-if (intersected != undefined && intersected['highlight']){
-    this.select(intersected.rid);
-}
+  if (intersected != undefined && intersected['highlight']){
+      this.select(intersected.rid);
+  }
 }
 
 Neu3D.prototype.onDocumentMouseDBLClick = function( event ) {
@@ -1054,511 +1053,508 @@ this.highlight(undefined);
 //
 Neu3D.prototype.onWindowResize = function() {
 
-var height = this.container.clientHeight;
-var width = this.container.clientWidth;
+  var height = this.container.clientHeight;
+  var width = this.container.clientWidth;
 
-var aspect = width/height;
-var cam_dir = new THREE.Vector3();
-cam_dir.subVectors(this.camera.position, this.controls.target);
-var prevDist = cam_dir.length();
-cam_dir.normalize();
+  var aspect = width/height;
+  var cam_dir = new THREE.Vector3();
+  cam_dir.subVectors(this.camera.position, this.controls.target);
+  var prevDist = cam_dir.length();
+  cam_dir.normalize();
 
-var hspan = prevDist*2*Math.tan(this.prevhfov/2);
-//vspan = prevDist*2*Math.tan(Math.PI*this.fov/2/180);
+  var hspan = prevDist*2*Math.tan(this.prevhfov/2);
+  //vspan = prevDist*2*Math.tan(Math.PI*this.fov/2/180);
 
-this.prevhfov = 2 * Math.atan( Math.tan (Math.PI*this.fov/2/180) * aspect );
-//span = Math.max(ffbomesh.boundingBox.maxX-ffbomesh.boundingBox.minX,ffbomesh.boundingBox.maxY-ffbomesh.boundingBox.minY, ffbomesh.boundingBox.maxZ-ffbomesh.boundingBox.minZ);
+  this.prevhfov = 2 * Math.atan( Math.tan (Math.PI*this.fov/2/180) * aspect );
+  //span = Math.max(ffbomesh.boundingBox.maxX-ffbomesh.boundingBox.minX,ffbomesh.boundingBox.maxY-ffbomesh.boundingBox.minY, ffbomesh.boundingBox.maxZ-ffbomesh.boundingBox.minZ);
 
-//dist = Math.max(hspan/2/Math.tan(hfov/2), vspan/2/Math.tan(Math.PI*this.fov/2/180));
-var dist = hspan/2/Math.tan(this.prevhfov/2);
-this.camera.position.copy(this.controls.target);
-this.camera.position.addScaledVector(cam_dir, dist);
+  //dist = Math.max(hspan/2/Math.tan(hfov/2), vspan/2/Math.tan(Math.PI*this.fov/2/180));
+  var dist = hspan/2/Math.tan(this.prevhfov/2);
+  this.camera.position.copy(this.controls.target);
+  this.camera.position.addScaledVector(cam_dir, dist);
 
-this.camera.aspect = aspect;
-this.camera.updateProjectionMatrix();
+  this.camera.aspect = aspect;
+  this.camera.updateProjectionMatrix();
 
-this.renderer.setSize( width, height );
-this.composer.setSize( width*window.devicePixelRatio,
-                        height*window.devicePixelRatio);
-this.effectFXAA.uniforms[ 'resolution' ].value.set(1 / Math.max(width, 1440), 1 / Math.max(height, 900) )
+  this.renderer.setSize( width, height );
+  this.composer.setSize( width*window.devicePixelRatio,
+                          height*window.devicePixelRatio);
+  this.effectFXAA.uniforms[ 'resolution' ].value.set(1 / Math.max(width, 1440), 1 / Math.max(height, 900) )
 
-this.controls.handleResize();
-this.render();
-if(this.dispatch['resize'] !== undefined)
-    this.dispatch['resize']();
+  this.controls.handleResize();
+  this.render();
+  if(this.dispatch['resize'] !== undefined)
+      this.dispatch['resize']();
 
 }
 
 var _saveImage ;
 window.onload = () => {
-    _saveImage = (function () {
-      let a = document.createElement("a");
-      document.body.appendChild(a);
-      a.style = "display: none";
-      return function (blob, fileName) {
-        let url = window.URL.createObjectURL(blob);
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        window.URL.revokeObjectURL(url);
-      };
-    }());
-  }
-//   = (function () {
-// var a = document.createElement("a");
-// document.body.appendChild(a);
-// a.style = "display: none";
-// return function (blob, fileName) {
-//     url = window.URL.createObjectURL(blob);
-//     a.href = url;
-//     a.download = fileName;
-//     a.click();
-//     window.URL.revokeObjectURL(url);
-// };
-// }());
+  _saveImage = (function () {
+    let a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    return function (blob, fileName) {
+      let url = window.URL.createObjectURL(blob);
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    };
+  }());
+}
 
 Neu3D.prototype.render = function() {
-
-if (this.states.animate) {
-    for (var key in this.meshDict) {
-    if (this.meshDict[key].object === undefined)
-        continue;
-    var x = this.meshDict[key].object.children;
-    for (var i in x)
-        x[i].material.opacity = this.animOpacity[key] || 0;
-    }
-} else if (this.states.highlight) {
-
-} else {
-    for (var key in this.meshDict) {
-    if (this.meshDict[key].object != undefined) {
-        var x = new Date().getTime();
-        if ( this.meshDict[key]['background'] ) {
-        var obj = this.meshDict[key].object.children;
-        //for ( var i = 0; i < obj.length; ++i )
-        obj[0].material.opacity = this.settings.backgroundOpacity +  0.5*this.settings.meshOscAmp*(1+Math.sin(x * .0005));
-        obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
-        } else {
-        //this.meshDict[key].object.children[0].material.opacity = 0.3 - 0.3*Math.sin(x * .0005);
-        //this.meshDict[key].object.children[0].material.opacity = 0.8;
+  if (this.states.animate) {
+      for (var key in this.meshDict) {
+        if (this.meshDict[key].object === undefined){
+          continue;
         }
-    }
-    }
-}
+        var x = this.meshDict[key].object.children;
+        for (var i in x){
+          x[i].material.opacity = this.animOpacity[key] || 0;
+        }
+      }
+  } else if (this.states.highlight) {
+    // TODO: Check
+  } else {
+      for (var key in this.meshDict) {
+        if (this.meshDict[key].object != undefined) {
+            var x = new Date().getTime();
+            if ( this.meshDict[key]['background'] ) {
+              var obj = this.meshDict[key].object.children;
+              //for ( var i = 0; i < obj.length; ++i )
+              obj[0].material.opacity = this.settings.backgroundOpacity +  0.5*this.settings.meshOscAmp*(1+Math.sin(x * .0005));
+              obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
+            } else {
+            //this.meshDict[key].object.children[0].material.opacity = 0.3 - 0.3*Math.sin(x * .0005);
+            //this.meshDict[key].object.children[0].material.opacity = 0.8;
+            }
+        }
+      }
+  }
 
-/*
-* show label of mesh object when it intersects with cursor
-*/
-// if (this.controls.checkStateIsNone() && this.states.mouseOver) {
-if(this.states.mouseOver) {
-    var intersected = this.getIntersection([this.groups.front, this.groups.back]);
-    if (this.uiVars.currentIntersected || intersected) {
-    this.uiVars.currentIntersected = intersected;
-    this.highlight(intersected);
-    }
 
-}
 
-this.composer.render();
-if(this._take_screenshot){
-    this.renderer.domElement.toBlob(function(b){
-    _saveImage(b, "ffbo_screenshot.png")
-    })
-    this._take_screenshot = false;
-}
-//this.renderer.render( this.scene, this.camera );
+  /*
+  * show label of mesh object when it intersects with cursor
+  */
+  // if (this.controls.checkStateIsNone() && this.states.mouseOver) {
+  if(this.states.mouseOver) {
+      var intersected = this.getIntersection([this.groups.front, this.groups.back]);
+      if (this.uiVars.currentIntersected || intersected) {
+      this.uiVars.currentIntersected = intersected;
+      this.highlight(intersected);
+      }
+
+  }
+
+  this.composer.render();
+  if(this._take_screenshot){
+      this.renderer.domElement.toBlob(function(b){
+      _saveImage(b, "ffbo_screenshot.png")
+      })
+      this._take_screenshot = false;
+  }
+  //this.renderer.render( this.scene, this.camera );
 }
 
 Neu3D.prototype.getIntersection = function(groups) {
-if (groups === undefined)
-    return undefined;
+  if (groups === undefined){
+      return undefined;
+  }
+  var val = undefined;
+  var object = undefined;
 
-var val = undefined;
-var object = undefined;
+  this.raycaster.setFromCamera( this.uiVars.cursorPosition, this.camera );
 
-this.raycaster.setFromCamera( this.uiVars.cursorPosition, this.camera );
-
-for (const group of groups) {
-    var intersects = this.raycaster.intersectObjects( group.children, true);
-    if ( intersects.length > 0 ) {
-    object = intersects[0].object.parent;
-    if (object.hasOwnProperty('rid') && object.rid in this.meshDict) {
-        val =  this.meshDict[object.rid];
-        break;
-    }
-    }
-}
-return val;
+  for (const group of groups) {
+      var intersects = this.raycaster.intersectObjects( group.children, true);
+      if ( intersects.length > 0 ) {
+        object = intersects[0].object.parent;
+        if (object.hasOwnProperty('rid') && object.rid in this.meshDict) {
+            val =  this.meshDict[object.rid];
+            break;
+        }
+      }
+  }
+  return val;
 }
 
 Neu3D.prototype.showFrontAll = function() {
-for (var val of this.groups.front.children)
+  for (var val of this.groups.front.children){
     this.meshDict[val.rid].visibility = true;
+  }
 };
 
 Neu3D.prototype.hideFrontAll = function() {
-for (var val of this.groups.front.children)
+  for (var val of this.groups.front.children){
     this.meshDict[val.rid].visibility = false;
+  }
 };
 
 Neu3D.prototype.showBackAll = function() {
-for (var val of this.groups.back.children)
+  for (var val of this.groups.back.children){
     this.meshDict[val.rid].visibility = true;
+  }
 };
 
 Neu3D.prototype.hideBackAll = function() {
-for (var val of this.groups.back.children)
+  for (var val of this.groups.back.children){
     this.meshDict[val.rid].visibility = false;
+  }
 };
 
 Neu3D.prototype.showAll = function() {
-for (var key in this.meshDict)
+  for (var key in this.meshDict){
     this.meshDict[key].visibility = true;
+  }
 };
 
 Neu3D.prototype.hideAll = function() {
-for (var key in this.meshDict)
-    if (!this.meshDict[key]['pinned'])
-    this.meshDict[key].visibility = false;
+  for (var key in this.meshDict){
+    if (!this.meshDict[key]['pinned']){
+      this.meshDict[key].visibility = false;
+    }
+  }
 };
 
 Neu3D.prototype.export_settings = function() {
-var backgroundColor = [0.15, 0.01, 0.15];
-if (this.groups.back.children.length)
-    backgroundColor = this.groups.back.children[0].children[0].material.color.toArray();
-if (this.settings.backgroundColor !== undefined)
-    backgroundColor = this.settings.backgroundColor;
-var set = Object.assign({}, this.settings, {
-    lightsHelper: this.lightsHelper.export(),
-    postProcessing: {
-    fxaa: this.settings.effectFXAA.enabled,
-    ssao: this.settings.backrenderSSAO.enabled,
-    toneMappingMinLum: 1-this.settings.toneMappingPass.brightness,
-    bloomRadius: this.settings.bloomPass.radius,
-    bloomThreshold: this.settings.bloomPass.threshold,
-    bloomStrength: this.settings.bloomPass.strength
-    },
-    backgroundColor: backgroundColor
-});
-delete set.effectFXAA;
-delete set.backrenderSSAO;
-delete set.toneMappingPass;
-delete set.bloomPass;
-return set;
+  var backgroundColor = [0.15, 0.01, 0.15];
+  if (this.groups.back.children.length)
+      backgroundColor = this.groups.back.children[0].children[0].material.color.toArray();
+  if (this.settings.backgroundColor !== undefined)
+      backgroundColor = this.settings.backgroundColor;
+  var set = Object.assign({}, this.settings, {
+      lightsHelper: this.lightsHelper.export(),
+      postProcessing: {
+      fxaa: this.settings.effectFXAA.enabled,
+      ssao: this.settings.backrenderSSAO.enabled,
+      toneMappingMinLum: 1-this.settings.toneMappingPass.brightness,
+      bloomRadius: this.settings.bloomPass.radius,
+      bloomThreshold: this.settings.bloomPass.threshold,
+      bloomStrength: this.settings.bloomPass.strength
+      },
+      backgroundColor: backgroundColor
+  });
+  delete set.effectFXAA;
+  delete set.backrenderSSAO;
+  delete set.toneMappingPass;
+  delete set.bloomPass;
+  return set;
 }
 
 Neu3D.prototype.import_settings = function(settings) {
-settings = Object.assign({}, settings);
-if('lightsHelper' in settings){
-    this.lightsHelper.import(settings.lightsHelper);
-    delete settings.lightsHelper;
-}
-if('postProcessing' in settings){
-    postProcessing = settings.postProcessing;
-    delete settings.postProcessing;
-    if( postProcessing.fxaa != undefined )
-    this.settings.effectFXAA.enabled = postProcessing.fxaa;
-    if( postProcessing.ssao != undefined )
-    this.settings.backrenderSSAO.enabled = postProcessing.ssao;
-    if( postProcessing.toneMappingMinLum != undefined )
-    this.settings.toneMappingPass.brightness = 1-postProcessing.toneMappingMinLum;
-    if( postProcessing.bloomRadius != undefined )
-    this.settings.bloomPass.radius = postProcessing.bloomRadius;
-    if( postProcessing.bloomStrength != undefined )
-    this.settings.bloomPass.strength = postProcessing.bloomStrength;
-    if( postProcessing.bloomThreshold != undefined )
-    this.settings.bloomPass.threshold = postProcessing.bloomThreshold;
-}
-if('backgroundColor' in settings){
-    bg = settings.backgroundColor;
-    setTimeout((function(){
-    this.setBackgroundColor(bg)
-    }).bind(this), 4000);
-    delete settings.backgroundColor;
-}
-Object.assign(this.settings, settings);
+  settings = Object.assign({}, settings);
+  if('lightsHelper' in settings){
+      this.lightsHelper.import(settings.lightsHelper);
+      delete settings.lightsHelper;
+  }
+  if('postProcessing' in settings){
+      postProcessing = settings.postProcessing;
+      delete settings.postProcessing;
+      if( postProcessing.fxaa != undefined )
+      this.settings.effectFXAA.enabled = postProcessing.fxaa;
+      if( postProcessing.ssao != undefined )
+      this.settings.backrenderSSAO.enabled = postProcessing.ssao;
+      if( postProcessing.toneMappingMinLum != undefined )
+      this.settings.toneMappingPass.brightness = 1-postProcessing.toneMappingMinLum;
+      if( postProcessing.bloomRadius != undefined )
+      this.settings.bloomPass.radius = postProcessing.bloomRadius;
+      if( postProcessing.bloomStrength != undefined )
+      this.settings.bloomPass.strength = postProcessing.bloomStrength;
+      if( postProcessing.bloomThreshold != undefined )
+      this.settings.bloomPass.threshold = postProcessing.bloomThreshold;
+  }
+  if('backgroundColor' in settings){
+      bg = settings.backgroundColor;
+      setTimeout((function(){
+      this.setBackgroundColor(bg)
+      }).bind(this), 4000);
+      delete settings.backgroundColor;
+  }
+  Object.assign(this.settings, settings);
 }
 
 Neu3D.prototype.export_state = function() {
-state_metadata = {'color':{},'pinned':{},'visibility':{},'camera':{'position':{},'up':{}},'target':{}};
-state_metadata['camera']['position']['x'] = this.camera.position.x;
-state_metadata['camera']['position']['y'] = this.camera.position.y;
-state_metadata['camera']['position']['z'] = this.camera.position.z;
+  state_metadata = {'color':{},'pinned':{},'visibility':{},'camera':{'position':{},'up':{}},'target':{}};
+  state_metadata['camera']['position']['x'] = this.camera.position.x;
+  state_metadata['camera']['position']['y'] = this.camera.position.y;
+  state_metadata['camera']['position']['z'] = this.camera.position.z;
 
-state_metadata['camera']['up']['x'] = this.camera.up.x;
-state_metadata['camera']['up']['y'] = this.camera.up.y;
-state_metadata['camera']['up']['z'] = this.camera.up.z;
+  state_metadata['camera']['up']['x'] = this.camera.up.x;
+  state_metadata['camera']['up']['y'] = this.camera.up.y;
+  state_metadata['camera']['up']['z'] = this.camera.up.z;
 
-state_metadata['target']['x'] = this.controls.target.x;
-state_metadata['target']['y'] = this.controls.target.y;
-state_metadata['target']['z'] = this.controls.target.z;
+  state_metadata['target']['x'] = this.controls.target.x;
+  state_metadata['target']['y'] = this.controls.target.y;
+  state_metadata['target']['z'] = this.controls.target.z;
 
-state_metadata['pinned'] = Array.from(this.uiVars.pinnedObjects);
+  state_metadata['pinned'] = Array.from(this.uiVars.pinnedObjects);
 
-for (var key in this.meshDict) {
-    if (this.meshDict.hasOwnProperty(key)) {
-    state_metadata['color'][key] = this.meshDict[key].object.children[0].material.color.toArray();
-    state_metadata['visibility'][key] = this.meshDict[key].visibility;
-    }
-}
-return state_metadata;
+  for (var key in this.meshDict) {
+      if (this.meshDict.hasOwnProperty(key)) {
+      state_metadata['color'][key] = this.meshDict[key].object.children[0].material.color.toArray();
+      state_metadata['visibility'][key] = this.meshDict[key].visibility;
+      }
+  }
+  return state_metadata;
 }
 
 Neu3D.prototype.import_state = function(state_metadata) {
+  this.camera.position.x = state_metadata['camera']['position']['x'];
+  this.camera.position.y = state_metadata['camera']['position']['y'];
+  this.camera.position.z = state_metadata['camera']['position']['z'];
 
-this.camera.position.x = state_metadata['camera']['position']['x'];
-this.camera.position.y = state_metadata['camera']['position']['y'];
-this.camera.position.z = state_metadata['camera']['position']['z'];
+  this.camera.up.x = state_metadata['camera']['up']['x'];
+  this.camera.up.y = state_metadata['camera']['up']['y'];
+  this.camera.up.z = state_metadata['camera']['up']['z'];
 
-this.camera.up.x = state_metadata['camera']['up']['x'];
-this.camera.up.y = state_metadata['camera']['up']['y'];
-this.camera.up.z = state_metadata['camera']['up']['z'];
+  this.controls.target.x = state_metadata['target']['x'];
+  this.controls.target.y = state_metadata['target']['y'];
+  this.controls.target.z = state_metadata['target']['z'];
 
-this.controls.target.x = state_metadata['target']['x'];
-this.controls.target.y = state_metadata['target']['y'];
-this.controls.target.z = state_metadata['target']['z'];
+  this.camera.lookAt(this.controls.target);
 
-this.camera.lookAt(this.controls.target);
-
-for (var i = 0; i < state_metadata['pinned'].length; ++i) {
-    var key = state_metadata['pinned'][i];
-    if (this.meshDict.hasOwnProperty(key))
-    this.meshDict[key]['pinned'] = true;
-}
-for (var key of Object.keys(state_metadata['visibility'])) {
-    if (!this.meshDict.hasOwnProperty(key))
-    continue
-    this.meshDict[key].visibility = state_metadata['visibility'][key];
-    if(this.meshDict[key].background)
-    continue
-    var meshobj = this.meshDict[key].object;
-    var color = state_metadata['color'][key];
-    for (var j = 0; j < meshobj.children.length; ++j ) {
-    meshobj.children[j].material.color.fromArray( color );
-    for(var k = 0; k < meshobj.children[j].geometry.colors.length; ++k){
-        meshobj.children[j].geometry.colors[k].fromArray( color );
-    }
-    meshobj.children[j].geometry.colorsNeedUpdate = true;
-    }
-}
+  for (var i = 0; i < state_metadata['pinned'].length; ++i) {
+      var key = state_metadata['pinned'][i];
+      if (this.meshDict.hasOwnProperty(key))
+      this.meshDict[key]['pinned'] = true;
+  }
+  for (var key of Object.keys(state_metadata['visibility'])) {
+      if (!this.meshDict.hasOwnProperty(key))
+      continue
+      this.meshDict[key].visibility = state_metadata['visibility'][key];
+      if(this.meshDict[key].background)
+      continue
+      var meshobj = this.meshDict[key].object;
+      var color = state_metadata['color'][key];
+      for (var j = 0; j < meshobj.children.length; ++j ) {
+      meshobj.children[j].material.color.fromArray( color );
+      for(var k = 0; k < meshobj.children[j].geometry.colors.length; ++k){
+          meshobj.children[j].geometry.colors[k].fromArray( color );
+      }
+      meshobj.children[j].geometry.colorsNeedUpdate = true;
+      }
+  }
 }
 
 Neu3D.prototype.show = function(id) {
+  id = this.asarray( id );
 
-id = this.asarray( id );
-
-for (var i = 0; i < id.length; ++i ) {
-    if ( !(id[i] in this.meshDict ) )
-    continue;
-    this.meshDict[id[i]].visibility = true;
-}
+  for (var i = 0; i < id.length; ++i ) {
+      if ( !(id[i] in this.meshDict ) )
+      continue;
+      this.meshDict[id[i]].visibility = true;
+  }
 }
 
 Neu3D.prototype.hide = function(id) {
+  id = this.asarray( id );
 
-id = this.asarray( id );
-
-for (var i = 0; i < id.length; ++i ) {
-    if ( !(id[i] in this.meshDict ) )
-    continue;
-    this.meshDict[id[i]].visibility = false;
-}
+  for (var i = 0; i < id.length; ++i ) {
+      if ( !(id[i] in this.meshDict ) )
+      continue;
+      this.meshDict[id[i]].visibility = false;
+  }
 }
 
 Neu3D.prototype.onAddMesh = function(e) {
-if ( !e.value['background'] ) {
-    if(!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
-    ++this.uiVars.frontNum;
-    this.groups.front.add(e.value.object);
-} else {
-    this.groups.back.add(e.value.object);
-    ++this.uiVars.backNum;
-}
-++this.uiVars.meshNum;
-this._labelToRid[e.value.label] = e.prop;
+  if ( !e.value['background'] ) {
+      if(!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
+      ++this.uiVars.frontNum;
+      this.groups.front.add(e.value.object);
+  } else {
+      this.groups.back.add(e.value.object);
+      ++this.uiVars.backNum;
+  }
+  ++this.uiVars.meshNum;
+  this._labelToRid[e.value.label] = e.prop;
 }
 
 Neu3D.prototype.onRemoveMesh = function(e) {
-// console.log(e);
-if (this.states.highlight == e.prop)
-    this.states.highlight = false;
-if (e.value['pinned'])
-    e.value['pinned'] = false;
-var meshobj = e.value.object;
+  // console.log(e);
+  if (this.states.highlight == e.prop)
+      this.states.highlight = false;
+  if (e.value['pinned'])
+      e.value['pinned'] = false;
+  var meshobj = e.value.object;
 
-for (var j = 0; j < meshobj.children.length; ++j ) {
-    meshobj.children[j].geometry.dispose();
-    meshobj.children[j].material.dispose();
-}
+  for (var j = 0; j < meshobj.children.length; ++j ) {
+      meshobj.children[j].geometry.dispose();
+      meshobj.children[j].material.dispose();
+  }
 
-if ( !e.value['background'] ) {
-    if(!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
-    --this.uiVars.frontNum;
-    this.groups.front.remove( meshobj );
-} else {
-    this.groups.back.remove( meshobj );
-    --this.uiVars.backNum;
-}
---this.uiVars.meshNum;
-meshobj = null;
-delete this._labelToRid[e.value.label]
+  if ( !e.value['background'] ) {
+      if(!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
+      --this.uiVars.frontNum;
+      this.groups.front.remove( meshobj );
+  } else {
+      this.groups.back.remove( meshobj );
+      --this.uiVars.backNum;
+  }
+  --this.uiVars.meshNum;
+  meshobj = null;
+  delete this._labelToRid[e.value.label]
 }
 
 Neu3D.prototype.toggleVis = function(key) {
-if (key in this.meshDict)
-    this.meshDict[key].visibility = !this.meshDict[key].visibility;
+  if (key in this.meshDict){
+      this.meshDict[key].visibility = !this.meshDict[key].visibility;
+  }
 }
 
 Neu3D.prototype.onUpdateVisibility = function(key) {
-this.meshDict[key]['object'].visible = this.meshDict[key].visibility;
+  this.meshDict[key]['object'].visible = this.meshDict[key].visibility;
 }
 
 Neu3D.prototype.highlight = function(d, updatePos) {
-if (d === undefined || d === false) {
-    this.states.highlight = false;
-    this.hide3dToolTip();
-    return;
-}
+  if (d === undefined || d === false) {
+      this.states.highlight = false;
+      this.hide3dToolTip();
+      return;
+  }
 
-if (typeof(d) === 'string' && (d in this.meshDict))
-    d = this.meshDict[d];
+  if (typeof(d) === 'string' && (d in this.meshDict))
+      d = this.meshDict[d];
 
-if ((d['highlight']) !== false) {
-    this.states.highlight = d['rid'];
-} else
-    this.states.highlight = false;
+  if ((d['highlight']) !== false) {
+      this.states.highlight = d['rid'];
+  } else
+      this.states.highlight = false;
 
 
-if (updatePos !== undefined && updatePos === true) {
-    var pos = this.getNeuronScreenPosition(d['rid']);
-    this.uiVars.toolTipPosition.x = pos.x;
-    this.uiVars.toolTipPosition.y = pos.y;
-}
-this.show3dToolTip(d['label']);
+  if (updatePos !== undefined && updatePos === true) {
+      var pos = this.getNeuronScreenPosition(d['rid']);
+      this.uiVars.toolTipPosition.x = pos.x;
+      this.uiVars.toolTipPosition.y = pos.y;
+  }
+  this.show3dToolTip(d['label']);
 }
 
 Neu3D.prototype.onUpdateHighlight = function(e) {
-
-if (e.old_value)
-    this.meshDict[e.old_value]['object']['visible'] = this.meshDict[e.old_value]['visibility'];
-if (e.value === false) {
-    this.renderer.domElement.style.cursor = "auto";
-} else {
-    this.renderer.domElement.style.cursor = "pointer";
-    this.meshDict[e.value]['object']['visible'] = true;
-}
+  if (e.old_value)
+      this.meshDict[e.old_value]['object']['visible'] = this.meshDict[e.old_value]['visibility'];
+  if (e.value === false) {
+      this.renderer.domElement.style.cursor = "auto";
+  } else {
+      this.renderer.domElement.style.cursor = "pointer";
+      this.meshDict[e.value]['object']['visible'] = true;
+  }
 }
 
 Neu3D.prototype.updateOpacity = function(e) {
-// Entering highlight mode or highlighted obj change
-if (e.prop == 'highlight'  && this.states.highlight) {
-    var list = ((e !== undefined) && e.old_value) ? [e.old_value] : Object.keys(this.meshDict);
-    for (const key of list) {
-    var val = this.meshDict[key];
-    var opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
-    var depthTest = true;
-    if (val['pinned']) {
-        opacity = this.settings.pinOpacity;
-        depthTest = false;
-    }
-    for (var i in val.object.children) {
-        val.object.children[i].material.opacity = opacity;
-        val.object.children[i].material.depthTest = depthTest;
-    }
-    }
-    var val = this.meshDict[this.states.highlight];
-    for (var i in val.object.children) {
-    val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
-    val.object.children[i].material.depthTest = false;
-    }
-} else if (this.states.highlight) {
-    return;
-// Either entering pinned mode or pinned mode settings changing
-} else if ((e.prop == 'highlight' && this.states.pinned) ||
-            (e.prop == 'pinned' && e.value && this.uiVars.pinnedObjects.size == 1) ||
-            (e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')){
-    for (const key of Object.keys(this.meshDict)) {
-    var val = this.meshDict[key];
-    if (!val['background']){
-        var opacity = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
-        var depthTest = !this.meshDict[key]['pinned'];
-        for (var i in val.object.children) {
-        val.object.children[i].material.opacity = opacity;
-        val.object.children[i].material.depthTest = depthTest;
+  // Entering highlight mode or highlighted obj change
+  if (e.prop == 'highlight'  && this.states.highlight) {
+      var list = ((e !== undefined) && e.old_value) ? [e.old_value] : Object.keys(this.meshDict);
+      for (const key of list) {
+        var val = this.meshDict[key];
+        var opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
+        var depthTest = true;
+        if (val['pinned']) {
+            opacity = this.settings.pinOpacity;
+            depthTest = false;
         }
-    } else {
-        val.object.children[0].material.opacity = this.settings.backgroundOpacity;
-        val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
-    }
-    }
-}
-// New object being pinned while already in pinned mode
-else if (e.prop == 'pinned' && this.states.pinned){
-    for (var i in e.obj.object.children) {
-    e.obj.object.children[i].material.opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
-    e.obj.object.children[i].material.depthTest = !e.value;
-    }
-}
-// Default opacity value change in upinned mode or exiting highlight mode
-else if (!this.states.pinned || e.prop == 'highlight'){
-    this.resetOpacity();
-}
+        for (var i in val.object.children) {
+            val.object.children[i].material.opacity = opacity;
+            val.object.children[i].material.depthTest = depthTest;
+        }
+      }
+      var val = this.meshDict[this.states.highlight];
+      for (var i in val.object.children) {
+        val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
+        val.object.children[i].material.depthTest = false;
+      }
+  } else if (this.states.highlight) {
+      return;
+  // Either entering pinned mode or pinned mode settings changing
+  } else if ((e.prop == 'highlight' && this.states.pinned) ||
+              (e.prop == 'pinned' && e.value && this.uiVars.pinnedObjects.size == 1) ||
+              (e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')){
+      for (const key of Object.keys(this.meshDict)) {
+      var val = this.meshDict[key];
+      if (!val['background']){
+          var opacity = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+          var depthTest = !this.meshDict[key]['pinned'];
+          for (var i in val.object.children) {
+          val.object.children[i].material.opacity = opacity;
+          val.object.children[i].material.depthTest = depthTest;
+          }
+      } else {
+          val.object.children[0].material.opacity = this.settings.backgroundOpacity;
+          val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+      }
+      }
+  }
+  // New object being pinned while already in pinned mode
+  else if (e.prop == 'pinned' && this.states.pinned){
+      for (var i in e.obj.object.children) {
+      e.obj.object.children[i].material.opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+      e.obj.object.children[i].material.depthTest = !e.value;
+      }
+  }
+  // Default opacity value change in upinned mode or exiting highlight mode
+  else if (!this.states.pinned || e.prop == 'highlight'){
+      this.resetOpacity();
+  }
 }
 
 Neu3D.prototype.resetOpacity = function() {
-var val = this.settings.defaultOpacity;
-for (const key of Object.keys(this.meshDict)) {
+  var val = this.settings.defaultOpacity;
+  for (const key of Object.keys(this.meshDict)) {
     if (!this.meshDict[key]['background']){
-    if(!('morph_type' in this.meshDict[key]) ||
-        (this.meshDict[key]['morph_type'] != 'Synapse SWC')) {
-        for (i in this.meshDict[key].object.children)
-        this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
+      if(!('morph_type' in this.meshDict[key]) ||
+          (this.meshDict[key]['morph_type'] != 'Synapse SWC')) {
+          for (i in this.meshDict[key].object.children){
+            this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
+          }
+      } else {
+          for (i in this.meshDict[key].object.children){
+            this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
+          }
+      }
     } else {
-        for (i in this.meshDict[key].object.children)
-        this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
+      this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
+      this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
     }
-    } else {
-    this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
-    this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
-    }
-}
+  }
 }
 
 Neu3D.prototype.asarray = function( variable ) {
-if (variable.constructor !== Array )
+  if (variable.constructor !== Array ){
     variable = [variable];
-return variable;
+  }
+      
+  return variable;
 }
 
 Neu3D.prototype.updatePinned = function(e) {
-if (e.obj['pinned']) {
-    this.uiVars.pinnedObjects.add(e.path[0])
-} else {
-    this.uiVars.pinnedObjects.delete(e.path[0])
-}
-this.states.pinned = (this.uiVars.pinnedObjects.size > 0);
+  if (e.obj['pinned']) {
+      this.uiVars.pinnedObjects.add(e.path[0])
+  } else {
+      this.uiVars.pinnedObjects.delete(e.path[0])
+  }
+  this.states.pinned = (this.uiVars.pinnedObjects.size > 0);
 }
 
 Neu3D.prototype.pin = function( id ) {
+  id = this.asarray( id );
 
-id = this.asarray( id );
-
-for (var i = 0; i < id.length; ++i ) {
-    if ( !(id[i] in this.meshDict ) || this.meshDict[id[i]]['pinned'] )
-    continue;
-    this.meshDict[id[i]]['pinned'] = true;
-}
+  for (var i = 0; i < id.length; ++i ) {
+      if ( !(id[i] in this.meshDict ) || this.meshDict[id[i]]['pinned'] )
+      continue;
+      this.meshDict[id[i]]['pinned'] = true;
+  }
 }
 
 Neu3D.prototype.unpin = function( id ) {
+  id = this.asarray( id );
 
-id = this.asarray( id );
-
-for (var i = 0; i < id.length; ++i ) {
-    if ( !(id[i] in this.meshDict ) || !this.meshDict[id[i]]['pinned'] )
-    continue;
-    this.meshDict[id[i]]['pinned'] = false;
-}
+  for (var i = 0; i < id.length; ++i ) {
+      if ( !(id[i] in this.meshDict ) || !this.meshDict[id[i]]['pinned'] )
+      continue;
+      this.meshDict[id[i]]['pinned'] = false;
+  }
 }
 
 Neu3D.prototype.getPinned = function() {
