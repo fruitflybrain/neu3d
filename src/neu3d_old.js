@@ -67,40 +67,6 @@ function createMultiMaterialObject(geometry, materials) {
 }
 
 
-
-    //  THREE = THREE || window.THREE;
-    //  Detector = Detector || window.Detector;
-    //  PropertyManager = PropertyManager || window.PropertyManager;
-    //  FFBOLightsHelper = FFBOLightsHelper || window.FFBOLightsHelper;
-
-    //  var isOnMobile = checkOnMobile();
-
-    //  function checkOnMobile() {
-
-    //    if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) )
-    //      return true;
-    //    else
-    //      return false;
-    //  }
-
-    //  function getAttr(obj, key, val) {
-    //    if (key in obj)
-    //      val = obj[key];
-    //    return val;
-    //  }
-
-    //  function setAttrIfNotDefined(obj, key, val) {
-    //    if (!(key in obj))
-    //      obj[key] = val;
-    //  }
-
-    //  function getRandomIntInclusive(min, max) {
-    //    min = Math.ceil(min);
-    //    max = Math.floor(max);
-    //    return Math.floor(Math.random() * (max - min + 1)) + min;
-    //  }
-    //  if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
-
 export function Neu3D(container, data, metadata, stats=false) {
   this.container = container;
   /* default metadata */
@@ -341,99 +307,97 @@ if (key in this.callbackRegistry) {
 }
 
 Neu3D.prototype.initCamera = function () {
+  var height = this.container.clientHeight;
+  var width = this.container.clientWidth;
 
-var height = this.container.clientHeight;
-var width = this.container.clientWidth;
+  this.fov = 20;
+  this.prevhfov = 2 * Math.atan( Math.tan (Math.PI*this.fov/2/180) * width/height );
 
-this.fov = 20;
-this.prevhfov = 2 * Math.atan( Math.tan (Math.PI*this.fov/2/180) * width/height );
+  var camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 20000);
+  camera.position.z = 1800;
 
-var camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 20000);
-camera.position.z = 1800;
-
-if (width<768 && width/height < 1)
-    camera.position.z = 3800;
-if (width<768 && width/height >= 1)
-    camera.position.z =2600;
-return camera;
+  if (width<768 && width/height < 1)
+      camera.position.z = 3800;
+  if (width<768 && width/height >= 1)
+      camera.position.z =2600;
+  return camera;
 }
 
 Neu3D.prototype.initRenderer = function () {
-var renderer = new THREE.WebGLRenderer({'logarithmicDepthBuffer': true});
-renderer.setPixelRatio( window.devicePixelRatio );
-renderer.setSize( this.container.clientWidth, this.container.clientHeight );
-this.container.appendChild(renderer.domElement);
-return renderer;
+  var renderer = new THREE.WebGLRenderer({'logarithmicDepthBuffer': true});
+  renderer.setPixelRatio( window.devicePixelRatio );
+  renderer.setSize( this.container.clientWidth, this.container.clientHeight );
+  this.container.appendChild(renderer.domElement);
+  return renderer;
 }
 
 Neu3D.prototype.initControls = function () {
-var controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
-controls.rotateSpeed = 2.0;
-controls.zoomSpeed = 1.0;
-controls.panSpeed = 2.0;
-controls.staticMoving = true;
-controls.dynamicDampingFactor = 0.3;
-controls.addEventListener('change', this.render.bind(this));
-return controls;
+  var controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
+  controls.rotateSpeed = 2.0;
+  controls.zoomSpeed = 1.0;
+  controls.panSpeed = 2.0;
+  controls.staticMoving = true;
+  controls.dynamicDampingFactor = 0.3;
+  controls.addEventListener('change', this.render.bind(this));
+  return controls;
 }
 
 Neu3D.prototype.initPostProcessing = function () {
-var height = this.container.clientHeight;
-var width = this.container.clientWidth;
-this.renderScene = new THREE.RenderPass( this.scenes.front, this.camera );
-this.renderScene.clear = false;
-this.renderScene.clearDepth = true;
+  var height = this.container.clientHeight;
+  var width = this.container.clientWidth;
+  this.renderScene = new THREE.RenderPass( this.scenes.front, this.camera );
+  this.renderScene.clear = false;
+  this.renderScene.clearDepth = true;
 
-this.backrenderScene = new THREE.RenderPass( this.scenes.back, this.camera);
-this.backrenderSSAO = new THREE.SSAOPass( this.scenes.back, this.camera, width, height);
+  this.backrenderScene = new THREE.RenderPass( this.scenes.back, this.camera);
+  this.backrenderSSAO = new THREE.SSAOPass( this.scenes.back, this.camera, width, height);
 
-this.effectFXAA = new THREE.ShaderPass( THREE.FXAAShader );
-this.effectFXAA.uniforms[ 'resolution' ].value.set( 1 / Math.max(width, 1440), 1 / Math.max(height, 900) );
+  this.effectFXAA = new THREE.ShaderPass( THREE.FXAAShader );
+  this.effectFXAA.uniforms[ 'resolution' ].value.set( 1 / Math.max(width, 1440), 1 / Math.max(height, 900) );
 
 
-this.bloomPass = new THREE.UnrealBloomPass(
-    new THREE.Vector2( width, height ),
-    this.settings.bloomPass.strength,
-    this.settings.bloomPass.radius,
-    this.settings.bloomPass.threshold
-);
+  this.bloomPass = new THREE.UnrealBloomPass(
+      new THREE.Vector2( width, height ),
+      this.settings.bloomPass.strength,
+      this.settings.bloomPass.radius,
+      this.settings.bloomPass.threshold
+  );
 
-this.bloomPass.renderToScreen = true;
+  this.bloomPass.renderToScreen = true;
 
-this.toneMappingPass = new THREE.AdaptiveToneMappingPass( true, width );
-this.toneMappingPass.setMinLuminance(1.-this.settings.toneMappingPass.brightness);
+  this.toneMappingPass = new THREE.AdaptiveToneMappingPass( true, width );
+  this.toneMappingPass.setMinLuminance(1.-this.settings.toneMappingPass.brightness);
 
-this.renderer.gammaInput = true;
-this.renderer.gammaOutput = true;
+  this.renderer.gammaInput = true;
+  this.renderer.gammaOutput = true;
 
-this.composer = new THREE.EffectComposer( this.renderer );
-this.composer.addPass( this.backrenderScene );
-this.composer.addPass( this.backrenderSSAO );
-this.composer.addPass( this.renderScene );
-this.composer.addPass( this.effectFXAA );
-this.composer.addPass( this.toneMappingPass );
+  this.composer = new THREE.EffectComposer( this.renderer );
+  this.composer.addPass( this.backrenderScene );
+  this.composer.addPass( this.backrenderSSAO );
+  this.composer.addPass( this.renderScene );
+  this.composer.addPass( this.effectFXAA );
+  this.composer.addPass( this.toneMappingPass );
 
-this.composer.addPass( this.bloomPass );
-this.composer.setSize( width*window.devicePixelRatio,
-                        height*window.devicePixelRatio);
-
+  this.composer.addPass( this.bloomPass );
+  this.composer.setSize( width*window.devicePixelRatio,
+                          height*window.devicePixelRatio);
 }
 
 Neu3D.prototype.initScenes = function () {
-var scenes = {
-    front: new THREE.Scene(),
-    back: new THREE.Scene()
-}
+  var scenes = {
+      front: new THREE.Scene(),
+      back: new THREE.Scene()
+  }
 
-scenes.front.background = null
-scenes.front.add( this.camera );
+  scenes.front.background = null
+  scenes.front.add( this.camera );
 
-scenes.back.background = new THREE.Color(0x030305);
-scenes.back.add( this.camera );
+  scenes.back.background = new THREE.Color(0x030305);
+  scenes.back.add( this.camera );
 
-scenes.front.add( this.groups.front );
-scenes.back.add( this.groups.back );
-return scenes;
+  scenes.front.add( this.groups.front );
+  scenes.back.add( this.groups.back );
+  return scenes;
 }
 
 Neu3D.prototype.initLut = function () {
@@ -445,137 +409,137 @@ return lut;
 }
 
 Neu3D.prototype.initLights = function() {
-var lightsHelper = new FFBOLightsHelper( this.camera, this.controls, this.scenes.front );
+  var lightsHelper = new FFBOLightsHelper( this.camera, this.controls, this.scenes.front );
 
-lightsHelper.addAmbientLight({
-    intensity: 0.1,
-    key: 'frontAmbient'
-});
+  lightsHelper.addAmbientLight({
+      intensity: 0.1,
+      key: 'frontAmbient'
+  });
 
-lightsHelper.addAmbientLight({
-    intensity: 0.4,
-    scene: this.scenes.back,
-    key: 'backAmbient'
-});
+  lightsHelper.addAmbientLight({
+      intensity: 0.4,
+      scene: this.scenes.back,
+      key: 'backAmbient'
+  });
 
-lightsHelper.addDirectionalLight({
-    intensity: 0.1,
-    position: new THREE.Vector3(0, 0, 5000),
-    key: 'frontDirectional_1'
-});
+  lightsHelper.addDirectionalLight({
+      intensity: 0.1,
+      position: new THREE.Vector3(0, 0, 5000),
+      key: 'frontDirectional_1'
+  });
 
-lightsHelper.addDirectionalLight({
-    intensity: 0.55,
-    position: new THREE.Vector3(0, 0, 5000),
-    scene: this.scenes.back,
-    key: 'backDirectional_1'
-});
+  lightsHelper.addDirectionalLight({
+      intensity: 0.55,
+      position: new THREE.Vector3(0, 0, 5000),
+      scene: this.scenes.back,
+      key: 'backDirectional_1'
+  });
 
-lightsHelper.addDirectionalLight({
-    intensity: 0.1,
-    position: new THREE.Vector3(0, 0, -5000),
-    key: 'frontDirectional_2'
-});
+  lightsHelper.addDirectionalLight({
+      intensity: 0.1,
+      position: new THREE.Vector3(0, 0, -5000),
+      key: 'frontDirectional_2'
+  });
 
-lightsHelper.addDirectionalLight({
-    intensity: 0.55,
-    position: new THREE.Vector3(0, 0, -5000),
-    scene: this.scenes.back,
-    key: 'backDirectional_2'
-});
+  lightsHelper.addDirectionalLight({
+      intensity: 0.55,
+      position: new THREE.Vector3(0, 0, -5000),
+      scene: this.scenes.back,
+      key: 'backDirectional_2'
+  });
 
-lightsHelper.addSpotLight({
-    posAngle1: 80,
-    posAngle2: 80,
-    key: 'frontSpot_1'
-});
+  lightsHelper.addSpotLight({
+      posAngle1: 80,
+      posAngle2: 80,
+      key: 'frontSpot_1'
+  });
 
-lightsHelper.addSpotLight({
-    posAngle1: 80,
-    posAngle2: 80,
-    intensity: 5.5,
-    scene: this.scenes.back,
-    key: 'backSpot_1'
-});
+  lightsHelper.addSpotLight({
+      posAngle1: 80,
+      posAngle2: 80,
+      intensity: 5.5,
+      scene: this.scenes.back,
+      key: 'backSpot_1'
+  });
 
-lightsHelper.addSpotLight({
-    posAngle1: -80,
-    posAngle2: 80,
-    key: 'frontSpot_2'
-});
+  lightsHelper.addSpotLight({
+      posAngle1: -80,
+      posAngle2: 80,
+      key: 'frontSpot_2'
+  });
 
-lightsHelper.addSpotLight({
-    posAngle1: -80,
-    posAngle2: 80,
-    intensity: 5.5,
-    scene: this.scenes.back,
-    key: 'backSpot_2'
-});
+  lightsHelper.addSpotLight({
+      posAngle1: -80,
+      posAngle2: 80,
+      intensity: 5.5,
+      scene: this.scenes.back,
+      key: 'backSpot_2'
+  });
 
-return lightsHelper
+  return lightsHelper
 }
 
 Neu3D.prototype.initLoadingManager = function() {
-var loadingManager = new THREE.LoadingManager();
-loadingManager.onLoad = function() {
-    this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
-    this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
-    this.controls.reset();
-    this.groups.front.visible = true;
-}.bind(this);
-return loadingManager;
+  var loadingManager = new THREE.LoadingManager();
+  loadingManager.onLoad = function() {
+      this.controls.target0.x = 0.5*(this.boundingBox.minX + this.boundingBox.maxX );
+      this.controls.target0.y = 0.5*(this.boundingBox.minY + this.boundingBox.maxY );
+      this.controls.reset();
+      this.groups.front.visible = true;
+  }.bind(this);
+  return loadingManager;
 }
 
 Neu3D.prototype.select = function(id) {
-this.uiVars.selected = id;
+  this.uiVars.selected = id;
 }
 
 Neu3D.prototype.reset = function(resetBackground) {
-resetBackground = resetBackground || false;
-for (var key of Object.keys(this.meshDict)) {
-    if ( !resetBackground && this.meshDict[key].background ) {
-    continue;
-    }
-    if (this.meshDict[key]['pinned'])
-    this.meshDict[key]['pinned'] = false;
-    var meshobj = this.meshDict[key].object;
-    for (var i = 0; i < meshobj.children.length; i++ ) {
-    meshobj.children[i].geometry.dispose();
-    meshobj.children[i].material.dispose();
-    }
-    --this.uiVars.meshNum;
-    this.groups.front.remove( meshobj );
-    meshobj = null;
-    delete this.meshDict[key];
-}
-this.uiVars.frontNum = 0
-this.states.highlight = false;
-// this.uiVars.pinnedObjects.clear()
-if ( resetBackground ) {
-    this.controls.target0.set(0,0,0);
-    this.boundingBox = {'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000};
-}
-//this.controls.reset();
+  resetBackground = resetBackground || false;
+  for (var key of Object.keys(this.meshDict)) {
+      if ( !resetBackground && this.meshDict[key].background ) {
+      continue;
+      }
+      if (this.meshDict[key]['pinned'])
+      this.meshDict[key]['pinned'] = false;
+      var meshobj = this.meshDict[key].object;
+      for (var i = 0; i < meshobj.children.length; i++ ) {
+      meshobj.children[i].geometry.dispose();
+      meshobj.children[i].material.dispose();
+      }
+      --this.uiVars.meshNum;
+      this.groups.front.remove( meshobj );
+      meshobj = null;
+      delete this.meshDict[key];
+  }
+  this.uiVars.frontNum = 0
+  this.states.highlight = false;
+  // this.uiVars.pinnedObjects.clear()
+  if ( resetBackground ) {
+      this.controls.target0.set(0,0,0);
+      this.boundingBox = {'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000};
+  }
+  //this.controls.reset();
 }
 
 Neu3D.prototype._configureCallbacks = function(){
-this.settings.on("change", function(e){
-    for(i=0; i<this.groups.back.children.length; i++)
-    this.groups.back.children[i].children[1].visible = e["value"];
-}.bind(this), "meshWireframe");
+  this.settings.on("change", function(e){
+      for(i=0; i<this.groups.back.children.length; i++)
+      this.groups.back.children[i].children[1].visible = e["value"];
+  }.bind(this), "meshWireframe");
 }
 
 Neu3D.prototype.execCommand = function(json) {
-var neuList = json['neurons'] || [];
-var commandList = json['commands'] || [];
-var args = json['args'] || undefined;
+  var neuList = json['neurons'] || [];
+  var commandList = json['commands'] || [];
+  var args = json['args'] || undefined;
 
-neuList = this.asarray( neuList );
-commandList = this.asarray( commandList );
-for ( var i = 0; i < commandList.length; ++i ) {
-    var c = commandList[i].toLowerCase();
-    this.commandDispatcher[c].call( this, neuList, args );
-}
+  neuList = this.asarray( neuList );
+  commandList = this.asarray( commandList );
+  for ( var i = 0; i < commandList.length; ++i ) {
+      var c = commandList[i].toLowerCase();
+      this.commandDispatcher[c].call( this, neuList, args );
+  }
 }
 
 Neu3D.prototype.addJson = function(json) {

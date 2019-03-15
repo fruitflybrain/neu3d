@@ -250,6 +250,7 @@ export class Neu3D {
 
     let ffbomesh = this;
     // setup drag-drop functionality
+    // TODO: use native JS instead of JQuery
     $('#' + this.container.id).on({
       'dragover dragenter': function (e) {
         e.preventDefault();
@@ -328,20 +329,29 @@ export class Neu3D {
 
   } // ENDOF Constructor
 
+  /**
+   * Setup callback
+   * @param {string} key string of callback
+   * @param {function} func callback function
+   */
   on(key, func) {
     if (typeof (func) !== "function") {
       console.log("not a function");
       return;
     }
+
     if (key in this.callbackRegistry) {
       let register = this.callbackRegistry[key];
       register(func);
-    }
-    else {
+    } else {
       console.log("callback keyword '" + key + "' not recognized.");
     }
   }
 
+  /**
+   * Initialize Control Panel dat.GUI
+   * @param {object} options 
+   */
   initControlPanel(options={}){
     let GUIOptions =  {
       autoPlace: (options.autoPlace) ? options.autoPlace : false, 
@@ -462,15 +472,19 @@ export class Neu3D {
         if (t == t_max)
         t = 0;
     }
-}
+  }
 
+  /** Initialize WebGL Renderer */
   initCamera() {
     let height = this.container.clientHeight;
     let width = this.container.clientWidth;
+
     this.fov = 20;
     this.prevhfov = 2 * Math.atan(Math.tan(Math.PI * this.fov / 2 / 180) * width / height);
+
     let camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 1000000 );
     camera.position.z = 1800;
+
     if (width < 768 && width / height < 1)
       camera.position.z = 3800;
     if (width < 768 && width / height >= 1)
@@ -486,6 +500,7 @@ export class Neu3D {
     return camera;
   }
 
+  /** Initialize WebGL Renderer */
   initRenderer() {
     let renderer = new THREE.WebGLRenderer({ 'logarithmicDepthBuffer': true });
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -494,6 +509,7 @@ export class Neu3D {
     return renderer;
   }
 
+  /** Initialize Mouse Control */
   initControls() {
     let controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
     controls.rotateSpeed = 2.0;
@@ -505,31 +521,48 @@ export class Neu3D {
     return controls;
   }
 
+  /** Initialize Post Processing */
   initPostProcessing() {
     let height = this.container.clientHeight;
     let width = this.container.clientWidth;
     this.renderScene = new THREE.RenderPass(this.scenes.front, this.camera);
     this.renderScene.clear = false;
     this.renderScene.clearDepth = true;
+
     this.backrenderScene = new THREE.RenderPass(this.scenes.back, this.camera);
     this.backrenderSSAO = new THREE.SSAOPass(this.scenes.back, this.camera, width, height);
+
     this.effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
     this.effectFXAA.uniforms['resolution'].value.set(1 / Math.max(width, 1440), 1 / Math.max(height, 900));
-    this.bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(width, height), this.settings.bloomPass.strength, this.settings.bloomPass.radius, this.settings.bloomPass.threshold);
+
+    this.bloomPass = new THREE.UnrealBloomPass(
+      new THREE.Vector2(width, height),
+      this.settings.bloomPass.strength,
+      this.settings.bloomPass.radius,
+      this.settings.bloomPass.threshold
+    );
+
     this.bloomPass.renderToScreen = true;
+
     this.toneMappingPass = new THREE.AdaptiveToneMappingPass(true, width);
     this.toneMappingPass.setMinLuminance(1. - this.settings.toneMappingPass.brightness);
+
     this.renderer.gammaInput = true;
     this.renderer.gammaOutput = true;
+
     this.composer = new THREE.EffectComposer(this.renderer);
     this.composer.addPass(this.backrenderScene);
     this.composer.addPass(this.backrenderSSAO);
     this.composer.addPass(this.renderScene);
     this.composer.addPass(this.effectFXAA);
     this.composer.addPass(this.toneMappingPass);
+
     this.composer.addPass(this.bloomPass);
-    this.composer.setSize(width * window.devicePixelRatio, height * window.devicePixelRatio);
+    this.composer.setSize(width * window.devicePixelRatio,
+                          height * window.devicePixelRatio);
   }
+
+  /** Initialize Scene */
   initScenes() {
     let scenes = {
       front: new THREE.Scene(),
@@ -537,12 +570,16 @@ export class Neu3D {
     };
     scenes.front.background = null;
     scenes.front.add(this.camera);
+
     scenes.back.background = new THREE.Color(0x030305);
     scenes.back.add(this.camera);
+
     scenes.front.add(this.groups.front);
     scenes.back.add(this.groups.back);
     return scenes;
   }
+
+  /** Initialize Look Up Table(Lut) for Color */
   initLut() {
     this.maxColorNum = this._metadata.maxColorNum;
     let lut = new THREE.Lut(this._metadata.colormap, this.maxColorNum);
@@ -550,44 +587,54 @@ export class Neu3D {
     lut.setMax(1);
     return lut;
   }
+
+  /** Initialize FFBOLightsHelper */
   initLights() {
     let lightsHelper = new FFBOLightsHelper(this.camera, this.controls, this.scenes.front);
+
     lightsHelper.addAmbientLight({
       intensity: 0.1,
       key: 'frontAmbient'
     });
+
     lightsHelper.addAmbientLight({
       intensity: 0.4,
       scene: this.scenes.back,
       key: 'backAmbient'
     });
+
     lightsHelper.addDirectionalLight({
       intensity: 0.1,
       position: new THREE.Vector3(0, 0, 5000),
       key: 'frontDirectional_1'
     });
+
     lightsHelper.addDirectionalLight({
       intensity: 0.55,
       position: new THREE.Vector3(0, 0, 5000),
       scene: this.scenes.back,
       key: 'backDirectional_1'
     });
+
     lightsHelper.addDirectionalLight({
       intensity: 0.1,
       position: new THREE.Vector3(0, 0, -5000),
       key: 'frontDirectional_2'
     });
+
     lightsHelper.addDirectionalLight({
       intensity: 0.55,
       position: new THREE.Vector3(0, 0, -5000),
       scene: this.scenes.back,
       key: 'backDirectional_2'
     });
+
     lightsHelper.addSpotLight({
       posAngle1: 80,
       posAngle2: 80,
       key: 'frontSpot_1'
     });
+
     lightsHelper.addSpotLight({
       posAngle1: 80,
       posAngle2: 80,
@@ -595,11 +642,13 @@ export class Neu3D {
       scene: this.scenes.back,
       key: 'backSpot_1'
     });
+
     lightsHelper.addSpotLight({
       posAngle1: -80,
       posAngle2: 80,
       key: 'frontSpot_2'
     });
+
     lightsHelper.addSpotLight({
       posAngle1: -80,
       posAngle2: 80,
@@ -607,8 +656,15 @@ export class Neu3D {
       scene: this.scenes.back,
       key: 'backSpot_2'
     });
+
     return lightsHelper;
   }
+
+  
+  /** 
+   * Initialize LoadingManager
+   * https://threejs.org/docs/#api/en/loaders/managers/LoadingManager
+  */
   initLoadingManager() {
     let loadingManager = new THREE.LoadingManager();
     loadingManager.onLoad = function () {
@@ -619,11 +675,21 @@ export class Neu3D {
     }.bind(this);
     return loadingManager;
   }
+
+  /** 
+   * Update selected object 
+   * @param {string} id uid of selected object
+   */
   select(id) {
     this.uiVars.selected = id;
   }
+
+  /** 
+   * Reset workspace 
+   * 
+   * @param {boolean=} resetBackground whether to reset background
+   */
   reset(resetBackground = false) {
-    //resetBackground = resetBackground || false;
     for (let key of Object.keys(this.meshDict)) {
       if (!resetBackground && this.meshDict[key].background) {
         continue;
@@ -643,18 +709,23 @@ export class Neu3D {
     }
     this.uiVars.frontNum = 0;
     this.states.highlight = false;
-    // this.uiVars.pinnedObjects.clear()
     if (resetBackground) {
       this.controls.target0.set(0, 0, 0);
       this.boundingBox = { 'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000 };
     }
   }
+
   _configureCallbacks() {
     this.settings.on("change", function (e) {
       for (i = 0; i < this.groups.back.children.length; i++)
         this.groups.back.children[i].children[1].visible = e["value"];
     }.bind(this), "meshWireframe");
   }
+
+  /**
+   * 
+   * @param {object} json 
+   */
   execCommand(json) {
     let neuList = json['neurons'] || [];
     let commandList = json['commands'] || [];
