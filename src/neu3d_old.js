@@ -1624,190 +1624,190 @@ this.controls.reset();
 }
 
 Neu3D.prototype.resetVisibleView = function() {
-this.computeVisibleBoundingBox();
-this.controls.target.x = 0.5*(this.visibleBoundingBox.minX + this.visibleBoundingBox.maxX );
-this.controls.target.y = 0.5*(this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY );
-this.controls.target.z = 0.5*(this.visibleBoundingBox.minZ + this.visibleBoundingBox.maxZ );
-this.camera.updateProjectionMatrix();
-setTimeout( () => {
-    positions = [
-    new THREE.Vector3(this.visibleBoundingBox.minX,
-                        this.visibleBoundingBox.minY,
-                        this.visibleBoundingBox.minZ),
-    new THREE.Vector3(this.visibleBoundingBox.minX,
-                        this.visibleBoundingBox.minY,
-                        this.visibleBoundingBox.maxZ),
-    new THREE.Vector3(this.visibleBoundingBox.minX,
-                        this.visibleBoundingBox.maxY,
-                        this.visibleBoundingBox.minZ),
-    new THREE.Vector3(this.visibleBoundingBox.minX,
-                        this.visibleBoundingBox.maxY,
-                        this.visibleBoundingBox.maxZ),
-    new THREE.Vector3(this.visibleBoundingBox.maxX,
-                        this.visibleBoundingBox.minY,
-                        this.visibleBoundingBox.minZ),
-    new THREE.Vector3(this.visibleBoundingBox.maxX,
-                        this.visibleBoundingBox.minY,
-                        this.visibleBoundingBox.maxZ),
-    new THREE.Vector3(this.visibleBoundingBox.maxX,
-                        this.visibleBoundingBox.maxY,
-                        this.visibleBoundingBox.minZ),
-    new THREE.Vector3(this.visibleBoundingBox.maxX,
-                        this.visibleBoundingBox.maxY,
-                        this.visibleBoundingBox.maxZ)
-    ]
-
-    // From https://stackoverflow.com/a/11771236
-    var targetFov = 0.0;
-    for (var i=0; i<8; i++) {
-    var proj2d = positions[i].applyMatrix4(this.camera.matrixWorldInverse);
-    var angle = Math.max(
-        Math.abs(Math.atan(proj2d.x/proj2d.z) / camera.aspect),
-        Math.abs(Math.atan(proj2d.y/proj2d.z))
-    );
-    var targetFov = Math.max(targetFov, angle);
-    }
-
-    var currentFov = Math.PI*this.fov/2/180;
-    var cam_dir = new THREE.Vector3();
-    cam_dir.subVectors(this.camera.position, this.controls.target);
-    var prevDist = cam_dir.length();
-    cam_dir.normalize();
-
-    var dist = prevDist * Math.tan(targetFov) / Math.tan(currentFov);
-
-    var aspect = this.camera.aspect;
-    var targetHfov =  2*Math.atan(Math.tan(targetFov/2)*aspect);
-    var currentHfov =  2*Math.atan(Math.tan(currentFov/2)*aspect);
-    dist = Math.max(prevDist * Math.tan(targetHfov) / Math.tan(currentHfov), dist);
-
-    this.camera.position.copy(this.controls.target);
-    this.camera.position.addScaledVector(cam_dir, dist);
-
+    this.computeVisibleBoundingBox();
+    this.controls.target.x = 0.5*(this.visibleBoundingBox.minX + this.visibleBoundingBox.maxX );
+    this.controls.target.y = 0.5*(this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY );
+    this.controls.target.z = 0.5*(this.visibleBoundingBox.minZ + this.visibleBoundingBox.maxZ );
     this.camera.updateProjectionMatrix();
-}, 400);
-//this.controls.reset();
+    setTimeout( () => {
+        positions = [
+        new THREE.Vector3(this.visibleBoundingBox.minX,
+                            this.visibleBoundingBox.minY,
+                            this.visibleBoundingBox.minZ),
+        new THREE.Vector3(this.visibleBoundingBox.minX,
+                            this.visibleBoundingBox.minY,
+                            this.visibleBoundingBox.maxZ),
+        new THREE.Vector3(this.visibleBoundingBox.minX,
+                            this.visibleBoundingBox.maxY,
+                            this.visibleBoundingBox.minZ),
+        new THREE.Vector3(this.visibleBoundingBox.minX,
+                            this.visibleBoundingBox.maxY,
+                            this.visibleBoundingBox.maxZ),
+        new THREE.Vector3(this.visibleBoundingBox.maxX,
+                            this.visibleBoundingBox.minY,
+                            this.visibleBoundingBox.minZ),
+        new THREE.Vector3(this.visibleBoundingBox.maxX,
+                            this.visibleBoundingBox.minY,
+                            this.visibleBoundingBox.maxZ),
+        new THREE.Vector3(this.visibleBoundingBox.maxX,
+                            this.visibleBoundingBox.maxY,
+                            this.visibleBoundingBox.minZ),
+        new THREE.Vector3(this.visibleBoundingBox.maxX,
+                            this.visibleBoundingBox.maxY,
+                            this.visibleBoundingBox.maxZ)
+        ]
+
+        // From https://stackoverflow.com/a/11771236
+        var targetFov = 0.0;
+        for (var i=0; i<8; i++) {
+        var proj2d = positions[i].applyMatrix4(this.camera.matrixWorldInverse);
+        var angle = Math.max(
+            Math.abs(Math.atan(proj2d.x/proj2d.z) / camera.aspect),
+            Math.abs(Math.atan(proj2d.y/proj2d.z))
+        );
+        var targetFov = Math.max(targetFov, angle);
+        }
+
+        var currentFov = Math.PI*this.fov/2/180;
+        var cam_dir = new THREE.Vector3();
+        cam_dir.subVectors(this.camera.position, this.controls.target);
+        var prevDist = cam_dir.length();
+        cam_dir.normalize();
+
+        var dist = prevDist * Math.tan(targetFov) / Math.tan(currentFov);
+
+        var aspect = this.camera.aspect;
+        var targetHfov =  2*Math.atan(Math.tan(targetFov/2)*aspect);
+        var currentHfov =  2*Math.atan(Math.tan(currentFov/2)*aspect);
+        dist = Math.max(prevDist * Math.tan(targetHfov) / Math.tan(currentHfov), dist);
+
+        this.camera.position.copy(this.controls.target);
+        this.camera.position.addScaledVector(cam_dir, dist);
+
+        this.camera.updateProjectionMatrix();
+    }, 400);
+    //this.controls.reset();
 }
 
 Neu3D.prototype.togglePin = function( d ) {
-if (!this._metadata.allowPin)
-    return;
-if (typeof(d) === 'string' && (d in this.meshDict)) {
-    d = this.meshDict[d];
-}
-d['pinned'] = !d['pinned'];
-}
+    if (!this._metadata.allowPin)
+        return;
+    if (typeof(d) === 'string' && (d in this.meshDict)) {
+        d = this.meshDict[d];
+    }
+    d['pinned'] = !d['pinned'];
+    }
 
-Neu3D.prototype.unpinAll = function() {
+    Neu3D.prototype.unpinAll = function() {
 
-if (!this._metadata.allowPin)
-    return;
-for (var key of this.uiVars.pinnedObjects)
-    this.meshDict[key]['pinned'] = false;
+    if (!this._metadata.allowPin)
+        return;
+    for (var key of this.uiVars.pinnedObjects)
+        this.meshDict[key]['pinned'] = false;
 }
 
 
 Neu3D.prototype.createInfoPanel = function() {
-this.infoDiv = document.createElement('div');
-this.infoDiv.style.cssText = "position: absolute; text-align: left; height: 15px; top: 6px; right: 5px; font: 12px sans-serif; z-index: 999; padding-right: 5px; padding-left: 5px; border-right: 1px solid #888; border-left: 1px solid #888;pointer-events: none;  color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; font-weight: 100";
-this.container.appendChild(this.infoDiv);
-this.updateInfoPanel();
+    this.infoDiv = document.createElement('div');
+    this.infoDiv.style.cssText = "position: absolute; text-align: left; height: 15px; top: 6px; right: 5px; font: 12px sans-serif; z-index: 999; padding-right: 5px; padding-left: 5px; border-right: 1px solid #888; border-left: 1px solid #888;pointer-events: none;  color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; font-weight: 100";
+    this.container.appendChild(this.infoDiv);
+    this.updateInfoPanel();
 }
 
 Neu3D.prototype.updateInfoPanel = function() {
-this.infoDiv.innerHTML = "Number of Neurons: " + this.uiVars.frontNum;
+    this.infoDiv.innerHTML = "Number of Neurons: " + this.uiVars.frontNum;
 }
 
 Neu3D.prototype.createUIBtn = function(name, icon, tooltip, func){
-var x = 5 + 20*Object.keys(this.UIBtns).length;
-var btn = document.createElement('a');
-btn.setAttribute("id", "ffboUIbtn-" + name);
-btn.style.cssText = 'position: absolute; text-align: right; height: 15px; top: 25px; right: ' + x + 'px; font: 15px arial; z-index: 1999; border: 0px; none; color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; cursor: pointer';
-btn.innerHTML = "<i class='fa " + icon + "' aria-hidden='true'></i>";
-// this.dispatch[name] = undefined;
-btn.addEventListener("click",
-                    (function(){
-                        for (var f of this.UIBtns[name]['callbacks'])
-                        f();
-                    }).bind(this));
-btn.addEventListener("mouseover",
-                    (function(event) {
-                        event.preventDefault();
-                        btn.style.color = "#fff";
-                        this.show3dToolTip(tooltip);
-                    }).bind(this));
-btn.addEventListener("mouseleave",
-                    (function() {
-                        btn.style.color = "#aaa";
-                        this.hide3dToolTip();
-                    }).bind(this));
-this.UIBtns[name] = {dom: btn, callbacks: []};
-this.container.appendChild(this.UIBtns[name]['dom']);
-if (func !== undefined) {
-    func = this.asarray(func);
-    for (var f of func) {
-    this.on(name, f);
+    var x = 5 + 20*Object.keys(this.UIBtns).length;
+    var btn = document.createElement('a');
+    btn.setAttribute("id", "ffboUIbtn-" + name);
+    btn.style.cssText = 'position: absolute; text-align: right; height: 15px; top: 25px; right: ' + x + 'px; font: 15px arial; z-index: 1999; border: 0px; none; color: #aaa; background: transparent; -webkit-transition: left .5s; transition: left .5s; cursor: pointer';
+    btn.innerHTML = "<i class='fa " + icon + "' aria-hidden='true'></i>";
+    // this.dispatch[name] = undefined;
+    btn.addEventListener("click",
+                        (function(){
+                            for (var f of this.UIBtns[name]['callbacks'])
+                            f();
+                        }).bind(this));
+    btn.addEventListener("mouseover",
+                        (function(event) {
+                            event.preventDefault();
+                            btn.style.color = "#fff";
+                            this.show3dToolTip(tooltip);
+                        }).bind(this));
+    btn.addEventListener("mouseleave",
+                        (function() {
+                            btn.style.color = "#aaa";
+                            this.hide3dToolTip();
+                        }).bind(this));
+    this.UIBtns[name] = {dom: btn, callbacks: []};
+    this.container.appendChild(this.UIBtns[name]['dom']);
+    if (func !== undefined) {
+        func = this.asarray(func);
+        for (var f of func) {
+        this.on(name, f);
+        }
     }
-}
 }
 
 
 Neu3D.prototype.createToolTip = function() {
-this.toolTipDiv = document.createElement('div');
-this.toolTipDiv.style.cssText = 'position: fixed; text-align: center; width: auto; min-width: 100px; height: auto; padding: 2px; font: 12px arial; z-index: 999; background: #ccc; border: solid #212121 3px; border-radius: 8px; pointer-events: none; opacity: 0.0; color: #212121';
-this.toolTipDiv.style.transition = "opacity 0.5s";
-this.container.appendChild(this.toolTipDiv);
+    this.toolTipDiv = document.createElement('div');
+    this.toolTipDiv.style.cssText = 'position: fixed; text-align: center; width: auto; min-width: 100px; height: auto; padding: 2px; font: 12px arial; z-index: 999; background: #ccc; border: solid #212121 3px; border-radius: 8px; pointer-events: none; opacity: 0.0; color: #212121';
+    this.toolTipDiv.style.transition = "opacity 0.5s";
+    this.container.appendChild(this.toolTipDiv);
 }
 
 Neu3D.prototype.show3dToolTip = function (d) {
-this.toolTipDiv.style.opacity = .9;
-this.toolTipDiv.innerHTML = d;
+    this.toolTipDiv.style.opacity = .9;
+    this.toolTipDiv.innerHTML = d;
 
-this.domRect = this.renderer.domElement.getBoundingClientRect();
-var toolTipRect = this.toolTipDiv.getBoundingClientRect();
+    this.domRect = this.renderer.domElement.getBoundingClientRect();
+    var toolTipRect = this.toolTipDiv.getBoundingClientRect();
 
-var left = this.uiVars.toolTipPosition.x + 10;
-if (left + toolTipRect.width > this.domRect.right )
-    left = this.domRect.right - 10 - toolTipRect.width;
-var top = this.uiVars.toolTipPosition.y + 10;
-if (top + toolTipRect.height > this.domRect.bottom )
-    top = this.uiVars.toolTipPosition.y - 10 - toolTipRect.height;
-this.toolTipDiv.style.left = left + "px";
-this.toolTipDiv.style.top =  top + "px";
+    var left = this.uiVars.toolTipPosition.x + 10;
+    if (left + toolTipRect.width > this.domRect.right )
+        left = this.domRect.right - 10 - toolTipRect.width;
+    var top = this.uiVars.toolTipPosition.y + 10;
+    if (top + toolTipRect.height > this.domRect.bottom )
+        top = this.uiVars.toolTipPosition.y - 10 - toolTipRect.height;
+    this.toolTipDiv.style.left = left + "px";
+    this.toolTipDiv.style.top =  top + "px";
 }
 
 Neu3D.prototype.hide3dToolTip = function () {
-this.toolTipDiv.style.opacity = 0.0;
+    this.toolTipDiv.style.opacity = 0.0;
 }
 
 Neu3D.prototype._getInfo = function (d) {
-return d;
+    return d;
 }
 
 Neu3D.prototype.getNeuronScreenPosition = function (id) {
 
-var vector = this.meshDict[id].position.clone()
-var canvasRect = this.renderer.domElement.getBoundingClientRect();
+    var vector = this.meshDict[id].position.clone()
+    var canvasRect = this.renderer.domElement.getBoundingClientRect();
 
-// map to normalized device coordinate (NDC) space
-vector.project( this.camera );
+    // map to normalized device coordinate (NDC) space
+    vector.project( this.camera );
 
-// map to 2D screen space
-vector.x = Math.round( (   vector.x + 1 ) * canvasRect.width  / 2 ) + canvasRect.left;
-vector.y = Math.round( ( - vector.y + 1 ) * canvasRect.height / 2 ) + canvasRect.top;
+    // map to 2D screen space
+    vector.x = Math.round( (   vector.x + 1 ) * canvasRect.width  / 2 ) + canvasRect.left;
+    vector.y = Math.round( ( - vector.y + 1 ) * canvasRect.height / 2 ) + canvasRect.top;
 
-return {'x':vector.x, 'y':vector.y};
+    return {'x':vector.x, 'y':vector.y};
 }
 
 Neu3D.prototype.syncControls = function (ffbomesh) {
-if (this === ffbomesh)
-    return;
+    if (this === ffbomesh)
+        return;
 
-this.controls.target.copy( ffbomesh.controls.target );
-this.camera.position.copy( ffbomesh.camera.position );
-this.camera.up.copy( ffbomesh.camera.up );
+    this.controls.target.copy( ffbomesh.controls.target );
+    this.camera.position.copy( ffbomesh.camera.position );
+    this.camera.up.copy( ffbomesh.camera.up );
 
-this.camera.lookAt( ffbomesh.controls.target );
+    this.camera.lookAt( ffbomesh.controls.target );
 }
 
 THREE.Lut.prototype.addColorMap( 'rainbow_gist', [

@@ -1397,8 +1397,8 @@ export class Neu3D {
           if (this.meshDict[key]['opacity'] >= 0.00){
             obj[0].material.opacity = this.meshDict[key]['opacity'] * (this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005)));
           }else{
-          obj[0].material.opacity = this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005));
-          obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
+            obj[0].material.opacity = this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005));
+            obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
           }
         } else {
           //TODO: check what this else loop does
@@ -1770,47 +1770,6 @@ export class Neu3D {
    * @param {*} e 
    */
   updateOpacity(e) {
-    // if (e.prop === "highlight" && this.states.highlight) { // Entering highlight mode or highlighted obj change
-    //   var list = ((e !== undefined) && e.old_value) ? [e.old_value] : Object.keys(this.meshDict);
-    //   for (const key of list) {
-    //     let val = this.meshDict[key];
-    //     let opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
-    //     let depthTest = true;
-
-    //     for (let i in val.pinned && (opacity = this.settings.pinOpacity,
-    //     depthTest = !1),
-    //     val.object.children)
-    //         val.object.children[i].material.opacity = opacity,
-    //         val.object.children[i].material.depthTest = depthTest
-    //   }
-    //   var val = this.meshDict[this.states.highlight];
-    //   for (var i in val.object.children)
-    //       val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity,
-    //       val.object.children[i].material.depthTest = !1
-    // } else {
-    //   if (this.states.highlight)// Either entering pinned mode or pinned mode settings changing
-    //       return;
-    //   if ("highlight" == e.prop && this.states.pinned || "pinned" == e.prop && e.value && 1 == this.uiVars.pinnedObjects.size || "pinLowOpacity" == e.prop || "pinOpacity" == e.prop)
-    //       for (const key of Object.keys(this.meshDict)) {
-    //           if ((val = this.meshDict[key]).background)
-    //               val.object.children[0].material.opacity = this.settings.backgroundOpacity,
-    //               val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
-    //           else {
-    //               opacity = this.meshDict[key].pinned ? this.settings.pinOpacity : this.settings.pinLowOpacity,
-    //               depthTest = !this.meshDict[key].pinned;
-    //               for (var i in val.object.children)
-    //                   val.object.children[i].material.opacity = opacity,
-    //                   val.object.children[i].material.depthTest = depthTest
-    //           }
-    //       }
-    //   else if ("pinned" == e.prop && this.states.pinned)// New object being pinned while already in pinned mode
-    //       for (var i in e.obj.object.children)
-    //           e.obj.object.children[i].material.opacity = e.value ? this.settings.pinOpacity : this.settings.pinLowOpacity,
-    //           e.obj.object.children[i].material.depthTest = !e.value;
-    //   else // Default opacity value change in upinned mode or exiting highlight mode
-    //       this.states.pinned && "highlight" != e.prop || this.resetOpacity()
-    // }
-    // Entering highlight mode or highlighted obj change
     if (e.prop == 'highlight' && this.states.highlight) {
       let list = ((e !== undefined) && e.old_value) ? [e.old_value] : Object.keys(this.meshDict);
       for (const key of list) {
@@ -1868,34 +1827,51 @@ export class Neu3D {
     for (const key of Object.keys(this.meshDict)) {
       if (!this.meshDict[key]['background']) {
         if (!('morph_type' in this.meshDict[key]) ||
-          (this.meshDict[key]['morph_type'] != 'Synapse SWC')) {
+            (this.meshDict[key]['morph_type'] != 'Synapse SWC')) {
           for (let i in this.meshDict[key].object.children) {
-            if (this.meshDict[key]['opacity'] >= 0.)
-            this.meshDict[key].object.children[i].material.opacity = this.meshDict[key]['opacity'] * this.settings.defaultOpacity;
-            else
-            this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;}
+            if (this.meshDict[key]['opacity'] >= 0.){
+              this.meshDict[key].object.children[i].material.opacity = this.meshDict[key]['opacity'] * this.settings.defaultOpacity;
+            } else {
+              this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
+            }
+          }
+        } else {
+          for (let i in this.meshDict[key].object.children){
+            if (this.meshDict[key]['opacity'] >= 0.){
+              this.meshDict[key].object.children[i].material.opacity = this.meshDict[key]['opacity'] * this.settings.synapseOpacity;
+            } else {
+              this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
+            }
+          }
         }
-        else {
-          for (let i in this.meshDict[key].object.children)
-          if (this.meshDict[key]['opacity'] >= 0.)
-            this.meshDict[key].object.children[i].material.opacity = this.meshDict[key]['opacity'] * this.settings.synapseOpacity;
-          else
-            this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
-        }
-      }
-      else {
-        if (this.meshDict[key]['opacity'] >= 0.)
-        {
+      } else {
+        if (this.meshDict[key]['opacity'] >= 0.){
           this.meshDict[key].object.children[0].material.opacity = this.meshDict[key]['opacity'] * this.settings.backgroundOpacity;
           this.meshDict[key].object.children[1].material.opacity = this.meshDict[key]['opacity'] * this.settings.backgroundWireframeOpacity;
-        }
-        else
-        {
+        } else{
         this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
         this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
         }
       }
     }
+    // let val = this.settings.defaultOpacity;
+    // for (const key of Object.keys(this.meshDict)) {
+    //   if (!this.meshDict[key]['background']){
+    //     if(!('morph_type' in this.meshDict[key]) ||
+    //         (this.meshDict[key]['morph_type'] != 'Synapse SWC')) {
+    //         for (i in this.meshDict[key].object.children){
+    //           this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
+    //         }
+    //     } else {
+    //         for (i in this.meshDict[key].object.children){
+    //           this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
+    //         }
+    //     }
+    //   } else {
+    //     this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
+    //     this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+    //   }
+    // }
   }
 
 
