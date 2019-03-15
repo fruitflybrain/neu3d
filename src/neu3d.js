@@ -57,15 +57,13 @@ if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
  */
 function createMultiMaterialObject(geometry, materials) {
 
-      var group = new THREE.Group();
+  let group = new THREE.Group();
 
-      for (var i = 0, l = materials.length; i < l; i++) {
+  for (let i = 0, l = materials.length; i < l; i++) {
+    group.add(new THREE.Mesh(geometry, materials[i]));
+  }
 
-        group.add(new THREE.Mesh(geometry, materials[i]));
-
-      }
-
-      return group;
+  return group;
 }
 
 
@@ -90,9 +88,11 @@ export class Neu3D {
       "upSign": 1.,
     };
     if (metadata !== undefined)
-      for (var key in this._metadata)
-        if ((key in metadata) && (metadata[key] !== undefined))
+      for (let key in this._metadata){
+        if ((key in metadata) && (metadata[key] !== undefined)){
           this._metadata[key] = metadata[key];
+        }
+      }
     this.settings = new PropertyManager({
       defaultOpacity: 0.7,
       synapseOpacity: 1.0,
@@ -248,6 +248,7 @@ export class Neu3D {
     this.animate();
     this._defaultSettings = this.export_settings();
 
+    let ffbomesh = this;
     // setup drag-drop functionality
     $('#' + this.container.id).on({
       'dragover dragenter': function (e) {
@@ -255,16 +256,16 @@ export class Neu3D {
         e.stopPropagation();
       },
       'drop': function (e) {
-        var dataTransfer = e.originalEvent.dataTransfer;
+        let dataTransfer = e.originalEvent.dataTransfer;
         if (dataTransfer && dataTransfer.files.length) {
           e.preventDefault();
           e.stopPropagation();
           $.each(dataTransfer.files, function (i, file) {
-            var reader = new FileReader();
+            let reader = new FileReader();
             reader.onload = $.proxy(function (file, event) {
               if (file.name.match('.+(\.swc)$')) {
-                var name = file.name.split('.')[0];
-                var json = {};
+                let name = file.name.split('.')[0];
+                let json = {};
                 json[name] = {
                   label: name,
                   dataStr: event.target.result,
@@ -289,8 +290,8 @@ export class Neu3D {
         let reader = new FileReader();
         reader.onload = $.proxy(function (file, event) {
           if (file.name.match('.+(\.swc)$')) {
-            var name = file.name.split('.')[0];
-            var json = {};
+            let name = file.name.split('.')[0];
+            let json = {};
             json[name] = {
               label: name,
               dataStr: event.target.result,
@@ -333,7 +334,7 @@ export class Neu3D {
       return;
     }
     if (key in this.callbackRegistry) {
-      var register = this.callbackRegistry[key];
+      let register = this.callbackRegistry[key];
       register(func);
     }
     else {
@@ -355,7 +356,7 @@ export class Neu3D {
       }
     }
     let controlPanel = new dat.GUI(GUIOptions);
-    $(panel.__closeButton).hide();
+    controlPanel.__closeButton.style.visibility = 'hidden';
     let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Number of Neurons: ');
     neuronNum.domElement.style["pointerEvents"] = "None";
     neuronNum.domElement.parentNode.parentNode.classList.add('noneurons');
@@ -364,8 +365,8 @@ export class Neu3D {
         this[name] = func;
       };
       let btn = new newButton();
-      var buttonid = controlPanel.add(btn, name).title(tooltip).icon(icon,"strip",iconAttrs);
-      
+      let buttonid = controlPanel.add(btn, name).title(tooltip).icon(icon,"strip",iconAttrs);
+      return buttonid;
     }
 
     _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { document.getElementById('neu3d-file-upload').click(); });
@@ -436,19 +437,21 @@ export class Neu3D {
   }
 
   animateActivity(activityData, t_i, interval, interpolation_interval) {
+    let ffbomesh = this;
+
     this.activityData = activityData;
-    var t = t_i || 0; 
-    var t_max = activityData[Object.keys(activityData)[0]].length;
-    var interp = 0;
+    let t = t_i || 0; 
+    let t_max = activityData[Object.keys(activityData)[0]].length;
+    let interp = 0;
     this.it1 = setInterval(frame, interval);
     this.it2 = setInterval(intFrame, interpolation_interval);
     function intFrame() {
         interp += interpolation_interval / interval;
-        var t_current = t;
-        var t_next = t+1;
+        let t_current = t;
+        let t_next = t+1;
         if (t_next == t_max)
         t_next = 0;
-        for (var key in activityData) {
+        for (let key in activityData) {
             ffbomesh.meshDict[key]['opacity'] = activityData[key][t_current] * (1-interp) + activityData[key][t_next] * (interp);
         }
         ffbomesh.resetOpacity();
@@ -462,8 +465,8 @@ export class Neu3D {
 }
 
   initCamera() {
-    var height = this.container.clientHeight;
-    var width = this.container.clientWidth;
+    let height = this.container.clientHeight;
+    let width = this.container.clientWidth;
     this.fov = 20;
     this.prevhfov = 2 * Math.atan(Math.tan(Math.PI * this.fov / 2 / 180) * width / height);
     let camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 1000000 );
@@ -503,8 +506,8 @@ export class Neu3D {
   }
 
   initPostProcessing() {
-    var height = this.container.clientHeight;
-    var width = this.container.clientWidth;
+    let height = this.container.clientHeight;
+    let width = this.container.clientWidth;
     this.renderScene = new THREE.RenderPass(this.scenes.front, this.camera);
     this.renderScene.clear = false;
     this.renderScene.clearDepth = true;
@@ -621,14 +624,15 @@ export class Neu3D {
   }
   reset(resetBackground = false) {
     //resetBackground = resetBackground || false;
-    for (var key of Object.keys(this.meshDict)) {
+    for (let key of Object.keys(this.meshDict)) {
       if (!resetBackground && this.meshDict[key].background) {
         continue;
       }
-      if (this.meshDict[key]['pinned'])
+      if (this.meshDict[key]['pinned']){
         this.meshDict[key]['pinned'] = false;
-      var meshobj = this.meshDict[key].object;
-      for (var i = 0; i < meshobj.children.length; i++) {
+      }
+      let meshobj = this.meshDict[key].object;
+      for (let i = 0; i < meshobj.children.length; i++) {
         meshobj.children[i].geometry.dispose();
         meshobj.children[i].material.dispose();
       }
@@ -652,13 +656,13 @@ export class Neu3D {
     }.bind(this), "meshWireframe");
   }
   execCommand(json) {
-    var neuList = json['neurons'] || [];
-    var commandList = json['commands'] || [];
-    var args = json['args'] || undefined;
+    let neuList = json['neurons'] || [];
+    let commandList = json['commands'] || [];
+    let args = json['args'] || undefined;
     neuList = this.asarray(neuList);
     commandList = this.asarray(commandList);
-    for (var i = 0; i < commandList.length; ++i) {
-      var c = commandList[i].toLowerCase();
+    for (let i = 0; i < commandList.length; ++i) {
+      let c = commandList[i].toLowerCase();
       this.commandDispatcher[c].call(this, neuList, args);
     }
   }
@@ -668,21 +672,21 @@ export class Neu3D {
         console.log('mesh json is undefined');
         return;
       }
-      var metadata = {
+      let metadata = {
         "type": undefined,
         "visibility": true,
         "colormap": this._metadata.colormap,
         "colororder": "random",
         "showAfterLoadAll": false,
       };
-      for (var key in metadata)
+      for (let key in metadata)
         if ((key in json) && (json[key] !== undefined))
           metadata[key] = json[key];
       if (('reset' in json) && json.reset)
         this.reset();
       /* set colormap */
-      var keyList = Object.keys(json.ffbo_json);
-      var colorNum, id2float, lut;
+      let keyList = Object.keys(json.ffbo_json);
+      let colorNum, id2float, lut;
       if (metadata.colororder === "order") {
         colorNum = keyList.length;
         id2float = function (i) { return i / colorNum; };
@@ -701,13 +705,13 @@ export class Neu3D {
         lut = this.lut;
       if (metadata.showAfterLoadAll)
         this.groups.front.visible = false;
-      for (var i = 0; i < keyList.length; ++i) {
-        var key = keyList[i];
+      for (let i = 0; i < keyList.length; ++i) {
+        let key = keyList[i];
         if (key in this.meshDict) {
           console.log('mesh object already exists... skip rendering...');
           continue;
         }
-        var unit = new PropertyManager(json.ffbo_json[key]);
+        let unit = new PropertyManager(json.ffbo_json[key]);
         unit.boundingBox = Object.assign({}, this.defaultBoundingBox);
         setAttrIfNotDefined(unit, 'highlight', true);
         setAttrIfNotDefined(unit, 'opacity', -1.0);
@@ -727,7 +731,7 @@ export class Neu3D {
         }
         else if ('filename' in unit) {
           unit['filetype'] = unit.filename.split('.').pop();
-          var loader = new THREE.FileLoader(this.loadingManager);
+          let loader = new THREE.FileLoader(this.loadingManager);
           if (unit['filetype'] == "json")
             loader.load(unit.filename, this.loadMeshCallBack(key, unit, metadata.visibility).bind(this));
           else if (unit['filetype'] == "swc")
@@ -758,7 +762,7 @@ export class Neu3D {
   computeVisibleBoundingBox(includeBackground = false) {
     this.visibleBoundingBox = Object.assign({}, this.defaultBoundingBox);
     let updated = false;
-    for (var key in this.meshDict) {
+    for (let key in this.meshDict) {
       if (this.meshDict[key].background)
         continue;
       if (this.meshDict[key].visibility) {
@@ -812,20 +816,20 @@ export class Neu3D {
   }
   loadMeshCallBack(key, unit, visibility) {
     return function (jsonString) {
-      var json = JSON.parse(jsonString);
-      var color = unit['color'];
-      var geometry = new THREE.Geometry();
-      var vtx = json['vertices'];
-      var idx = json['faces'];
-      for (var j = 0; j < vtx.length / 3; j++) {
-        var x = parseFloat(vtx[3 * j + 0]);
-        var y = parseFloat(vtx[3 * j + 1]);
-        var z = parseFloat(vtx[3 * j + 2]);
+      let json = JSON.parse(jsonString);
+      let color = unit['color'];
+      let geometry = new THREE.Geometry();
+      let vtx = json['vertices'];
+      let idx = json['faces'];
+      for (let j = 0; j < vtx.length / 3; j++) {
+        let x = parseFloat(vtx[3 * j + 0]);
+        let y = parseFloat(vtx[3 * j + 1]);
+        let z = parseFloat(vtx[3 * j + 2]);
         geometry.vertices.push(new THREE.Vector3(x, y, z));
         this.updateObjectBoundingBox(unit, x, y, z);
         this.updateBoundingBox(x, y, z);
       }
-      for (var j = 0; j < idx.length / 3; j++) {
+      for (let j = 0; j < idx.length / 3; j++) {
         geometry.faces.push(new THREE.Face3(parseInt(idx[3 * j + 0]), parseInt(idx[3 * j + 1]), parseInt(idx[3 * j + 2])));
       }
       geometry.mergeVertices();
@@ -836,7 +840,7 @@ export class Neu3D {
         new THREE.MeshLambertMaterial({ color: color, transparent: true, side: 2, flatShading: true }),
         new THREE.MeshBasicMaterial({ color: color, wireframe: true, transparent: true })
       ];
-      var object = createMultiMaterialObject(geometry, materials);
+      let object = createMultiMaterialObject(geometry, materials);
       if (!this.settings.meshWireframe)
         object.children[1].visible = false;
       object.visible = visibility;
@@ -849,11 +853,11 @@ export class Neu3D {
       * process string
       */
       swcString = swcString.replace(/\r\n/g, "\n");
-      var swcLine = swcString.split("\n");
-      var len = swcLine.length;
-      var swcObj = {};
+      let swcLine = swcString.split("\n");
+      let len = swcLine.length;
+      let swcObj = {};
       swcLine.forEach(function (e) {
-        var seg = e.split(' ');
+        let seg = e.split(' ');
         if (seg.length == 7) {
           swcObj[parseInt(seg[0])] = {
             'type': parseInt(seg[1]),
@@ -865,54 +869,56 @@ export class Neu3D {
           };
         }
       });
-      var color = unit['color']
-      var object = new THREE.Object3D();
-      var pointGeometry = undefined;
-      var mergedGeometry = undefined;
-      var geometry = undefined;
-      for (var idx in swcObj) {
-        var c = swcObj[idx];
+      let color = unit['color']
+      let object = new THREE.Object3D();
+      let pointGeometry = undefined;
+      let mergedGeometry = undefined;
+      let geometry = undefined;
+      let sphereGeometry = undefined;
+      for (let idx in swcObj) {
+        let c = swcObj[idx];
         if (idx == Math.round(len / 2) && unit.position == undefined)
           unit.position = new THREE.Vector3(c.x, c.y, c.z);
         this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
         this.updateBoundingBox(c.x, c.y, c.z);
         if (c.parent != -1) {
-          var p = swcObj[c.parent];
+          let p = swcObj[c.parent];
           if (this.settings.neuron3d) {
-            if (mergedGeometry == undefined)
+            if (mergedGeometry == undefined){
               mergedGeometry = new THREE.Geometry();
-            var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
-            if (!p.radius || !c.radius)
-              var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
-            else
-              var geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
+            }
+            let d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
+            if (!p.radius || !c.radius){
+              geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
+            }else{
+              geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
+            }
             geometry.translate(0, 0.5 * d.length(), 0);
             geometry.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
             geometry.lookAt(d.clone());
             geometry.translate((c.x + c.x) / 2, -0.0 * d.length() + (c.y + c.y) / 2, (c.z + c.z) / 2);
             mergedGeometry.merge(geometry);
             geometry = null;
+
             if (this.settings.neuron3dMode == 2) {
-              var geometry = new THREE.SphereGeometry(c.radius, 8, 8);
+              geometry = new THREE.SphereGeometry(c.radius, 8, 8);
               geometry.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
               geometry.lookAt(d);
               geometry.translate((c.x + c.x) / 2, (c.y + c.y) / 2, (c.z + c.z) / 2);
               mergedGeometry.merge(geometry);
               geometry = null;
-            }
-            else if (this.settings.neuron3dMode == 3) {
+            }else if (this.settings.neuron3dMode == 3) {
               if (p.parent != -1) {
                 let p2 = swcObj[p.parent];
-                var a = new THREE.Vector3(0.9 * p.x + 0.1 * p2.x, 0.9 * p.y + 0.1 * p2.y, 0.9 * p.z + 0.1 * p2.z);
-                var b = new THREE.Vector3(0.9 * p.x + 0.1 * c.x, 0.9 * p.y + 0.1 * c.y, 0.9 * p.z + 0.1 * c.z);
-                var curve = new THREE.QuadraticBezierCurve3(a, new THREE.Vector3(p.x, p.y, p.z), b);
-                var geometry = new THREE.TubeGeometry(curve, 8, p.radius, 4, false);
+                let a = new THREE.Vector3(0.9 * p.x + 0.1 * p2.x, 0.9 * p.y + 0.1 * p2.y, 0.9 * p.z + 0.1 * p2.z);
+                let b = new THREE.Vector3(0.9 * p.x + 0.1 * c.x, 0.9 * p.y + 0.1 * c.y, 0.9 * p.z + 0.1 * c.z);
+                let curve = new THREE.QuadraticBezierCurve3(a, new THREE.Vector3(p.x, p.y, p.z), b);
+                geometry = new THREE.TubeGeometry(curve, 8, p.radius, 4, false);
                 mergedGeometry.merge(geometry);
                 geometry = null;
               }
             }
-          }
-          else {
+          }else {
             if (geometry == undefined)
               geometry = new THREE.Geometry();
             geometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
@@ -922,30 +928,32 @@ export class Neu3D {
           }
         }
         if (c.type == 1) {
-          if (c.radius)
-            var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
-          else
-            var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8);
+          if (c.radius){
+            sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
+          }else{
+            sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8);
+          }
           sphereGeometry.translate(c.x, c.y, c.z);
-          var sphereMaterial = new THREE.MeshLambertMaterial({ color: color, transparent: true });
+          let sphereMaterial = new THREE.MeshLambertMaterial({ color: color, transparent: true });
           object.add(new THREE.Mesh(sphereGeometry, sphereMaterial));
           unit['position'] = new THREE.Vector3(c.x, c.y, c.z);
         }
         if (c.type == -1) {
           if (this.settings.synapseMode == true) {
-            if (mergedGeometry == undefined)
+            if (mergedGeometry == undefined){
               mergedGeometry = new THREE.Geometry();
-            if (c.radius)
-              var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
-            else
-              var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8);
+            }
+            if (c.radius){
+              sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
+            }else{
+              sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8);
+            }
             sphereGeometry.translate(c.x, c.y, c.z);
-            //var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
+            //let sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
             //object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
             mergedGeometry.merge(sphereGeometry);
             unit['position'] = new THREE.Vector3(c.x, c.y, c.z);
-          }
-          else {
+          } else {
             if (pointGeometry == undefined)
               pointGeometry = new THREE.Geometry();
             pointGeometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
@@ -953,25 +961,24 @@ export class Neu3D {
         }
       }
       if (pointGeometry) {
-        var pointMaterial = new THREE.PointsMaterial({ color: color, size: this.settings.defaultSynapseRadius, lights: true });
-        var points = new THREE.Points(pointGeometry, pointMaterial);
+        let pointMaterial = new THREE.PointsMaterial({ color: color, size: this.settings.defaultSynapseRadius, lights: true });
+        let points = new THREE.Points(pointGeometry, pointMaterial);
         object.add(points);
       }
       if (mergedGeometry) {
-        var material = new THREE.MeshLambertMaterial({ color: color, transparent: true });
-        //var modifier = new THREE.SimplifyModifier();
+        let material = new THREE.MeshLambertMaterial({ color: color, transparent: true });
+        //let modifier = new THREE.SimplifyModifier();
         //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
-        var mesh = new THREE.Mesh(mergedGeometry, material);
-        //var mesh = new THREE.Mesh(simplified, material);
+        let mesh = new THREE.Mesh(mergedGeometry, material);
+        //let mesh = new THREE.Mesh(simplified, material);
         object.add(mesh);
       }
       if (geometry) {
-        var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
+        let material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
         object.add(new THREE.LineSegments(geometry, material));
       }
       object.visible = visibility;
       this._registerObject(key, unit, object);
-
     };
   }
   loadMorphJSONCallBack(key, unit, visibility) {
@@ -979,9 +986,9 @@ export class Neu3D {
       /*
       * process string
       */
-      var swcObj = {};
-      var len = unit['sample'].length;
-      for (var j = 0; j < len; j++) {
+      let swcObj = {};
+      let len = unit['sample'].length;
+      for (let j = 0; j < len; j++) {
         swcObj[parseInt(unit['sample'][j])] = {
           'type': parseInt(unit['identifier'][j]),
           'x': parseFloat(unit['x'][j]),
@@ -991,27 +998,28 @@ export class Neu3D {
           'parent': parseInt(unit['parent'][j]),
         };
       }
-      var color = unit['color'];
-      var object = new THREE.Object3D();
-      var pointGeometry = undefined;
-      var mergedGeometry = undefined;
-      var geometry = undefined;
-      for (var idx in swcObj) {
-        var c = swcObj[idx];
+      let color = unit['color'];
+      let object = new THREE.Object3D();
+      let pointGeometry = undefined;
+      let mergedGeometry = undefined;
+      let geometry = undefined;
+      let sphereGeometry = undefined;
+      for (let idx in swcObj) {
+        let c = swcObj[idx];
         if (idx == Math.round(len / 2) && unit.position == undefined)
           unit.position = new THREE.Vector3(c.x, c.y, c.z);
         this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
         this.updateBoundingBox(c.x, c.y, c.z);
         if (c.parent != -1) {
-          var p = swcObj[c.parent];
+          let p = swcObj[c.parent];
           if (this.settings.neuron3d) {
             if (mergedGeometry == undefined)
               mergedGeometry = new THREE.Geometry();
-            var d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
+              let d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
             if (!p.radius || !c.radius)
-              var geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
+              geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
             else
-              var geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
+              geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
             geometry.translate(0, 0.5 * d.length(), 0);
             geometry.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
             geometry.lookAt(d.clone());
@@ -1019,28 +1027,27 @@ export class Neu3D {
             mergedGeometry.merge(geometry);
             geometry = null;
             if (this.settings.neuron3dMode == 2) {
-              var geometry = new THREE.SphereGeometry(c.radius, 8, 8);
+              geometry = new THREE.SphereGeometry(c.radius, 8, 8);
               geometry.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
               geometry.lookAt(d);
               geometry.translate((c.x + c.x) / 2, (c.y + c.y) / 2, (c.z + c.z) / 2);
               mergedGeometry.merge(geometry);
               geometry = null;
-            }
-            else if (this.settings.neuron3dMode == 3) {
+            } else if (this.settings.neuron3dMode == 3) {
               if (p.parent != -1) {
                 p2 = swcObj[p.parent];
-                var a = new THREE.Vector3(0.9 * p.x + 0.1 * p2.x, 0.9 * p.y + 0.1 * p2.y, 0.9 * p.z + 0.1 * p2.z);
-                var b = new THREE.Vector3(0.9 * p.x + 0.1 * c.x, 0.9 * p.y + 0.1 * c.y, 0.9 * p.z + 0.1 * c.z);
-                var curve = new THREE.QuadraticBezierCurve3(a, new THREE.Vector3(p.x, p.y, p.z), b);
-                var geometry = new THREE.TubeGeometry(curve, 8, p.radius, 4, false);
+                let a = new THREE.Vector3(0.9 * p.x + 0.1 * p2.x, 0.9 * p.y + 0.1 * p2.y, 0.9 * p.z + 0.1 * p2.z);
+                let b = new THREE.Vector3(0.9 * p.x + 0.1 * c.x, 0.9 * p.y + 0.1 * c.y, 0.9 * p.z + 0.1 * c.z);
+                let curve = new THREE.QuadraticBezierCurve3(a, new THREE.Vector3(p.x, p.y, p.z), b);
+                geometry = new THREE.TubeGeometry(curve, 8, p.radius, 4, false);
                 mergedGeometry.merge(geometry);
                 geometry = null;
               }
             }
-          }
-          else {
-            if (geometry == undefined)
+          } else {
+            if (geometry == undefined){
               geometry = new THREE.Geometry();
+            }
             geometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
             geometry.vertices.push(new THREE.Vector3(p.x, p.y, p.z));
             geometry.colors.push(color);
@@ -1048,30 +1055,32 @@ export class Neu3D {
           }
         }
         if (c.type == 1) {
-          if (c.radius)
-            var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
-          else
-            var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8);
+          if (c.radius){
+            sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
+          }else{
+            sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8);
+          }
           sphereGeometry.translate(c.x, c.y, c.z);
-          var sphereMaterial = new THREE.MeshLambertMaterial({ color: color, transparent: true });
+          let sphereMaterial = new THREE.MeshLambertMaterial({ color: color, transparent: true });
           object.add(new THREE.Mesh(sphereGeometry, sphereMaterial));
           unit['position'] = new THREE.Vector3(c.x, c.y, c.z);
         }
         if (c.type == -1) {
           if (this.settings.synapseMode == true) {
-            if (mergedGeometry == undefined)
+            if (mergedGeometry == undefined){
               mergedGeometry = new THREE.Geometry();
-            if (c.radius)
-              var sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
-            else
-              var sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8);
+            }
+            if (c.radius){
+              sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
+            }else {
+              sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8);
+            }
             sphereGeometry.translate(c.x, c.y, c.z);
-            //var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
+            //let sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
             //object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
             mergedGeometry.merge(sphereGeometry);
             unit['position'] = new THREE.Vector3(c.x, c.y, c.z);
-          }
-          else {
+          } else {
             if (pointGeometry == undefined)
               pointGeometry = new THREE.Geometry();
             pointGeometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
@@ -1079,20 +1088,20 @@ export class Neu3D {
         }
       }
       if (pointGeometry) {
-        var pointMaterial = new THREE.PointsMaterial({ color: color, size: this.settings.defaultSynapseRadius, lights: true });
-        var points = new THREE.Points(pointGeometry, pointMaterial);
+        let pointMaterial = new THREE.PointsMaterial({ color: color, size: this.settings.defaultSynapseRadius, lights: true });
+        let points = new THREE.Points(pointGeometry, pointMaterial);
         object.add(points);
       }
       if (mergedGeometry) {
-        var material = new THREE.MeshLambertMaterial({ color: color, transparent: true });
-        //var modifier = new THREE.SimplifyModifier();
+        let material = new THREE.MeshLambertMaterial({ color: color, transparent: true });
+        //let modifier = new THREE.SimplifyModifier();
         //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
-        var mesh = new THREE.Mesh(mergedGeometry, material);
-        //var mesh = new THREE.Mesh(simplified, material);
+        let mesh = new THREE.Mesh(mergedGeometry, material);
+        //let mesh = new THREE.Mesh(simplified, material);
         object.add(mesh);
       }
       if (geometry) {
-        var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
+        let material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
         object.add(new THREE.LineSegments(geometry, material));
       }
       object.visible = visibility;
@@ -1119,51 +1128,60 @@ export class Neu3D {
     }
     // TODO: move the code below to a function
     if (!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')) {
-      if (this.settings.defaultOpacity !== 1)
-        for (var i = 0; i < unit['object'].children.length; i++)
+      if (this.settings.defaultOpacity !== 1){
+        for (let i = 0; i < unit['object'].children.length; i++){
           unit['object'].children[i].material.opacity = this.settings.defaultOpacity;
+        }
+      }
     }
     else {
-      if (this.settings.synapseOpacity !== 1)
-        for (var i = 0; i < unit['object'].children.length; i++)
+      if (this.settings.synapseOpacity !== 1){
+        for (let i = 0; i < unit['object'].children.length; i++){
           unit['object'].children[i].material.opacity = this.settings.synapseOpacity;
+        }
+      }
     }
     this.meshDict[key] = unit;
   }
   onDocumentMouseClick(event) {
-    if (event !== undefined)
+    if (event !== undefined){
       event.preventDefault();
+    }
     // if (!this.controls.checkStateIsNone())
     //   return;
-    var intersected = this.getIntersection([this.groups.front]);
+    let intersected = this.getIntersection([this.groups.front]);
     if (intersected != undefined && intersected['highlight']) {
       this.select(intersected.rid);
     }
   }
   onDocumentMouseDBLClick(event) {
-    if (event !== undefined)
+    if (event !== undefined){
       event.preventDefault();
-    var intersected = this.getIntersection([this.groups.front]);
+    }
+    let intersected = this.getIntersection([this.groups.front]);
     if (intersected != undefined) {
-      if (!intersected['highlight'])
+      if (!intersected['highlight']){
         return;
+      }
       this.togglePin(intersected);
     }
   }
   onDocumentMouseDBLClickMobile(event) {
-    if (event !== undefined)
+    if (event !== undefined){
       event.preventDefault();
-    var intersected = this.getIntersection([this.groups.front]);
+    }
+    let intersected = this.getIntersection([this.groups.front]);
     if (intersected != undefined) {
-      if (!intersected['highlight'])
+      if (!intersected['highlight']){
         return;
+      }
       this.togglePin(intersected);
     }
   }
   onDocumentMouseMove(event) {
     event.preventDefault();
     this.states.mouseOver = true;
-    var rect = this.container.getBoundingClientRect();
+    let rect = this.container.getBoundingClientRect();
     this.uiVars.toolTipPosition.x = event.clientX;
     this.uiVars.toolTipPosition.y = event.clientY;
     this.uiVars.cursorPosition.x = ((event.clientX - rect.left) / this.container.clientWidth) * 2 - 1;
@@ -1180,8 +1198,8 @@ export class Neu3D {
   }
   //
   onWindowResize() {
-    var height = this.container.clientHeight;
-    var width = this.container.clientWidth;
+    let height = this.container.clientHeight;
+    let width = this.container.clientWidth;
     let aspect = width / height;
     let cam_dir = new THREE.Vector3();
     cam_dir.subVectors(this.camera.position, this.controls.target);
@@ -1207,12 +1225,12 @@ export class Neu3D {
   }
   render() {
 
-    for (var key in this.meshDict) {
+    for (let key in this.meshDict) {
       if (this.meshDict[key].object != undefined) {
-        var x = new Date().getTime();
+        let x = new Date().getTime();
         if (this.meshDict[key]['background']) {
-          var obj = this.meshDict[key].object.children;
-          //for ( var i = 0; i < obj.length; ++i )
+          let obj = this.meshDict[key].object.children;
+          //for ( let i = 0; i < obj.length; ++i )
           if (this.meshDict[key]['opacity'] >= 0.00)
           obj[0].material.opacity = this.meshDict[key]['opacity'] * (this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005)));
           else
@@ -1231,7 +1249,7 @@ export class Neu3D {
     */
     // if (this.controls.checkStateIsNone() && this.states.mouseOver) {
     if (this.states.mouseOver) {
-      var intersected = this.getIntersection([this.groups.front, this.groups.back]);
+      let intersected = this.getIntersection([this.groups.front, this.groups.back]);
       if (this.uiVars.currentIntersected || intersected) {
         this.uiVars.currentIntersected = intersected;
         this.highlight(intersected);
@@ -1247,13 +1265,14 @@ export class Neu3D {
     //this.renderer.render( this.scene, this.camera );
   }
   getIntersection(groups) {
-    if (groups === undefined)
+    if (groups === undefined){
       return undefined;
-    var val = undefined;
-    var object = undefined;
+    }
+    let val = undefined;
+    let object = undefined;
     this.raycaster.setFromCamera(this.uiVars.cursorPosition, this.camera);
     for (const group of groups) {
-      var intersects = this.raycaster.intersectObjects(group.children, true);
+      let intersects = this.raycaster.intersectObjects(group.children, true);
       if (intersects.length > 0) {
         object = intersects[0].object.parent;
         if (object.hasOwnProperty('rid') && object.rid in this.meshDict) {
@@ -1265,29 +1284,36 @@ export class Neu3D {
     return val;
   }
   showFrontAll() {
-    for (var val of this.groups.front.children)
+    for (let val of this.groups.front.children){
       this.meshDict[val.rid].visibility = true;
+    }
   }
   hideFrontAll() {
-    for (var val of this.groups.front.children)
+    for (let val of this.groups.front.children){
       this.meshDict[val.rid].visibility = false;
+    }
   }
   showBackAll() {
-    for (var val of this.groups.back.children)
+    for (let val of this.groups.back.children){
       this.meshDict[val.rid].visibility = true;
+    }
   }
   hideBackAll() {
-    for (var val of this.groups.back.children)
+    for (let val of this.groups.back.children){
       this.meshDict[val.rid].visibility = false;
+    }
   }
   showAll() {
-    for (var key in this.meshDict)
+    for (let key in this.meshDict){
       this.meshDict[key].visibility = true;
+    }
   }
   hideAll() {
-    for (var key in this.meshDict)
-      if (!this.meshDict[key]['pinned'])
+    for (let key in this.meshDict){
+      if (!this.meshDict[key]['pinned']){
         this.meshDict[key].visibility = false;
+      }
+    }
   }
   export_settings() {
     let backgroundColor = [0.15, 0.01, 0.15];
@@ -1356,7 +1382,7 @@ export class Neu3D {
     state_metadata['target']['y'] = this.controls.target.y;
     state_metadata['target']['z'] = this.controls.target.z;
     state_metadata['pinned'] = Array.from(this.uiVars.pinnedObjects);
-    for (var key in this.meshDict) {
+    for (let key in this.meshDict) {
       if (this.meshDict.hasOwnProperty(key)) {
         state_metadata['color'][key] = this.meshDict[key].object.children[0].material.color.toArray();
         state_metadata['visibility'][key] = this.meshDict[key].visibility;
@@ -1375,22 +1401,24 @@ export class Neu3D {
     this.controls.target.y = state_metadata['target']['y'];
     this.controls.target.z = state_metadata['target']['z'];
     this.camera.lookAt(this.controls.target);
-    for (var i = 0; i < state_metadata['pinned'].length; ++i) {
-      var key = state_metadata['pinned'][i];
+    for (let i = 0; i < state_metadata['pinned'].length; ++i) {
+      let key = state_metadata['pinned'][i];
       if (this.meshDict.hasOwnProperty(key))
         this.meshDict[key]['pinned'] = true;
     }
-    for (var key of Object.keys(state_metadata['visibility'])) {
-      if (!this.meshDict.hasOwnProperty(key))
+    for (let key of Object.keys(state_metadata['visibility'])) {
+      if (!this.meshDict.hasOwnProperty(key)){
         continue;
+      }
       this.meshDict[key].visibility = state_metadata['visibility'][key];
-      if (this.meshDict[key].background)
+      if (this.meshDict[key].background){
         continue;
-      var meshobj = this.meshDict[key].object;
-      var color = state_metadata['color'][key];
-      for (var j = 0; j < meshobj.children.length; ++j) {
+      } 
+      let meshobj = this.meshDict[key].object;
+      let color = state_metadata['color'][key];
+      for (let j = 0; j < meshobj.children.length; ++j) {
         meshobj.children[j].material.color.fromArray(color);
-        for (var k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
+        for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
           meshobj.children[j].geometry.colors[k].fromArray(color);
         }
         meshobj.children[j].geometry.colorsNeedUpdate = true;
@@ -1399,17 +1427,19 @@ export class Neu3D {
   }
   show(id) {
     id = this.asarray(id);
-    for (var i = 0; i < id.length; ++i) {
-      if (!(id[i] in this.meshDict))
+    for (let i = 0; i < id.length; ++i) {
+      if (!(id[i] in this.meshDict)){
         continue;
+      }
       this.meshDict[id[i]].visibility = true;
     }
   }
   hide(id) {
     id = this.asarray(id);
-    for (var i = 0; i < id.length; ++i) {
-      if (!(id[i] in this.meshDict))
+    for (let i = 0; i < id.length; ++i) {
+      if (!(id[i] in this.meshDict)){
         continue;
+      } 
       this.meshDict[id[i]].visibility = false;
     }
   }
@@ -1432,8 +1462,8 @@ export class Neu3D {
       this.states.highlight = false;
     if (e.value['pinned'])
       e.value['pinned'] = false;
-    var meshobj = e.value.object;
-    for (var j = 0; j < meshobj.children.length; ++j) {
+    let meshobj = e.value.object;
+    for (let j = 0; j < meshobj.children.length; ++j) {
       meshobj.children[j].geometry.dispose();
       meshobj.children[j].material.dispose();
     }
@@ -1471,7 +1501,7 @@ export class Neu3D {
     else
       this.states.highlight = false;
     if (updatePos !== undefined && updatePos === true) {
-      var pos = this.getNeuronScreenPosition(d['rid']);
+      let pos = this.getNeuronScreenPosition(d['rid']);
       this.uiVars.toolTipPosition.x = pos.x;
       this.uiVars.toolTipPosition.y = pos.y;
     }
@@ -1488,85 +1518,128 @@ export class Neu3D {
       this.meshDict[e.value]['object']['visible'] = true;
     }
   }
+
+  
   updateOpacity(e) {
-    // Entering highlight mode or highlighted obj change
-    if (e.prop == 'highlight' && this.states.highlight) {
-      var list = ((e !== undefined) && e.old_value) ? [e.old_value] : Object.keys(this.meshDict);
+    if ("highlight" == e.prop && this.states.highlight) {// Entering highlight mode or highlighted obj change
+      var list = void 0 !== e && e.old_value ? [e.old_value] : Object.keys(this.meshDict);
       for (const key of list) {
-        var val = this.meshDict[key];
-        var opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
-        var depthTest = true;
-        if (val['pinned']) {
-          opacity = this.settings.pinOpacity;
-          depthTest = false;
-        }
-        for (var i in val.object.children) {
-          if (val['opacity'] >= 0.)
-          val.object.children[i].material.opacity = opacity * val['opacity'];
-          else
-          val.object.children[i].material.opacity = opacity;
-          val.object.children[i].material.depthTest = depthTest;
-        }
+          var opacity = (val = this.meshDict[key]).highlight ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity
+            , depthTest = !0;
+          for (var i in val.pinned && (opacity = this.settings.pinOpacity,
+          depthTest = !1),
+          val.object.children)
+              val.object.children[i].material.opacity = opacity,
+              val.object.children[i].material.depthTest = depthTest
       }
-      
       var val = this.meshDict[this.states.highlight];
-      var op = val['opacity'];
-      for (var i in val.object.children) {
-        if (op >= 0.)
-        val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity * op;
-        else
-        val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
-        val.object.children[i].material.depthTest = false;
-      }
-    }
-    else if (this.states.highlight) {
-      return;
-      // Either entering pinned mode or pinned mode settings changing
-    }
-    else if ((e.prop == 'highlight' && this.states.pinned) ||
-      (e.prop == 'pinned' && e.value && this.uiVars.pinnedObjects.size == 1) ||
-      (e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')) {
-      for (const key of Object.keys(this.meshDict)) {
-        var val = this.meshDict[key];
-        if (!val['background']) {
-          var opacity = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
-          var depthTest = !this.meshDict[key]['pinned'];
-          for (var i in val.object.children) {
-            if (val['opacity'] >= 0.)
-            val.object.children[i].material.opacity = opacity * val['opacity'];
-            else
-            val.object.children[i].material.opacity = opacity;
-            val.object.children[i].material.depthTest = depthTest;
+      for (var i in val.object.children)
+          val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity,
+          val.object.children[i].material.depthTest = !1
+    } else {
+      if (this.states.highlight)// Either entering pinned mode or pinned mode settings changing
+          return;
+      if ("highlight" == e.prop && this.states.pinned || "pinned" == e.prop && e.value && 1 == this.uiVars.pinnedObjects.size || "pinLowOpacity" == e.prop || "pinOpacity" == e.prop)
+          for (const key of Object.keys(this.meshDict)) {
+              if ((val = this.meshDict[key]).background)
+                  val.object.children[0].material.opacity = this.settings.backgroundOpacity,
+                  val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+              else {
+                  opacity = this.meshDict[key].pinned ? this.settings.pinOpacity : this.settings.pinLowOpacity,
+                  depthTest = !this.meshDict[key].pinned;
+                  for (var i in val.object.children)
+                      val.object.children[i].material.opacity = opacity,
+                      val.object.children[i].material.depthTest = depthTest
+              }
           }
-        }
-        else {
-          var op = val['opacity'];
-          if (val['opacity'] >= 0.)
-          val.object.children[i].material.opacity = this.settings.backgroundOpacity * val['opacity'];
-          else
-          val.object.children[i].material.opacity = this.settings.backgroundOpacity;
-          val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
-        }
-      }
-    }
-    // New object being pinned while already in pinned mode
-    else if (e.prop == 'pinned' && this.states.pinned) {
-      for (var i in e.obj.object.children) {
-        var op = val['opacity'];
-        if (val['opacity'] >= 0.)
-        e.obj.object.children[i].material.opacity = ((e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity)* val['opacity'];
-        else
-        e.obj.object.children[i].material.opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
-        e.obj.object.children[i].material.depthTest = !e.value;
-      }
-    }
-    // Default opacity value change in upinned mode or exiting highlight mode
-    else if (!this.states.pinned || e.prop == 'highlight') {
-      this.resetOpacity();
+      else if ("pinned" == e.prop && this.states.pinned)// New object being pinned while already in pinned mode
+          for (var i in e.obj.object.children)
+              e.obj.object.children[i].material.opacity = e.value ? this.settings.pinOpacity : this.settings.pinLowOpacity,
+              e.obj.object.children[i].material.depthTest = !e.value;
+      else // Default opacity value change in upinned mode or exiting highlight mode
+          this.states.pinned && "highlight" != e.prop || this.resetOpacity()
     }
   }
+  
+
+  
+
+
+    
+  //   if (e.prop == 'highlight' && this.states.highlight) {
+  //     let list = ((e !== undefined) && e.old_value) ? [e.old_value] : Object.keys(this.meshDict);
+  //     for (const key of list) {
+  //       let val = this.meshDict[key];
+  //       let opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
+  //       let depthTest = true;
+  //       if (val['pinned']) {
+  //         opacity = this.settings.pinOpacity;
+  //         depthTest = false;
+  //       }
+  //       for (let i in val.object.children) {
+  //         if (val['opacity'] >= 0.){
+  //           val.object.children[i].material.opacity = opacity * val['opacity'];
+  //         }else{
+  //           val.object.children[i].material.opacity = opacity;
+  //           val.object.children[i].material.depthTest = depthTest;
+  //         }
+  //       }
+  //     }
+      
+  //     let val = this.meshDict[this.states.highlight];
+  //     for (let i in val.object.children) {
+  //       if (val['opacity'] >= 0.){
+  //         val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity * val['opacity'];
+  //       }else{
+  //         val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
+  //         val.object.children[i].material.depthTest = false;
+  //       }
+  //     }
+  //   } else if (this.states.highlight) {
+  //     return;
+      
+  //   } else if ((e.prop == 'highlight' && this.states.pinned) ||
+  //     (e.prop == 'pinned' && e.value && this.uiVars.pinnedObjects.size == 1) ||
+  //     (e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')) {
+  //     for (const key of Object.keys(this.meshDict)) {
+  //       let val = this.meshDict[key];
+  //       if (!val['background']) {
+  //         let opacity = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+  //         let depthTest = !this.meshDict[key]['pinned'];
+  //         for (let i in val.object.children) {
+  //           if (val['opacity'] >= 0.){
+  //             val.object.children[i].material.opacity = opacity * val['opacity'];
+  //           }else{
+  //             val.object.children[i].material.opacity = opacity;
+  //             val.object.children[i].material.depthTest = depthTest;
+  //           }
+  //         }
+  //       }else {
+  //         // for (let i in val.object.children) {
+  //           if (val['opacity'] >= 0.){
+  //             val.object.children[i].material.opacity = this.settings.backgroundOpacity * val['opacity'];
+  //           }else{
+  //             val.object.children[i].material.opacity = this.settings.backgroundOpacity;
+  //             val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+  //           }
+  //         // }
+  //       }
+  //     }
+  //   } else if (e.prop == 'pinned' && this.states.pinned) {// New object being pinned while already in pinned mode
+  //     for (let i in e.obj.object.children) {
+  //       if (val['opacity'] >= 0.){
+  //         e.obj.object.children[i].material.opacity = ((e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity)* val['opacity'];
+  //       }else{
+  //         e.obj.object.children[i].material.opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+  //         e.obj.object.children[i].material.depthTest = !e.value;
+  //       }
+  //     }
+  //   }else if (!this.states.pinned || e.prop == 'highlight') {// Default opacity value change in upinned mode or exiting highlight mode
+  //     this.resetOpacity();
+  //   }
+  // }
   resetOpacity() {
-    var val = this.settings.defaultOpacity;
+    let val = this.settings.defaultOpacity;
     for (const key of Object.keys(this.meshDict)) {
       if (!this.meshDict[key]['background']) {
         if (!('morph_type' in this.meshDict[key]) ||
@@ -1600,8 +1673,9 @@ export class Neu3D {
     }
   }
   asarray(variable) {
-    if (variable.constructor !== Array)
+    if (variable.constructor !== Array){
       variable = [variable];
+    }
     return variable;
   }
   updatePinned(e) {
@@ -1615,17 +1689,19 @@ export class Neu3D {
   }
   pin(id) {
     id = this.asarray(id);
-    for (var i = 0; i < id.length; ++i) {
-      if (!(id[i] in this.meshDict) || this.meshDict[id[i]]['pinned'])
+    for (let i = 0; i < id.length; ++i) {
+      if (!(id[i] in this.meshDict) || this.meshDict[id[i]]['pinned']){
         continue;
+      }
       this.meshDict[id[i]]['pinned'] = true;
     }
   }
   unpin(id) {
     id = this.asarray(id);
-    for (var i = 0; i < id.length; ++i) {
-      if (!(id[i] in this.meshDict) || !this.meshDict[id[i]]['pinned'])
+    for (let i = 0; i < id.length; ++i) {
+      if (!(id[i] in this.meshDict) || !this.meshDict[id[i]]['pinned']){
         continue;
+      }
       this.meshDict[id[i]]['pinned'] = false;
     }
   }
@@ -1633,18 +1709,20 @@ export class Neu3D {
     return Array.from(this.uiVars.pinnedObjects);
   }
   getUnpinned() {
-    var list = [];
-    for (var key of Object.keys(this.meshDict)) {
-      if (!this.meshDict[key]['background'] && !this.meshDict[key]['pinned'])
+    let list = [];
+    for (let key of Object.keys(this.meshDict)) {
+      if (!this.meshDict[key]['background'] && !this.meshDict[key]['pinned']){
         list.push(key);
+      }
     }
     return list;
   }
   remove(id) {
     id = this.asarray(id);
-    for (var i = 0; i < id.length; ++i) {
-      if (!(id[i] in this.meshDict))
+    for (let i = 0; i < id.length; ++i) {
+      if (!(id[i] in this.meshDict)){
         continue;
+      }
       delete this.meshDict[id[i]];
     }
   }
@@ -1662,14 +1740,15 @@ export class Neu3D {
    */
   setColor(id, color) {
     id = this.asarray(id);
-    for (var i = 0; i < id.length; ++i) {
-      if (!(id[i] in this.meshDict))
+    for (let i = 0; i < id.length; ++i) {
+      if (!(id[i] in this.meshDict)){
         continue;
-      var meshobj = this.meshDict[id[i]].object;
-      for (var j = 0; j < meshobj.children.length; ++j) {
+      }
+      let meshobj = this.meshDict[id[i]].object;
+      for (let j = 0; j < meshobj.children.length; ++j) {
         meshobj.children[j].material.color.set(color);
         meshobj.children[j].geometry.colorsNeedUpdate = true;
-        for (var k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
+        for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
           meshobj.children[j].geometry.colors[k].set(color);
         }
       }
@@ -1677,14 +1756,15 @@ export class Neu3D {
     }
   }
   setBackgroundColor(color) {
-    if (Array.isArray(color))
+    if (Array.isArray(color)){
       color = new THREE.Color().fromArray(color);
-    for (var i = 0; i < this.groups.back.children.length; ++i) {
-      var meshobj = this.groups.back.children[i];
-      for (var j = 0; j < meshobj.children.length; ++j) {
+    }
+    for (let i = 0; i < this.groups.back.children.length; ++i) {
+      let meshobj = this.groups.back.children[i];
+      for (let j = 0; j < meshobj.children.length; ++j) {
         meshobj.children[j].material.color.set(color);
         meshobj.children[j].geometry.colorsNeedUpdate = true;
-        for (var k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
+        for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
           meshobj.children[j].geometry.colors[k].set(color);
         }
       }
@@ -1720,7 +1800,7 @@ export class Neu3D {
       ];
       // From https://stackoverflow.com/a/11771236
       let targetFov = 0.0;
-      for (var i = 0; i < 8; i++) {
+      for (let i = 0; i < 8; i++) {
         let proj2d = positions[i].applyMatrix4(this.camera.matrixWorldInverse);
         let angle = Math.max(Math.abs(Math.atan(proj2d.x / proj2d.z) / this.camera.aspect), Math.abs(Math.atan(proj2d.y / proj2d.z)));
         targetFov = Math.max(targetFov, angle);
@@ -1752,7 +1832,7 @@ export class Neu3D {
   unpinAll() {
     if (!this._metadata.allowPin)
       return;
-    for (var key of this.uiVars.pinnedObjects)
+    for (let key of this.uiVars.pinnedObjects)
       this.meshDict[key]['pinned'] = false;
   }
 
@@ -1788,13 +1868,15 @@ export class Neu3D {
     this.toolTipDiv.style.opacity = .9;
     this.toolTipDiv.innerHTML = d;
     this.domRect = this.renderer.domElement.getBoundingClientRect();
-    var toolTipRect = this.toolTipDiv.getBoundingClientRect();
-    var left = this.uiVars.toolTipPosition.x + 10;
-    if (left + toolTipRect.width > this.domRect.right)
+    let toolTipRect = this.toolTipDiv.getBoundingClientRect();
+    let left = this.uiVars.toolTipPosition.x + 10;
+    if (left + toolTipRect.width > this.domRect.right){
       left = this.domRect.right - 10 - toolTipRect.width;
-    var top = this.uiVars.toolTipPosition.y + 10;
-    if (top + toolTipRect.height > this.domRect.bottom)
+    }
+    let top = this.uiVars.toolTipPosition.y + 10;
+    if (top + toolTipRect.height > this.domRect.bottom){
       top = this.uiVars.toolTipPosition.y - 10 - toolTipRect.height;
+    }
     this.toolTipDiv.style.left = left + "px";
     this.toolTipDiv.style.top = top + "px";
   }
@@ -1805,8 +1887,8 @@ export class Neu3D {
     return d;
   }
   getNeuronScreenPosition(id) {
-    var vector = this.meshDict[id].position.clone();
-    var canvasRect = this.renderer.domElement.getBoundingClientRect();
+    let vector = this.meshDict[id].position.clone();
+    let canvasRect = this.renderer.domElement.getBoundingClientRect();
     // map to normalized device coordinate (NDC) space
     vector.project(this.camera);
     // map to 2D screen space
@@ -1828,7 +1910,7 @@ var _saveImage;
 
 window.onload = () => {
   _saveImage = (function () {
-    var a = document.createElement("a");
+    let a = document.createElement("a");
     document.body.appendChild(a);
     a.style = "display: none";
     return function (blob, fileName) {
@@ -1848,7 +1930,7 @@ window.onload = () => {
 
 
 
-var datGuiPresets = {
+const datGuiPresets = {
   "preset": "Default",
   "closed": false,
   "remembered": {
