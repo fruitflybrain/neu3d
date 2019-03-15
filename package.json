@@ -6,6 +6,7 @@
   "types": "./typings/index.d.ts",
   "scripts": {
     "build": "npx webpack --config webpack.config.js",
+    "watch": "npx webpack --config webpack.config.js --watch",
     "test": "echo \"To see it in action, server HTML server in root after build\""
   },
   "repository": {
