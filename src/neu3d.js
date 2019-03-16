@@ -254,39 +254,6 @@ export class Neu3D {
 
     this.animate();
     this._defaultSettings = this.export_settings();
-
-    // let ffbomesh = this;
-    // // setup drag-drop functionality
-    // // TODO: use native JS instead of JQuery
-    // $('#' + this.container.id).on({
-    //   'dragover dragenter': function (e) {
-    //     e.preventDefault();
-    //     e.stopPropagation();
-    //   },
-    //   'drop': function (e) {
-    //     let dataTransfer = e.originalEvent.dataTransfer;
-    //     if (dataTransfer && dataTransfer.files.length) {
-    //       e.preventDefault();
-    //       e.stopPropagation();
-    //       $.each(dataTransfer.files, function (i, file) {
-    //         let reader = new FileReader();
-    //         reader.onload = $.proxy(function (file, event) {
-    //           if (file.name.match('.+(\.swc)$')) {
-    //             let name = file.name.split('.')[0];
-    //             let json = {};
-    //             json[name] = {
-    //               label: name,
-    //               dataStr: event.target.result,
-    //               filetype: 'swc'
-    //             };
-    //             ffbomesh.addJson({ ffbo_json: json });
-    //           }
-    //         }, this, file);
-    //         reader.readAsText(file);
-    //       });
-    //     }
-    //   }
-    // });
     
     // add file input
     let fileUploadInput = document.createElement('input');
