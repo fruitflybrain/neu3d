@@ -401,11 +401,11 @@ Neu3D.prototype.initScenes = function () {
 }
 
 Neu3D.prototype.initLut = function () {
-this.maxColorNum = this._metadata.maxColorNum;
-var lut = new THREE.Lut( this._metadata.colormap, this.maxColorNum);
-lut.setMin( 0 );
-lut.setMax( 1 );
-return lut;
+    this.maxColorNum = this._metadata.maxColorNum;
+    var lut = new THREE.Lut( this._metadata.colormap, this.maxColorNum);
+    lut.setMin( 0 );
+    lut.setMax( 1 );
+    return lut;
 }
 
 Neu3D.prototype.initLights = function() {
@@ -498,14 +498,15 @@ Neu3D.prototype.reset = function(resetBackground) {
   resetBackground = resetBackground || false;
   for (var key of Object.keys(this.meshDict)) {
       if ( !resetBackground && this.meshDict[key].background ) {
-      continue;
+        continue;
       }
-      if (this.meshDict[key]['pinned'])
-      this.meshDict[key]['pinned'] = false;
+      if (this.meshDict[key]['pinned']){
+        this.meshDict[key]['pinned'] = false;
+      }
       var meshobj = this.meshDict[key].object;
       for (var i = 0; i < meshobj.children.length; i++ ) {
-      meshobj.children[i].geometry.dispose();
-      meshobj.children[i].material.dispose();
+        meshobj.children[i].geometry.dispose();
+        meshobj.children[i].material.dispose();
       }
       --this.uiVars.meshNum;
       this.groups.front.remove( meshobj );
@@ -514,7 +515,6 @@ Neu3D.prototype.reset = function(resetBackground) {
   }
   this.uiVars.frontNum = 0
   this.states.highlight = false;
-  // this.uiVars.pinnedObjects.clear()
   if ( resetBackground ) {
       this.controls.target0.set(0,0,0);
       this.boundingBox = {'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000};
@@ -544,46 +544,51 @@ Neu3D.prototype.execCommand = function(json) {
 
 Neu3D.prototype.addJson = function(json) {
   return new Promise((function(resolve) {
-      if ( (json === undefined) || !("ffbo_json" in json) ) {
+    if ( (json === undefined) || !("ffbo_json" in json) ) {
       console.log( 'mesh json is undefined' );
       return;
-      }
-      var metadata = {
+    }
+    var metadata = {
       "type": undefined,
       "visibility": true,
       "colormap": this._metadata.colormap,
       "colororder": "random",
       "showAfterLoadAll": false,
-      }
-      for (var key in metadata)
-      if ( (key in json) && (json[key] !== undefined) )
+    }
+    for (var key in metadata){
+      if ( (key in json) && (json[key] !== undefined) ){
           metadata[key] = json[key];
+      }
+    }
 
-      if ( ('reset' in json) && json.reset )
+    if ( ('reset' in json) && json.reset ){
       this.reset();
-      /* set colormap */
-      var keyList = Object.keys(json.ffbo_json);
-      var colorNum, id2float, lut;
+    }
+    /* set colormap */
+    var keyList = Object.keys(json.ffbo_json);
+    var colorNum, id2float, lut;
 
-      if ( metadata.colororder === "order" ) {
+    if ( metadata.colororder === "order" ) {
       colorNum = keyList.length;
       id2float = function(i) {return i/colorNum};
-      } else {
+    } else {
       colorNum = this.maxColorNum;
       id2float = function(i) {return getRandomIntInclusive(1, colorNum)/colorNum};
-      }
+    }
 
-      if ( metadata.colororder === "order" && (colorNum !== this.maxColorNum || metadata.colormap !== "rainbow_gist") ) {
+    if ( metadata.colororder === "order" && (colorNum !== this.maxColorNum || metadata.colormap !== "rainbow_gist") ) {
       colorNum = keyList.length;
       lut = new THREE.Lut( metadata.colormap, colorNum);
       lut.setMin( 0 );
       lut.setMax( 1 );
-      } else
+    } else{
       lut = this.lut;
-      if ( metadata.showAfterLoadAll )
+    }
+    if ( metadata.showAfterLoadAll ){
       this.groups.front.visible = false;
+    }
 
-      for ( var i = 0; i < keyList.length; ++i ) {
+    for ( var i = 0; i < keyList.length; ++i ) {
       var key = keyList[i];
       if (key in this.meshDict ) {
           console.log( 'mesh object already exists... skip rendering...' )
@@ -631,8 +636,8 @@ Neu3D.prototype.addJson = function(json) {
           console.log( 'mesh object has neither filename nor data string... skip rendering' );
           continue;
       }
-      }
-      resolve();
+    }
+    resolve();
   }).bind(this));
 }
 
@@ -699,11 +704,13 @@ Neu3D.prototype.setAnim = function(data) {
       this.animOpacity[key] = data[key];
   }
   this.states.animate = true;
-  }
-  Neu3D.prototype.stopAnim = function() {
+}
+
+Neu3D.prototype.stopAnim = function() {
   this.states.animate = false;
-  }
-  Neu3D.prototype.animate = function() {
+}
+
+Neu3D.prototype.animate = function() {
 
   this.stats.begin()
 
@@ -755,8 +762,9 @@ Neu3D.prototype.loadMeshCallBack = function(key, unit, visibility) {
 
 
       var object = createMultiMaterialObject( geometry, materials );
-      if(! this.settings.meshWireframe )
-      object.children[1].visible = false;
+      if(! this.settings.meshWireframe ){
+        object.children[1].visible = false;
+      }
       object.visible = visibility;
 
       this._registerObject(key, unit, object);
@@ -986,8 +994,9 @@ Neu3D.prototype._registerObject = function(key, unit, object) {
 }
 
 Neu3D.prototype.onDocumentMouseClick = function( event ) {
-  if (event !== undefined)
+  if (event !== undefined){
       event.preventDefault();
+  }
 
   // if (!this.controls.checkStateIsNone())
   //     return;
@@ -1690,20 +1699,20 @@ Neu3D.prototype.resetVisibleView = function() {
 }
 
 Neu3D.prototype.togglePin = function( d ) {
-    if (!this._metadata.allowPin)
-        return;
-    if (typeof(d) === 'string' && (d in this.meshDict)) {
-        d = this.meshDict[d];
-    }
-    d['pinned'] = !d['pinned'];
-    }
+  if (!this._metadata.allowPin)
+    return;
+  if (typeof(d) === 'string' && (d in this.meshDict)) {
+    d = this.meshDict[d];
+  }
+  d['pinned'] = !d['pinned'];
+}
 
-    Neu3D.prototype.unpinAll = function() {
+Neu3D.prototype.unpinAll = function() {
 
-    if (!this._metadata.allowPin)
-        return;
-    for (var key of this.uiVars.pinnedObjects)
-        this.meshDict[key]['pinned'] = false;
+  if (!this._metadata.allowPin)
+    return;
+  for (var key of this.uiVars.pinnedObjects)
+    this.meshDict[key]['pinned'] = false;
 }
 
 
