@@ -176,6 +176,10 @@ export class Neu3D {
     this.container.addEventListener('mouseenter', this.onDocumentMouseEnter.bind(this), false);
     this.container.addEventListener('mousemove', this.onDocumentMouseMove.bind(this), false);
     this.container.addEventListener('mouseleave', this.onDocumentMouseLeave.bind(this), false);
+    this.container.addEventListener('drop', this.onDocumentDrop.bind(this), false); // drop file load swc
+    this.container.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation()}, false); // drop file load swc
+    this.container.addEventListener('dragenter', (e) => { e.preventDefault(); e.stopPropagation()} , false); // drop file load swc
+
     this.container.addEventListener('resize', this.onWindowResize.bind(this), false);
     this.animOpacity = {};
     this.defaultBoundingBox = { 'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000 };
@@ -251,38 +255,38 @@ export class Neu3D {
     this.animate();
     this._defaultSettings = this.export_settings();
 
-    let ffbomesh = this;
-    // setup drag-drop functionality
-    // TODO: use native JS instead of JQuery
-    $('#' + this.container.id).on({
-      'dragover dragenter': function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-      },
-      'drop': function (e) {
-        let dataTransfer = e.originalEvent.dataTransfer;
-        if (dataTransfer && dataTransfer.files.length) {
-          e.preventDefault();
-          e.stopPropagation();
-          $.each(dataTransfer.files, function (i, file) {
-            let reader = new FileReader();
-            reader.onload = $.proxy(function (file, event) {
-              if (file.name.match('.+(\.swc)$')) {
-                let name = file.name.split('.')[0];
-                let json = {};
-                json[name] = {
-                  label: name,
-                  dataStr: event.target.result,
-                  filetype: 'swc'
-                };
-                ffbomesh.addJson({ ffbo_json: json });
-              }
-            }, this, file);
-            reader.readAsText(file);
-          });
-        }
-      }
-    });
+    // let ffbomesh = this;
+    // // setup drag-drop functionality
+    // // TODO: use native JS instead of JQuery
+    // $('#' + this.container.id).on({
+    //   'dragover dragenter': function (e) {
+    //     e.preventDefault();
+    //     e.stopPropagation();
+    //   },
+    //   'drop': function (e) {
+    //     let dataTransfer = e.originalEvent.dataTransfer;
+    //     if (dataTransfer && dataTransfer.files.length) {
+    //       e.preventDefault();
+    //       e.stopPropagation();
+    //       $.each(dataTransfer.files, function (i, file) {
+    //         let reader = new FileReader();
+    //         reader.onload = $.proxy(function (file, event) {
+    //           if (file.name.match('.+(\.swc)$')) {
+    //             let name = file.name.split('.')[0];
+    //             let json = {};
+    //             json[name] = {
+    //               label: name,
+    //               dataStr: event.target.result,
+    //               filetype: 'swc'
+    //             };
+    //             ffbomesh.addJson({ ffbo_json: json });
+    //           }
+    //         }, this, file);
+    //         reader.readAsText(file);
+    //       });
+    //     }
+    //   }
+    // });
     
     // add file input
     let fileUploadInput = document.createElement('input');
@@ -1281,6 +1285,32 @@ export class Neu3D {
     this.meshDict[key] = unit;
   }
 
+
+  /**
+   * Load swc files on drop
+   * @param {DragEvent} event
+   */
+  onDocumentDrop(event) {
+    event.preventDefault();
+
+    let neu3D_obj = this;
+    $.each(event.dataTransfer.files, function (i, file) {
+      let reader = new FileReader();
+      reader.onload = $.proxy(function (file, event) {
+        if (file.name.match('.+(\.swc)$')) {
+          let name = file.name.split('.')[0];
+          let json = {};
+          json[name] = {
+            label: name,
+            dataStr: event.target.result,
+            filetype: 'swc'
+          };
+          neu3D_obj.addJson({ ffbo_json: json });
+        }
+      }, this, file);
+      reader.readAsText(file);
+    });
+  }
 
   /**
    * Mouse Click Event
