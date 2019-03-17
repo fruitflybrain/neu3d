@@ -1,6 +1,6 @@
 {
   "name": "neu3d",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "A npm package for rendering SWC files.",
   "main": "./lib/neu3d.min.js",
   "types": "./typings/index.d.ts",
