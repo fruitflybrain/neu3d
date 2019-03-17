@@ -256,6 +256,7 @@ export class Neu3D {
     this._defaultSettings = this.export_settings();
     
     // add file input
+    let ffbomesh = this;
     let fileUploadInput = document.createElement('input');
     fileUploadInput.id = "neu3d-file-upload";
     fileUploadInput.setAttribute("type", "file");
