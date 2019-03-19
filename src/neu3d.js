@@ -359,7 +359,6 @@ export class Neu3D {
     _createBtn("removeUnpin", "fa fa-trash", {}, "Remove Unpinned Neurons", ()=> {this.removeUnpinned();})
     _createBtn("removeUnpin", "fa fa-map-upin", {}, "Unpin All", () => { this.unpinAll(); })
     _createBtn("showSettings", "fa fa-cogs", {}, "Display Settings", () => { controlPanel.__closeButton.click(); })
-
     // add settings
     let f_vis = controlPanel.addFolder('Settings');
     let f0 = f_vis.addFolder('Display Mode');
@@ -2223,7 +2222,7 @@ window.onload = () => {
   }());
 }
 
-const datGuiPresets = {
+const datGuiPresets ={
   "preset": "Default",
   "closed": false,
   "remembered": {

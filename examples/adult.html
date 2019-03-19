@@ -3,8 +3,6 @@
   <head>
     <title>Neu3d Test</title>
     <script type="text/javascript" src=" https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <!-- <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp"
-      crossorigin="anonymous"> -->
     <script src="../lib/neu3d.min.js"> </script>
   </head>
   <body>
@@ -20,15 +18,15 @@
           hideable: true
         }
       }
-      var ffbomesh = new Neu3D(parentDiv,
+      var neu3d = new Neu3D(parentDiv,
                                undefined,
                                { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } },
                                options);
 
-      window.ffbomesh = ffbomesh;
+      window.neu3d = neu3d;
 
       $.getJSON("../data/data.json", function (json) {
-        ffbomesh.addJson({
+        neu3d.addJson({
           ffbo_json: json,
           showAfterLoadAll: true
         });
@@ -36,7 +34,7 @@
 
 
       $(document).ready(() => {
-        ffbomesh.onWindowResize();
+        neu3d.onWindowResize();
         document.getElementById('neu3d-file-upload').click();
       });
     </script>
