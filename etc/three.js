@@ -32,6 +32,7 @@ require("three/examples/js/postprocessing/BloomPass");
 require("three/examples/js/postprocessing/UnrealBloomPass");
 require("three/examples/js/postprocessing/AdaptiveToneMappingPass");
 require("three/examples/js/controls/TrackballControls");
+require("three/examples/js/controls/DragControls");
 // require("three/examples/js/utils/SceneUtils");
 
 module.exports = THREE;

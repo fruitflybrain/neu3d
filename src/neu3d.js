@@ -1,15 +1,17 @@
-import * as Stats from 'stats.js';
+//import * as Stats from 'stats.js';
 import { PropertyManager } from './propertymanager';
 import { FFBOLightsHelper } from './lightshelper';
 
+import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+
 // add FontAwesome
 import fontawesome from '@fortawesome/fontawesome';
-import solid from '@fortawesome/fontawesome-free-solid';
+import solid, { faPrescriptionBottle } from '@fortawesome/fontawesome-free-solid';
 import regular from '@fortawesome/fontawesome-free-regular';
 fontawesome.library.add(regular);
 fontawesome.library.add(solid);
 
-
+const STATS = require('../etc/stats');
 const Detector = require("three/examples/js/Detector");
 const THREE = require('../etc/three');
 
@@ -77,6 +79,8 @@ export class Neu3D {
    */
   constructor(container, data, metadata, options={}) {
     this.container = container;
+    this.frameCounter = 0;
+    this.resINeed = 0;
     /* default metadata */
     this._metadata = {
       "colormap": "rainbow_gist",
@@ -111,12 +115,13 @@ export class Neu3D {
       neuron3dMode: 1,
       synapseMode: true,
       meshWireframe: true,
-      backgroundColor: "#260226"
+      backgroundColor: "#260226",
+      render_resolution: 1.0
     });
     this.settings.toneMappingPass = new PropertyManager({ brightness: 0.95 });
     this.settings.bloomPass = new PropertyManager({ radius: 0.2, strength: 0.2, threshold: 0.3 });
     this.settings.effectFXAA = new PropertyManager({ enabled: true });
-    this.settings.backrenderSSAO = new PropertyManager({ enabled: true });
+    this.settings.backrenderSSAO = new PropertyManager({ enabled: true }); // change
     this.states = new PropertyManager({
       mouseOver: false,
       pinned: false,
@@ -141,10 +146,11 @@ export class Neu3D {
     // In case of non-unique labels, will hold the rid for the last object
     // added with that label
     this._labelToRid = {};
+    THREE.Mesh.raycast = acceleratedRaycast;
     this.raycaster = new THREE.Raycaster();
     this.raycaster.linePrecision = 3;
     if (options['stats']) {
-      this.stats = new Stats();
+      this.stats = STATS.Stats();
       this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
       this.stats.dom.style.position = "relative";
       this.container.appendChild(this.stats.dom);
@@ -166,13 +172,13 @@ export class Neu3D {
     this.controlPanel = this.initControlPanel(options['datGUI']);
     controlPanelDiv.appendChild(this.controlPanel.domElement);
     this.container.appendChild(controlPanelDiv);
-
+    
     this.container.addEventListener('click', this.onDocumentMouseClick.bind(this), false);
     this.container.addEventListener('dblclick', this.onDocumentMouseDBLClick.bind(this), false);
     if (isOnMobile) {
       this.container.addEventListener('taphold', this.onDocumentMouseDBLClickMobile.bind(this));
       document.body.addEventListener('contextmenu', function () { return false; });
-    }
+    }    
     this.container.addEventListener('mouseenter', this.onDocumentMouseEnter.bind(this), false);
     this.container.addEventListener('mousemove', this.onDocumentMouseMove.bind(this), false);
     this.container.addEventListener('mouseleave', this.onDocumentMouseLeave.bind(this), false);
@@ -351,7 +357,7 @@ export class Neu3D {
     }
 
     _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { document.getElementById('neu3d-file-upload').click(); });
-    _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { this.resetView() });
+    _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { this.resetVisibleView() });
     _createBtn("resetVisibleView", "fa fa-align-justify",{}, "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
     _createBtn("hideAll", "fa fa-eye-slash",{}, "Hide All", () => { this.hideAll() });
     _createBtn("showAll", "fa fa-eye",{}, "Show All", () => { this.showAll() });
@@ -473,10 +479,55 @@ export class Neu3D {
   /** Initialize WebGL Renderer */
   initRenderer() {
     let renderer = new THREE.WebGLRenderer({ 'logarithmicDepthBuffer': true });
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(window.devicePixelRatio * this.settings.render_resolution);
     renderer.setSize(this.container.clientWidth, this.container.clientHeight);
     this.container.appendChild(renderer.domElement);
     return renderer;
+  }
+
+  updateResolution() {
+    
+    if (this.stats.getFPS() < 30 && this.settings.render_resolution > 0.25) {
+      this.settings.render_resolution = this.settings.render_resolution - 0.005;
+      if (this.settings.render_resolution < 0.25)
+        this.settings.render_resolution = 0.25;
+      if (this.settings.backrenderSSAO.enabled == true)
+      this.highSettingsFPS = 1.0 + (1-1/this.stats.getFPS())*this.highSettingsFPS;
+    }
+    else if (this.stats.getFPS() > 58 && this.settings.render_resolution < 2.0) {
+      this.settings.render_resolution = this.settings.render_resolution + 0.005;
+      if (this.settings.render_resolution > 2.0)
+        this.settings.render_resolution = 2.0;
+    }
+    else if (this.stats.getFPS() > 30 && this.settings.render_resolution < 1.0) {
+     this.settings.render_resolution = this.settings.render_resolution + 0.005;
+     if (this.settings.render_resolution > 1.0)
+       this.settings.render_resolution = 1.0;
+   }
+   else if (this.stats.getFPS() > 30 && this.settings.render_resolution > 1.0) {
+     this.settings.render_resolution = this.settings.render_resolution - 0.005;
+   }
+    if (this.stats.getFPS() > 58 && this.settings.render_resolution >= 1.95 && this.settings.backrenderSSAO.enabled == false && this.highSettingsFPS > 45)
+     this.settings.backrenderSSAO.enabled = true;
+    else if (this.settings.render_resolution < 1.00)
+     this.settings.backrenderSSAO.enabled = false;
+
+
+    if(this.settings.render_resolution != this.resINeed){
+      //console.log("UPDATING");
+      this.renderer.setPixelRatio(window.devicePixelRatio * this.settings.render_resolution);
+      this.resINeed = this.settings.render_resolution;
+    }
+  }
+
+  updateShaders(){
+    if(this.stats.getFPS() < 30 && this.settings.render_resolution > 0.25){
+      this.settings.effectFXAA.enabled = false;
+      this.settings.backrenderSSAO.enabled = false;
+    }else if (this.stats.getFPS() > 50 && this.settings.render_resolution >= 1.95 && this.settings.backrenderSSAO.enabled == false && this.highSettingsFPS > 45){
+      this.settings.backrenderSSAO.enabled = true;
+      this.settings.effectFXAA.enabled = true;
+    }
   }
 
   /** Initialize Mouse Control */
@@ -882,6 +933,20 @@ export class Neu3D {
     this.controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
     if (this.states.mouseOver && this.dispatch.syncControls){
       this.dispatch.syncControls(this);
+      if(options['adaptive']){
+        this.updateResolution();
+        this.updateShaders();
+        /*
+        if(this.frameCounter < 3){
+          this.frameCounter++;
+        }else{
+          this.updateResolution();
+          this.updateShaders();
+          this.frameCounter = 0;
+        }
+        */
+
+      }
     }
     this.render();
     if (this.stats){
@@ -889,6 +954,7 @@ export class Neu3D {
     }
     requestAnimationFrame(this.animate.bind(this));
   }
+
 
   /** TODO: Add comment
    * @param {*} key 
@@ -918,9 +984,10 @@ export class Neu3D {
       geometry.computeVertexNormals();
       let materials = [
         //new THREE.MeshPhongMaterial( { color: color, flatShading: true, shininess: 0, transparent: true } ),
-        new THREE.MeshLambertMaterial({ color: color, transparent: true, side: 2, flatShading: true }),
-        new THREE.MeshBasicMaterial({ color: color, wireframe: true, transparent: true })
+        new THREE.MeshLambertMaterial({ color: color, transparent: true, side: 2, flatShading: true })
+        //new THREE.MeshBasicMaterial({ color: color, wireframe: true, transparent: true })
       ];
+
       let object = createMultiMaterialObject(geometry, materials);
       if (!this.settings.meshWireframe){
         object.children[1].visible = false;
@@ -1397,6 +1464,7 @@ export class Neu3D {
     }
   }
 
+
   /**
    * Render 
    */
@@ -1457,14 +1525,29 @@ export class Neu3D {
     let val = undefined;
     let object = undefined;
     this.raycaster.setFromCamera(this.uiVars.cursorPosition, this.camera);
+    var b = false;
     for (const group of groups) {
-      let intersects = this.raycaster.intersectObjects(group.children, true);
+      /*
+      var intersects = this.raycaster.intersectObjects(group.children, true);
       if (intersects.length > 0) {
         object = intersects[0].object.parent;
         if (object.hasOwnProperty('rid') && object.rid in this.meshDict) {
           val = this.meshDict[object.rid];
           break;
         }
+      }
+      */
+      for (var i = 0; i < group.children.length; i++){
+        var obj = group.children[i];
+        var intersects = this.raycaster.intersectObject(obj);
+        if (intersects.length > 0) {
+          object = intersects[0].object.parent;
+          if (object.hasOwnProperty('rid') && object.rid in this.meshDict) {
+            val = this.meshDict[object.rid];
+            return;
+          }
+        }
+
       }
     }
     return val;
@@ -2028,6 +2111,7 @@ export class Neu3D {
    * Reset camera and control position
    */
   resetView() {
+    console.log(this.boundingBox);
     if (this._metadata["enablePositionReset"] == true) {
       this.camera.position.z = this._metadata["resetPosition"]['z'];
       this.camera.position.y = this._metadata["resetPosition"]['y'];
