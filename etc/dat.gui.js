@@ -63,7 +63,7 @@ function setCommandIcon(faName,displayType='strip',attrs={}) {
 }
 
 function eachController(fnc) {
-    for (var controllerName in dat.controllers) {
+    for (let controllerName in dat.controllers) {
         if (dat.controllers.hasOwnProperty(controllerName)) {
             fnc(dat.controllers[controllerName]);
         }
@@ -83,7 +83,7 @@ eachController(controller => {
     }
 });
 
-var customFA = {
+const customFA = {
     'fa fa-map-upin': '<span class="fa-layers fa-fw" ><i class= "fas fa-map-pin"></i><i class="fa-inverse fas fa-times" data-fa-transform="shrink-5 right-3 down-5" style="color:red"></i></span>'
 }
 
