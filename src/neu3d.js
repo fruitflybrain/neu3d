@@ -1526,27 +1526,13 @@ export class Neu3D {
     this.raycaster.setFromCamera(this.uiVars.cursorPosition, this.camera);
     var b = false;
     for (const group of groups) {
-      /*
-      var intersects = this.raycaster.intersectObjects(group.children, true);
+      let intersects = this.raycaster.intersectObjects(group.children, true);
       if (intersects.length > 0) {
         object = intersects[0].object.parent;
         if (object.hasOwnProperty('rid') && object.rid in this.meshDict) {
           val = this.meshDict[object.rid];
           break;
         }
-      }
-      */
-      for (var i = 0; i < group.children.length; i++){
-        var obj = group.children[i];
-        var intersects = this.raycaster.intersectObject(obj);
-        if (intersects.length > 0) {
-          object = intersects[0].object.parent;
-          if (object.hasOwnProperty('rid') && object.rid in this.meshDict) {
-            val = this.meshDict[object.rid];
-            return;
-          }
-        }
-
       }
     }
     return val;
