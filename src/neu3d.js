@@ -1685,29 +1685,6 @@ export class Neu3D {
   }
 
   /**
-   * Create a UI Button in dat.GUI
-   * @param {String} name 
-   * @param {String} icon 
-   * @param {String} tooltip 
-   * @param {()=>{}} func 
-   */
-  createUIBtn(name, icon, tooltip, func) {
-    let UIFolder;
-    try {
-      UIFolder = this.controlPanel.addFolder('UI Controls');
-    }catch(e){
-      UIFolder = this.controlPanel.__folders["UI Controls"];
-    }
-    // constructor for new UI button
-    let newButton = function () {
-      this[name] = func;
-    };
-
-    let btn = new newButton();
-    UIFolder.add(btn,name).title(tooltip);
-  }
-
-  /**
    * Create Tooltip
    */
   createToolTip() {
