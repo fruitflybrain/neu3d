@@ -1,8 +1,7 @@
-//import * as Stats from 'stats.js';
 import { PropertyManager } from './propertymanager';
 import { FFBOLightsHelper } from './lightshelper';
 
-import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+// import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 
 // add FontAwesome
 import fontawesome from '@fortawesome/fontawesome';
@@ -146,7 +145,7 @@ export class Neu3D {
     // In case of non-unique labels, will hold the rid for the last object
     // added with that label
     this._labelToRid = {};
-    THREE.Mesh.raycast = acceleratedRaycast;
+    // THREE.Mesh.raycast = acceleratedRaycast;
     this.raycaster = new THREE.Raycaster();
     this.raycaster.linePrecision = 3;
     if (options['stats']) {
@@ -984,8 +983,8 @@ export class Neu3D {
       geometry.computeVertexNormals();
       let materials = [
         //new THREE.MeshPhongMaterial( { color: color, flatShading: true, shininess: 0, transparent: true } ),
-        new THREE.MeshLambertMaterial({ color: color, transparent: true, side: 2, flatShading: true })
-        //new THREE.MeshBasicMaterial({ color: color, wireframe: true, transparent: true })
+        new THREE.MeshLambertMaterial({ color: color, transparent: true, side: 2, flatShading: true }),
+        new THREE.MeshBasicMaterial({ color: color, wireframe: true, transparent: true })
       ];
 
       let object = createMultiMaterialObject(geometry, materials);
