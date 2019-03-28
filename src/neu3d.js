@@ -334,7 +334,7 @@ export class Neu3D {
     }
 
     _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { document.getElementById('neu3d-file-upload').click(); });
-    _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { this.resetVisibleView() });
+    _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { this.resetView() });
     _createBtn("resetVisibleView", "fa fa-align-justify",{}, "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
     _createBtn("hideAll", "fa fa-eye-slash",{}, "Hide All", () => { this.hideAll() });
     _createBtn("showAll", "fa fa-eye",{}, "Show All", () => { this.showAll() });
@@ -1602,7 +1602,6 @@ export class Neu3D {
    * Reset camera and control position
    */
   resetView() {
-    console.log(this.boundingBox);
     if (this._metadata["enablePositionReset"] == true) {
       this.camera.position.z = this._metadata["resetPosition"]['z'];
       this.camera.position.y = this._metadata["resetPosition"]['y'];
