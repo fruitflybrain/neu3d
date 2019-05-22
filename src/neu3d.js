@@ -1,4 +1,3 @@
-import * as Stats from 'stats.js';
 import { PropertyManager } from './propertymanager';
 import { FFBOLightsHelper } from './lightshelper';
 
@@ -9,12 +8,13 @@ import regular from '@fortawesome/fontawesome-free-regular';
 fontawesome.library.add(regular);
 fontawesome.library.add(solid);
 
-
+const STATS = require('../etc/stats');
 const Detector = require("three/examples/js/Detector");
 const THREE = require('../etc/three');
 
 import dat from '../etc/dat.gui';
 import '../style/neu3d.css';
+import { datGuiPresets } from './presets.js';
 
 var isOnMobile = checkOnMobile();
 
@@ -45,27 +45,6 @@ function getRandomIntInclusive(min, max) {
 if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 
-/**
- * Function taken from THREE.SceneUtils
- * 
- * @param geometry 
- * @param materials 
- * 
- * ### Note
- * reason for extracting this method is that loading THREE.SceneUtils
- * always returns `module has been moved to ...` error.
- */
-function createMultiMaterialObject(geometry, materials) {
-
-  let group = new THREE.Group();
-
-  for (let i = 0, l = materials.length; i < l; i++) {
-    group.add(new THREE.Mesh(geometry, materials[i]));
-  }
-
-  return group;
-}
-
 
 export class Neu3D {
   /**
@@ -77,6 +56,8 @@ export class Neu3D {
    */
   constructor(container, data, metadata, options={}) {
     this.container = container;
+    this.frameCounter = 0;
+    this.resINeed = 0;
     /* default metadata */
     this._metadata = {
       "colormap": "rainbow_gist",
@@ -111,12 +92,13 @@ export class Neu3D {
       neuron3dMode: 1,
       synapseMode: true,
       meshWireframe: true,
-      backgroundColor: "#260226"
+      backgroundColor: "#260226",
+      render_resolution: 1.0
     });
     this.settings.toneMappingPass = new PropertyManager({ brightness: 0.95 });
     this.settings.bloomPass = new PropertyManager({ radius: 0.2, strength: 0.2, threshold: 0.3 });
     this.settings.effectFXAA = new PropertyManager({ enabled: true });
-    this.settings.backrenderSSAO = new PropertyManager({ enabled: true });
+    this.settings.backrenderSSAO = new PropertyManager({ enabled: true }); // change
     this.states = new PropertyManager({
       mouseOver: false,
       pinned: false,
@@ -141,10 +123,11 @@ export class Neu3D {
     // In case of non-unique labels, will hold the rid for the last object
     // added with that label
     this._labelToRid = {};
+    // THREE.Mesh.raycast = acceleratedRaycast;
     this.raycaster = new THREE.Raycaster();
     this.raycaster.linePrecision = 3;
     if (options['stats']) {
-      this.stats = new Stats();
+      this.stats = STATS.Stats();
       this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
       this.stats.dom.style.position = "relative";
       this.container.appendChild(this.stats.dom);
@@ -166,13 +149,13 @@ export class Neu3D {
     this.controlPanel = this.initControlPanel(options['datGUI']);
     controlPanelDiv.appendChild(this.controlPanel.domElement);
     this.container.appendChild(controlPanelDiv);
-
+    
     this.container.addEventListener('click', this.onDocumentMouseClick.bind(this), false);
     this.container.addEventListener('dblclick', this.onDocumentMouseDBLClick.bind(this), false);
     if (isOnMobile) {
       this.container.addEventListener('taphold', this.onDocumentMouseDBLClickMobile.bind(this));
       document.body.addEventListener('contextmenu', function () { return false; });
-    }
+    }    
     this.container.addEventListener('mouseenter', this.onDocumentMouseEnter.bind(this), false);
     this.container.addEventListener('mousemove', this.onDocumentMouseMove.bind(this), false);
     this.container.addEventListener('mouseleave', this.onDocumentMouseLeave.bind(this), false);
@@ -473,10 +456,55 @@ export class Neu3D {
   /** Initialize WebGL Renderer */
   initRenderer() {
     let renderer = new THREE.WebGLRenderer({ 'logarithmicDepthBuffer': true });
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(window.devicePixelRatio * this.settings.render_resolution);
     renderer.setSize(this.container.clientWidth, this.container.clientHeight);
     this.container.appendChild(renderer.domElement);
     return renderer;
+  }
+
+  updateResolution() {
+    
+    if (this.stats.getFPS() < 30 && this.settings.render_resolution > 0.25) {
+      this.settings.render_resolution = this.settings.render_resolution - 0.005;
+      if (this.settings.render_resolution < 0.25)
+        this.settings.render_resolution = 0.25;
+      if (this.settings.backrenderSSAO.enabled == true)
+      this.highSettingsFPS = 1.0 + (1-1/this.stats.getFPS())*this.highSettingsFPS;
+    }
+    else if (this.stats.getFPS() > 58 && this.settings.render_resolution < 2.0) {
+      this.settings.render_resolution = this.settings.render_resolution + 0.005;
+      if (this.settings.render_resolution > 2.0)
+        this.settings.render_resolution = 2.0;
+    }
+    else if (this.stats.getFPS() > 30 && this.settings.render_resolution < 1.0) {
+     this.settings.render_resolution = this.settings.render_resolution + 0.005;
+     if (this.settings.render_resolution > 1.0)
+       this.settings.render_resolution = 1.0;
+   }
+   else if (this.stats.getFPS() > 30 && this.settings.render_resolution > 1.0) {
+     this.settings.render_resolution = this.settings.render_resolution - 0.005;
+   }
+    if (this.stats.getFPS() > 58 && this.settings.render_resolution >= 1.95 && this.settings.backrenderSSAO.enabled == false && this.highSettingsFPS > 45)
+     this.settings.backrenderSSAO.enabled = true;
+    else if (this.settings.render_resolution < 1.00)
+     this.settings.backrenderSSAO.enabled = false;
+
+
+    if(this.settings.render_resolution != this.resINeed){
+      //console.log("UPDATING");
+      this.renderer.setPixelRatio(window.devicePixelRatio * this.settings.render_resolution);
+      this.resINeed = this.settings.render_resolution;
+    }
+  }
+
+  updateShaders(){
+    if(this.stats.getFPS() < 30 && this.settings.render_resolution > 0.25){
+      this.settings.effectFXAA.enabled = false;
+      this.settings.backrenderSSAO.enabled = false;
+    }else if (this.stats.getFPS() > 50 && this.settings.render_resolution >= 1.95 && this.settings.backrenderSSAO.enabled == false && this.highSettingsFPS > 45){
+      this.settings.backrenderSSAO.enabled = true;
+      this.settings.effectFXAA.enabled = true;
+    }
   }
 
   /** Initialize Mouse Control */
@@ -882,6 +910,20 @@ export class Neu3D {
     this.controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
     if (this.states.mouseOver && this.dispatch.syncControls){
       this.dispatch.syncControls(this);
+      if(options['adaptive']){
+        this.updateResolution();
+        this.updateShaders();
+        /*
+        if(this.frameCounter < 3){
+          this.frameCounter++;
+        }else{
+          this.updateResolution();
+          this.updateShaders();
+          this.frameCounter = 0;
+        }
+        */
+
+      }
     }
     this.render();
     if (this.stats){
@@ -890,367 +932,6 @@ export class Neu3D {
     requestAnimationFrame(this.animate.bind(this));
   }
 
-  /** TODO: Add comment
-   * @param {*} key 
-   * @param {*} unit 
-   * @param {*} visibility 
-   */
-  loadMeshCallBack(key, unit, visibility) {
-    return (jsonString) => {
-      let json = JSON.parse(jsonString);
-      let color = unit['color'];
-      let geometry = new THREE.Geometry();
-      let vtx = json['vertices'];
-      let idx = json['faces'];
-      for (let j = 0; j < vtx.length / 3; j++) {
-        let x = parseFloat(vtx[3 * j + 0]);
-        let y = parseFloat(vtx[3 * j + 1]);
-        let z = parseFloat(vtx[3 * j + 2]);
-        geometry.vertices.push(new THREE.Vector3(x, y, z));
-        this.updateObjectBoundingBox(unit, x, y, z);
-        this.updateBoundingBox(x, y, z);
-      }
-      for (let j = 0; j < idx.length / 3; j++) {
-        geometry.faces.push(new THREE.Face3(parseInt(idx[3 * j + 0]), parseInt(idx[3 * j + 1]), parseInt(idx[3 * j + 2])));
-      }
-      geometry.mergeVertices();
-      geometry.computeFaceNormals();
-      geometry.computeVertexNormals();
-      let materials = [
-        //new THREE.MeshPhongMaterial( { color: color, flatShading: true, shininess: 0, transparent: true } ),
-        new THREE.MeshLambertMaterial({ color: color, transparent: true, side: 2, flatShading: true }),
-        new THREE.MeshBasicMaterial({ color: color, wireframe: true, transparent: true })
-      ];
-      let object = createMultiMaterialObject(geometry, materials);
-      if (!this.settings.meshWireframe){
-        object.children[1].visible = false;
-      }
-      object.visible = visibility;
-      this._registerObject(key, unit, object);
-    };
-  }
-
-  /** TODO: Add comment
-   * @param {*} key 
-   * @param {*} unit 
-   * @param {*} visibility 
-   */
-  loadSWCCallBack(key, unit, visibility) {
-    return (swcString) => {
-      /** process string */
-      swcString = swcString.replace(/\r\n/g, "\n");
-      let swcLine = swcString.split("\n");
-      let len = swcLine.length;
-      let swcObj = {};
-
-      swcLine.forEach((e)=> {
-        let seg = e.split(' ');
-        if (seg.length == 7) {
-          swcObj[parseInt(seg[0])] = {
-            'type': parseInt(seg[1]),
-            'x': parseFloat(seg[2]),
-            'y': parseFloat(seg[3]),
-            'z': parseFloat(seg[4]),
-            'radius': parseFloat(seg[5]),
-            'parent': parseInt(seg[6]),
-          };
-        }
-      });
-
-      let color = unit['color']
-      let object = new THREE.Object3D();
-      let pointGeometry = undefined;
-      let mergedGeometry = undefined;
-      let geometry = undefined;
-      let sphereGeometry = undefined;
-
-      for (let idx in swcObj) {
-        let c = swcObj[idx];
-        if (idx == Math.round(len / 2) && unit.position == undefined)
-          unit.position = new THREE.Vector3(c.x, c.y, c.z);
-        this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
-        this.updateBoundingBox(c.x, c.y, c.z);
-        if (c.parent != -1) {
-          let p = swcObj[c.parent];
-          if (this.settings.neuron3d) {
-            if (mergedGeometry == undefined){
-              mergedGeometry = new THREE.Geometry();
-            }
-            let d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
-            if (!p.radius || !c.radius){
-              geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
-            }else{
-              geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
-            }
-            geometry.translate(0, 0.5 * d.length(), 0);
-            geometry.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
-            geometry.lookAt(d.clone());
-            geometry.translate((c.x + c.x) / 2, -0.0 * d.length() + (c.y + c.y) / 2, (c.z + c.z) / 2);
-            mergedGeometry.merge(geometry);
-            geometry = null;
-
-            if (this.settings.neuron3dMode == 2) {
-              geometry = new THREE.SphereGeometry(c.radius, 8, 8);
-              geometry.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
-              geometry.lookAt(d);
-              geometry.translate((c.x + c.x) / 2, (c.y + c.y) / 2, (c.z + c.z) / 2);
-              mergedGeometry.merge(geometry);
-              geometry = null;
-            }else if (this.settings.neuron3dMode == 3) {
-              if (p.parent != -1) {
-                let p2 = swcObj[p.parent];
-                let a = new THREE.Vector3(0.9 * p.x + 0.1 * p2.x, 0.9 * p.y + 0.1 * p2.y, 0.9 * p.z + 0.1 * p2.z);
-                let b = new THREE.Vector3(0.9 * p.x + 0.1 * c.x, 0.9 * p.y + 0.1 * c.y, 0.9 * p.z + 0.1 * c.z);
-                let curve = new THREE.QuadraticBezierCurve3(a, new THREE.Vector3(p.x, p.y, p.z), b);
-                geometry = new THREE.TubeGeometry(curve, 8, p.radius, 4, false);
-                mergedGeometry.merge(geometry);
-                geometry = null;
-              }
-            }
-          }else {
-            if (geometry == undefined)
-              geometry = new THREE.Geometry();
-            geometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
-            geometry.vertices.push(new THREE.Vector3(p.x, p.y, p.z));
-            geometry.colors.push(color);
-            geometry.colors.push(color);
-          }
-        }
-        if (c.type == 1) {
-          if (c.radius){
-            sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
-          }else{
-            sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8);
-          }
-          sphereGeometry.translate(c.x, c.y, c.z);
-          let sphereMaterial = new THREE.MeshLambertMaterial({ color: color, transparent: true });
-          object.add(new THREE.Mesh(sphereGeometry, sphereMaterial));
-          unit['position'] = new THREE.Vector3(c.x, c.y, c.z);
-        }
-        if (c.type == -1) {
-          if (this.settings.synapseMode == true) {
-            if (mergedGeometry == undefined){
-              mergedGeometry = new THREE.Geometry();
-            }
-            if (c.radius){
-              sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
-            }else{
-              sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8);
-            }
-            sphereGeometry.translate(c.x, c.y, c.z);
-            //let sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
-            //object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
-            mergedGeometry.merge(sphereGeometry);
-            unit['position'] = new THREE.Vector3(c.x, c.y, c.z);
-          } else {
-            if (pointGeometry == undefined)
-              pointGeometry = new THREE.Geometry();
-            pointGeometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
-          }
-        }
-      }
-      if (pointGeometry) {
-        let pointMaterial = new THREE.PointsMaterial({ color: color, size: this.settings.defaultSynapseRadius, lights: true });
-        let points = new THREE.Points(pointGeometry, pointMaterial);
-        object.add(points);
-      }
-      if (mergedGeometry) {
-        let material = new THREE.MeshLambertMaterial({ color: color, transparent: true });
-        //let modifier = new THREE.SimplifyModifier();
-        //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
-        let mesh = new THREE.Mesh(mergedGeometry, material);
-        //let mesh = new THREE.Mesh(simplified, material);
-        object.add(mesh);
-      }
-      if (geometry) {
-        let material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
-        object.add(new THREE.LineSegments(geometry, material));
-      }
-      object.visible = visibility;
-      this._registerObject(key, unit, object);
-    };
-  }
-
-  /** TODO: Add comment
-   * 
-   * @param {*} key 
-   * @param {*} unit 
-   * @param {*} visibility 
-   */
-  loadMorphJSONCallBack(key, unit, visibility) {
-    return () => {
-      /*
-      * process string
-      */
-      let swcObj = {};
-      let len = unit['sample'].length;
-      for (let j = 0; j < len; j++) {
-        swcObj[parseInt(unit['sample'][j])] = {
-          'type': parseInt(unit['identifier'][j]),
-          'x': parseFloat(unit['x'][j]),
-          'y': parseFloat(unit['y'][j]),
-          'z': parseFloat(unit['z'][j]),
-          'radius': parseFloat(unit['r'][j]),
-          'parent': parseInt(unit['parent'][j]),
-        };
-      }
-      let color = unit['color'];
-      let object = new THREE.Object3D();
-      let pointGeometry = undefined;
-      let mergedGeometry = undefined;
-      let geometry = undefined;
-      let sphereGeometry = undefined;
-      for (let idx in swcObj) {
-        let c = swcObj[idx];
-        if (idx == Math.round(len / 2) && unit.position == undefined){
-          unit.position = new THREE.Vector3(c.x, c.y, c.z);
-        }
-        this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
-        this.updateBoundingBox(c.x, c.y, c.z);
-        if (c.parent != -1) {
-          let p = swcObj[c.parent];
-          if (this.settings.neuron3d) {
-            if (mergedGeometry == undefined){
-              mergedGeometry = new THREE.Geometry();
-            }
-            let d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
-            if (!p.radius || !c.radius){
-              geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
-            } else {
-              geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
-            }
-            geometry.translate(0, 0.5 * d.length(), 0);
-            geometry.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
-            geometry.lookAt(d.clone());
-            geometry.translate((c.x + c.x) / 2, -0.0 * d.length() + (c.y + c.y) / 2, (c.z + c.z) / 2);
-            mergedGeometry.merge(geometry);
-            geometry = null;
-            if (this.settings.neuron3dMode == 2) {
-              geometry = new THREE.SphereGeometry(c.radius, 8, 8);
-              geometry.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
-              geometry.lookAt(d);
-              geometry.translate((c.x + c.x) / 2, (c.y + c.y) / 2, (c.z + c.z) / 2);
-              mergedGeometry.merge(geometry);
-              geometry = null;
-            } else if (this.settings.neuron3dMode == 3) {
-              if (p.parent != -1) {
-                p2 = swcObj[p.parent];
-                let a = new THREE.Vector3(0.9 * p.x + 0.1 * p2.x, 0.9 * p.y + 0.1 * p2.y, 0.9 * p.z + 0.1 * p2.z);
-                let b = new THREE.Vector3(0.9 * p.x + 0.1 * c.x, 0.9 * p.y + 0.1 * c.y, 0.9 * p.z + 0.1 * c.z);
-                let curve = new THREE.QuadraticBezierCurve3(a, new THREE.Vector3(p.x, p.y, p.z), b);
-                geometry = new THREE.TubeGeometry(curve, 8, p.radius, 4, false);
-                mergedGeometry.merge(geometry);
-                geometry = null;
-              }
-            }
-          } else {
-            if (geometry == undefined){
-              geometry = new THREE.Geometry();
-            }
-            geometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
-            geometry.vertices.push(new THREE.Vector3(p.x, p.y, p.z));
-            geometry.colors.push(color);
-            geometry.colors.push(color);
-          }
-        }
-        if (c.type == 1) {
-          if (c.radius){
-            sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
-          }else{
-            sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8);
-          }
-          sphereGeometry.translate(c.x, c.y, c.z);
-          let sphereMaterial = new THREE.MeshLambertMaterial({ color: color, transparent: true });
-          object.add(new THREE.Mesh(sphereGeometry, sphereMaterial));
-          unit['position'] = new THREE.Vector3(c.x, c.y, c.z);
-        }
-        if (c.type == -1) {
-          if (this.settings.synapseMode == true) {
-            if (mergedGeometry == undefined){
-              mergedGeometry = new THREE.Geometry();
-            }
-            if (c.radius){
-              sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
-            }else {
-              sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8);
-            }
-            sphereGeometry.translate(c.x, c.y, c.z);
-            //let sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
-            //object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
-            mergedGeometry.merge(sphereGeometry);
-            unit['position'] = new THREE.Vector3(c.x, c.y, c.z);
-          } else {
-            if (pointGeometry == undefined){
-              pointGeometry = new THREE.Geometry();
-            }
-            pointGeometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
-          }
-        }
-      }
-      if (pointGeometry) {
-        let pointMaterial = new THREE.PointsMaterial({ color: color, size: this.settings.defaultSynapseRadius, lights: true });
-        let points = new THREE.Points(pointGeometry, pointMaterial);
-        object.add(points);
-      }
-      if (mergedGeometry) {
-        let material = new THREE.MeshLambertMaterial({ color: color, transparent: true });
-        //let modifier = new THREE.SimplifyModifier();
-        //simplified = modifier.modify( mergedGeometry, geometry.vertices.length * 0.25 | 0 )
-        let mesh = new THREE.Mesh(mergedGeometry, material);
-        //let mesh = new THREE.Mesh(simplified, material);
-        object.add(mesh);
-      }
-      if (geometry) {
-        let material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors, transparent: true, color: color });
-        object.add(new THREE.LineSegments(geometry, material));
-      }
-      object.visible = visibility;
-      this._registerObject(key, unit, object);
-      /* delete morpology data */
-      delete unit['identifier'];
-      delete unit['x'];
-      delete unit['y'];
-      delete unit['z'];
-      delete unit['r'];
-      delete unit['parent'];
-      delete unit['sample'];
-      delete unit['type'];
-    };
-  }
-
-
-  /**
-   * Register Object to `meshDict`
-   * @param {*} key 
-   * @param {*} unit 
-   * @param {*} object 
-   */
-  _registerObject(key, unit, object) {
-    object.rid = key; // needed rid for raycaster reference
-    unit['rid'] = key;
-    unit['object'] = object;
-    unit['pinned'] = false;
-    // unit['opacity'] = -1.;
-    if (!unit.hasOwnProperty('position')) {
-      unit['position'] = new THREE.Vector3(0.5 * (unit.boundingBox.minX + unit.boundingBox.maxX), 0.5 * (unit.boundingBox.minY + unit.boundingBox.maxY), 0.5 * (unit.boundingBox.minZ + unit.boundingBox.maxZ));
-    }
-    // TODO: move the code below to a function
-    if (!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')) {
-      if (this.settings.defaultOpacity !== 1){
-        for (let i = 0; i < unit['object'].children.length; i++){
-          unit['object'].children[i].material.opacity = this.settings.defaultOpacity;
-        }
-      }
-    }
-    else {
-      if (this.settings.synapseOpacity !== 1){
-        for (let i = 0; i < unit['object'].children.length; i++){
-          unit['object'].children[i].material.opacity = this.settings.synapseOpacity;
-        }
-      }
-    }
-    this.meshDict[key] = unit;
-  }
 
 
   /**
@@ -1397,6 +1078,7 @@ export class Neu3D {
     }
   }
 
+
   /**
    * Render 
    */
@@ -1457,6 +1139,7 @@ export class Neu3D {
     let val = undefined;
     let object = undefined;
     this.raycaster.setFromCamera(this.uiVars.cursorPosition, this.camera);
+    var b = false;
     for (const group of groups) {
       let intersects = this.raycaster.intersectObjects(group.children, true);
       if (intersects.length > 0) {
@@ -1540,115 +1223,6 @@ export class Neu3D {
     delete set.toneMappingPass;
     delete set.bloomPass;
     return set;
-  }
-  
-  /** Import settings */
-  import_settings(settings) {
-    settings = Object.assign({}, settings);
-    if ('lightsHelper' in settings) {
-      this.lightsHelper.import(settings.lightsHelper);
-      delete settings.lightsHelper;
-    }
-
-    if ('postProcessing' in settings) {
-      postProcessing = settings.postProcessing;
-      delete settings.postProcessing;
-      if (postProcessing.fxaa != undefined){
-        this.settings.effectFXAA.enabled = postProcessing.fxaa;
-      }
-      if (postProcessing.ssao != undefined){
-        this.settings.backrenderSSAO.enabled = postProcessing.ssao;
-      }
-      if (postProcessing.toneMappingMinLum != undefined){
-        this.settings.toneMappingPass.brightness = 1 - postProcessing.toneMappingMinLum;
-      }
-      if (postProcessing.bloomRadius != undefined){
-        this.settings.bloomPass.radius = postProcessing.bloomRadius;
-      }
-      if (postProcessing.bloomStrength != undefined){
-        this.settings.bloomPass.strength = postProcessing.bloomStrength;
-      }
-      if (postProcessing.bloomThreshold != undefined){
-        this.settings.bloomPass.threshold = postProcessing.bloomThreshold;
-      }
-    }
-
-    if ('backgroundColor' in settings) {
-      bg = settings.backgroundColor;
-      setTimeout( ()=> {
-        this.setBackgroundColor(bg);
-      }, 4000);
-      delete settings.backgroundColor;
-    }
-    Object.assign(this.settings, settings);
-  }
-
-  /** 
-   * Export state of the workspace 
-   * 
-   * Note: useful for tagging
-   */
-  export_state() {
-    let state_metadata = { 'color': {}, 'pinned': {}, 'visibility': {}, 'camera': { 'position': {}, 'up': {} }, 'target': {} };
-    state_metadata['camera']['position']['x'] = this.camera.position.x;
-    state_metadata['camera']['position']['y'] = this.camera.position.y;
-    state_metadata['camera']['position']['z'] = this.camera.position.z;
-    state_metadata['camera']['up']['x'] = this.camera.up.x;
-    state_metadata['camera']['up']['y'] = this.camera.up.y;
-    state_metadata['camera']['up']['z'] = this.camera.up.z;
-    state_metadata['target']['x'] = this.controls.target.x;
-    state_metadata['target']['y'] = this.controls.target.y;
-    state_metadata['target']['z'] = this.controls.target.z;
-    state_metadata['pinned'] = Array.from(this.uiVars.pinnedObjects);
-    for (let key in this.meshDict) {
-      if (this.meshDict.hasOwnProperty(key)) {
-        state_metadata['color'][key] = this.meshDict[key].object.children[0].material.color.toArray();
-        state_metadata['visibility'][key] = this.meshDict[key].visibility;
-      }
-    }
-    return state_metadata;
-  }
-
-  /**
-   * Import State
-   * 
-   * Note: useful for tagging
-   * @param {object} state_metadata 
-   */
-  import_state(state_metadata) {
-    this.camera.position.x = state_metadata['camera']['position']['x'];
-    this.camera.position.y = state_metadata['camera']['position']['y'];
-    this.camera.position.z = state_metadata['camera']['position']['z'];
-    this.camera.up.x = state_metadata['camera']['up']['x'];
-    this.camera.up.y = state_metadata['camera']['up']['y'];
-    this.camera.up.z = state_metadata['camera']['up']['z'];
-    this.controls.target.x = state_metadata['target']['x'];
-    this.controls.target.y = state_metadata['target']['y'];
-    this.controls.target.z = state_metadata['target']['z'];
-    this.camera.lookAt(this.controls.target);
-    for (let i = 0; i < state_metadata['pinned'].length; ++i) {
-      let key = state_metadata['pinned'][i];
-      if (this.meshDict.hasOwnProperty(key))
-        this.meshDict[key]['pinned'] = true;
-    }
-    for (let key of Object.keys(state_metadata['visibility'])) {
-      if (!this.meshDict.hasOwnProperty(key)){
-        continue;
-      }
-      this.meshDict[key].visibility = state_metadata['visibility'][key];
-      if (this.meshDict[key].background){
-        continue;
-      } 
-      let meshobj = this.meshDict[key].object;
-      let color = state_metadata['color'][key];
-      for (let j = 0; j < meshobj.children.length; ++j) {
-        meshobj.children[j].material.color.fromArray(color);
-        for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
-          meshobj.children[j].geometry.colors[k].fromArray(color);
-        }
-        meshobj.children[j].geometry.colorsNeedUpdate = true;
-      }
-    }
   }
 
   /**
@@ -2110,29 +1684,6 @@ export class Neu3D {
   }
 
   /**
-   * Create a UI Button in dat.GUI
-   * @param {String} name 
-   * @param {String} icon 
-   * @param {String} tooltip 
-   * @param {()=>{}} func 
-   */
-  createUIBtn(name, icon, tooltip, func) {
-    let UIFolder;
-    try {
-      UIFolder = this.controlPanel.addFolder('UI Controls');
-    }catch(e){
-      UIFolder = this.controlPanel.__folders["UI Controls"];
-    }
-    // constructor for new UI button
-    let newButton = function () {
-      this[name] = func;
-    };
-
-    let btn = new newButton();
-    UIFolder.add(btn,name).title(tooltip);
-  }
-
-  /**
    * Create Tooltip
    */
   createToolTip() {
@@ -2221,239 +1772,3 @@ window.onload = () => {
     };
   }());
 }
-
-const datGuiPresets ={
-  "preset": "Default",
-  "closed": false,
-  "remembered": {
-    "Low": {
-      "0": {
-        "neuron3d": false,
-        "neuron3dMode": "1",
-        "synapseMode": true,
-        "meshWireframe": true,
-        "backgroundColor": "#260226",
-        "defaultOpacity": 0.7,
-        "synapseOpacity": 1,
-        "nonHighlightableOpacity": 0.1,
-        "lowOpacity": 0.1,
-        "pinOpacity": 0.9,
-        "pinLowOpacity": 0.15,
-        "highlightedObjectOpacity": 1,
-        "backgroundOpacity": 1,
-        "backgroundWireframeOpacity": 0.07,
-        "defaultRadius": 0.5,
-        "defaultSomaRadius": 3,
-        "defaultSynapseRadius": 0.2
-      },
-      "1": {
-        "brightness": 0.95
-      },
-      "2": {
-        "radius": 0.2,
-        "strength": 0.2,
-        "threshold": 0.3
-      },
-      "3": {
-        "enabled": true
-      },
-      "4": {
-        "enabled": false
-      }
-    },
-    "High": {
-      "0": {
-        "neuron3d": true,
-        "neuron3dMode": "3",
-        "synapseMode": true,
-        "meshWireframe": true,
-        "backgroundColor": "#260226",
-        "defaultOpacity": 0.7,
-        "synapseOpacity": 1,
-        "nonHighlightableOpacity": 0.1,
-        "lowOpacity": 0.1,
-        "pinOpacity": 0.9,
-        "pinLowOpacity": 0.15,
-        "highlightedObjectOpacity": 1,
-        "backgroundOpacity": 1,
-        "backgroundWireframeOpacity": 0.07,
-        "defaultRadius": 0.5,
-        "defaultSomaRadius": 3,
-        "defaultSynapseRadius": 0.2
-      },
-      "1": {
-        "brightness": 0.95
-      },
-      "2": {
-        "radius": 0.2,
-        "strength": 0.2,
-        "threshold": 0.3
-      },
-      "3": {
-        "enabled": true
-      },
-      "4": {
-        "enabled": true
-      }
-    },
-    "Default": {
-      "0": {
-        "neuron3d": true,
-        "neuron3dMode": "2",
-        "synapseMode": true,
-        "meshWireframe": true,
-        "backgroundColor": "#260226",
-        "defaultOpacity": 0.7,
-        "synapseOpacity": 1,
-        "nonHighlightableOpacity": 0.1,
-        "lowOpacity": 0.1,
-        "pinOpacity": 0.9,
-        "pinLowOpacity": 0.15,
-        "highlightedObjectOpacity": 1,
-        "backgroundOpacity": 1,
-        "backgroundWireframeOpacity": 0.07,
-        "defaultRadius": 0.5,
-        "defaultSomaRadius": 3,
-        "defaultSynapseRadius": 0.2
-      },
-      "1": {
-        "brightness": 0.95
-      },
-      "2": {
-        "radius": 0.2,
-        "strength": 0.2,
-        "threshold": 0.3
-      },
-      "3": {
-        "enabled": true
-      },
-      "4": {
-        "enabled": true
-      }
-    }
-  },
-  "folders": {
-    "Settings": {
-      "preset": "Default",
-      "closed": true,
-      "folders": {
-        "Display Mode": {
-          "preset": "Default",
-          "closed": true,
-          "folders": {}
-        },
-        "Visualization": {
-          "preset": "Default",
-          "closed": true,
-          "folders": {
-            "Opacity": {
-              "preset": "Default",
-              "closed": true,
-              "folders": {}
-            },
-            "Advanced": {
-              "preset": "Default",
-              "closed": true,
-              "folders": {}
-            }
-          }
-        },
-        "Size": {
-          "preset": "Default",
-          "closed": true,
-          "folders": {}
-        }
-      }
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-THREE.Lut.prototype.addColorMap( 'rainbow_gist', [
-  [ 0.000000, '0xff0028' ], [ 0.031250, '0xff0100' ], [ 0.062500, '0xff2c00' ],
-  [ 0.093750, '0xff5700' ], [ 0.125000, '0xff8200' ], [ 0.156250, '0xffae00' ],
-  [ 0.187500, '0xffd900' ], [ 0.218750, '0xf9ff00' ], [ 0.250000, '0xceff00' ],
-  [ 0.281250, '0xa3ff00' ], [ 0.312500, '0x78ff00' ], [ 0.343750, '0x4dff00' ],
-  [ 0.375000, '0x22ff00' ], [ 0.406250, '0x00ff08' ], [ 0.437500, '0x00ff33' ],
-  [ 0.468750, '0x00ff5e' ], [ 0.500000, '0x00ff89' ], [ 0.531250, '0x00ffb3' ],
-  [ 0.562500, '0x00ffde' ], [ 0.593750, '0x00f4ff' ], [ 0.625000, '0x00c8ff' ],
-  [ 0.656250, '0x009dff' ], [ 0.687500, '0x0072ff' ], [ 0.718750, '0x0047ff' ],
-  [ 0.750000, '0x001bff' ], [ 0.781250, '0x0f00ff' ], [ 0.812500, '0x3a00ff' ],
-  [ 0.843750, '0x6600ff' ], [ 0.875000, '0x9100ff' ], [ 0.906250, '0xbc00ff' ],
-  [ 0.937500, '0xe800ff' ], [ 0.968750, '0xff00ea' ], [ 1.000000, '0xff00bf' ],
-]);
-
-
-THREE.Lut.prototype.addColorMap( 'no_purple', [
-  [0.000000, '0xFF4000'],
-  [0.017544, '0xFF4D00'],
-  [0.035088, '0xFF5900'],
-  [0.052632, '0xFF6600'],
-  [0.070175, '0xFF7300'],
-  [0.087719, '0xFF8000'],
-  [0.105263, '0xFF8C00'],
-  [0.122807, '0xFF9900'],
-  [0.140351, '0xFFA600'],
-  [0.157895, '0xFFB300'],
-  [0.175439, '0xFFBF00'],
-  [0.192982, '0xFFCC00'],
-  [0.210526, '0xFFD900'],
-  [0.228070, '0xFFE500'],
-  [0.245614, '0xFFF200'],
-  [0.263158, '0xFFFF00'],
-  [0.280702, '0xF2FF00'],
-  [0.298246, '0xE6FF00'],
-  [0.315789, '0xD9FF00'],
-  [0.333333, '0xCCFF00'],
-  [0.350877, '0xBFFF00'],
-  [0.368421, '0xB3FF00'],
-  [0.385965, '0xAAFF00'],
-  [0.403509, '0x8CFF00'],
-  [0.421053, '0x6EFF00'],
-  [0.438596, '0x51FF00'],
-  [0.456140, '0x33FF00'],
-  [0.473684, '0x15FF00'],
-  [0.491228, '0x00FF08'],
-  [0.508772, '0x00FF26'],
-  [0.526316, '0x00FF44'],
-  [0.543860, '0x00FF55'],
-  [0.561404, '0x00FF62'],
-  [0.578947, '0x00FF6F'],
-  [0.596491, '0x00FF7B'],
-  [0.614035, '0x00FF88'],
-  [0.631579, '0x00FF95'],
-  [0.649123, '0x00FFA2'],
-  [0.666667, '0x00FFAE'],
-  [0.684211, '0x00FFBB'],
-  [0.701754, '0x00FFC8'],
-  [0.719298, '0x00FFD4'],
-  [0.736842, '0x00FFE1'],
-  [0.754386, '0x00FFEE'],
-  [0.771930, '0x00FFFB'],
-  [0.789474, '0x00F7FF'],
-  [0.807018, '0x00EAFF'],
-  [0.824561, '0x00DDFF'],
-  [0.842105, '0x00D0FF'],
-  [0.859649, '0x00C3FF'],
-  [0.877193, '0x00B7FF'],
-  [0.894737, '0x00AAFF'],
-  [0.912281, '0x009DFF'],
-  [0.929825, '0x0091FF'],
-  [0.947368, '0x0084FF'],
-  [0.964912, '0x0077FF'],
-  [0.982456, '0x006AFF'],
-  [1.000000, '0x005EFF'],
-]);
