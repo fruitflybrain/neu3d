@@ -273,14 +273,14 @@ export class Neu3D {
       this.onWindowResize();
     })
     window.onresize = this.onWindowResize.bind(this);
-    $.each( $( ".tooltip" ), function() {
+    var _tooltips = document.getElementsByClassName("tooltip")
+    for (var l of _tooltips){
       let element = document.createElement('SPAN');
       element.classList.add('tooltiptext');
-      element.innerHTML = this.getAttribute('title');
-      this.appendChild(element);
-      this.removeAttribute('title');
-    });
-
+      element.innerHTML = l.getAttribute('title');
+      l.appendChild(element);
+      l.removeAttribute('title');
+    }
   } // ENDOF Constructor
 
   /**
