@@ -10,6 +10,7 @@ declare class Neu3D {
     settings: any; // should be PropertyManager;
     _take_screenshot: boolean;
     backrenderSSAO: any; // should be THREE.SSAOPass;
+    controlPanel: dat.GUI;
 
     on(key: string, func: Function): void;
     addJson(json: object): Promise<void>;
@@ -36,6 +37,9 @@ declare class Neu3D {
     unpin(id: string): void;
     unpinAll(): void;
 
+    removeUnpinned(): void;
+    remove(id: string): void;
+    
     getPinned(): Array<any>;
 
     select(id: string): void;
