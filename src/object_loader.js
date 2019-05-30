@@ -140,6 +140,8 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
       this.updateBoundingBox(c.x, c.y, c.z);
       if (c.parent != -1) {
         let p = swcObj[c.parent];
+        if (p != undefined)
+        {
         if (this.settings.neuron3d) {
           if (mergedGeometry == undefined){
             mergedGeometry = new THREE.Geometry();
@@ -178,11 +180,15 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
         }else {
           if (geometry == undefined)
           geometry = new THREE.Geometry();
-          geometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
-          geometry.vertices.push(new THREE.Vector3(p.x, p.y, p.z));
-          geometry.colors.push(color);
-          geometry.colors.push(color);
+          if (p != undefined)
+          {
+            geometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
+            geometry.vertices.push(new THREE.Vector3(p.x, p.y, p.z));
+            geometry.colors.push(color);
+            geometry.colors.push(color);
         }
+        }
+      }
       }
       if (c.type == 1) {
         if (c.radius){
@@ -315,10 +321,13 @@ Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
           if (geometry == undefined){
             geometry = new THREE.Geometry();
           }
-          geometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
-          geometry.vertices.push(new THREE.Vector3(p.x, p.y, p.z));
-          geometry.colors.push(color);
-          geometry.colors.push(color);
+          if (p != undefined)
+          {
+            geometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
+            geometry.vertices.push(new THREE.Vector3(p.x, p.y, p.z));
+            geometry.colors.push(color);
+            geometry.colors.push(color);
+        }
         }
       }
       if (c.type == 1) {
