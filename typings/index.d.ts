@@ -10,7 +10,7 @@ declare class Neu3D {
     settings: any; // should be PropertyManager;
     _take_screenshot: boolean;
     backrenderSSAO: any; // should be THREE.SSAOPass;
-    controlPanel: dat.GUI;
+    controlPanel: any; // should be dat.GUI;
 
     on(key: string, func: Function): void;
     addJson(json: object): Promise<void>;
