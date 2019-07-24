@@ -435,7 +435,7 @@ export class Neu3D {
     this.fov = 20;
     this.prevhfov = 2 * Math.atan(Math.tan(Math.PI * this.fov / 2 / 180) * width / height);
 
-    let camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 1000000 );
+    let camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 10000000 );
     camera.position.z = 1800;
 
     if (width < 768 && width / height < 1)
@@ -529,7 +529,9 @@ export class Neu3D {
 
     this.backrenderScene = new THREE.RenderPass(this.scenes.back, this.camera);
     this.backrenderSSAO = new THREE.SSAOPass(this.scenes.back, this.camera, width, height);
-
+    this.volumeScene = new THREE.Scene();
+    this.volumeScene.background = null;
+    this.volumeRenderPass = new THREE.RenderPass(this.volumeScene, this.camera);
     this.effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
     this.effectFXAA.uniforms['resolution'].value.set(1 / Math.max(width, 1440), 1 / Math.max(height, 900));
 
@@ -556,6 +558,7 @@ export class Neu3D {
     this.composer.addPass(this.toneMappingPass);
 
     this.composer.addPass(this.bloomPass);
+    this.composer.addPass(this.volumeRenderPass);
     this.composer.setSize(width * window.devicePixelRatio,
                           height * window.devicePixelRatio);
   }
@@ -754,6 +757,7 @@ export class Neu3D {
         "colormap": this._metadata.colormap,
         "colororder": "random",
         "showAfterLoadAll": false,
+        "radius_scale": 1.,
       };
       for (let key in metadata){
         if ((key in json) && (json[key] !== undefined)){
@@ -803,6 +807,16 @@ export class Neu3D {
         setAttrIfNotDefined(unit, 'background', false);
         setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
         setAttrIfNotDefined(unit, 'label', getAttr(unit, 'uname', key));
+        setAttrIfNotDefined(unit, 'radius_scale', 1.);
+        setAttrIfNotDefined(unit, 'x_shift', 0.);
+        setAttrIfNotDefined(unit, 'y_shift', 0.);
+        setAttrIfNotDefined(unit, 'z_shift', 0.);
+        setAttrIfNotDefined(unit, 'x_scale', 1.);
+        setAttrIfNotDefined(unit, 'y_scale', 1.);
+        setAttrIfNotDefined(unit, 'z_scale', 1.);
+        setAttrIfNotDefined(unit, 'xy_rot', 0.);
+        setAttrIfNotDefined(unit, 'yz_rot', 0.);
+
 
         if (Array.isArray(unit.color)){
           unit.color = new THREE.Color(...unit.color);

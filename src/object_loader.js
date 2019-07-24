@@ -110,22 +110,35 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
     let swcLine = swcString.split("\n");
     let len = swcLine.length;
     let swcObj = {};
-    
+    let radius_scale = unit['radius_scale'];
     swcLine.forEach((e)=> {
       let seg = e.split(' ');
       if (seg.length == 7) {
+        var x_put = parseFloat(seg[2])*unit['x_scale'];
+        var y_put = parseFloat(seg[3])*unit['y_scale'];
+        var z_put = parseFloat(seg[4])*unit['z_scale'];
+        var x_i = Math.cos(unit['xy_rot'])*x_put + Math.sin(unit['xy_rot'])*y_put;
+        var y_i = Math.sin(unit['xy_rot'])*x_put + Math.cos(unit['xy_rot'])*y_put;
+        var z_i = z_put;
+        var y_f = Math.cos(unit['yz_rot'])*y_i + Math.sin(unit['yz_rot'])*z_i;
+        var z_f = Math.sin(unit['yz_rot'])*y_i + Math.cos(unit['yz_rot'])*z_i;
+        var x_f = x_i;
+        x_f = x_f + unit['x_shift'];
+        y_f = y_f + unit['y_shift'];
+        z_f = z_f + unit['z_shift'];
+        
         swcObj[parseInt(seg[0])] = {
           'type': parseInt(seg[1]),
-          'x': parseFloat(seg[2]),
-          'y': parseFloat(seg[3]),
-          'z': parseFloat(seg[4]),
-          'radius': parseFloat(seg[5]),
+          'x': x_f,
+          'y': y_f,
+          'z': z_f,
+          'radius': parseFloat(seg[5]) * radius_scale,
           'parent': parseInt(seg[6]),
         };
       }
     });
     
-    let color = unit['color']
+    let color = unit['color'];
     let object = new THREE.Object3D();
     let pointGeometry = undefined;
     let mergedGeometry = undefined;
