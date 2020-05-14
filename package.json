@@ -23,20 +23,20 @@
     "@fortawesome/fontawesome": "^1.1.8",
     "@fortawesome/fontawesome-free-regular": "^5.0.13",
     "@fortawesome/fontawesome-free-solid": "^5.0.13",
-    "bootstrap": "^4.3.1",
-    "dat.gui": "^0.7.6",
+    "bootstrap": "^4.5.0",
+    "dat.gui": "^0.7.7",
     "exports-loader": "^0.7.0",
     "imports-loader": "^0.8.0",
-    "jquery": "^3.4.1",
+    "jquery": "^3.5.1",
     "lodash": "^4.17.15",
-    "popper.js": "^1.15.0",
+    "popper.js": "^1.16.1",
     "stats.js": "^0.17.0",
     "three": "^0.93.0"
   },
   "devDependencies": {
     "css-loader": "^2.1.1",
     "style-loader": "^0.21.0",
-    "webpack": "^4.29.6",
-    "webpack-cli": "^3.3.0"
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11"
   }
 }
