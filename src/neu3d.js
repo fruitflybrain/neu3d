@@ -130,6 +130,7 @@ export class Neu3D {
       this.stats = STATS.Stats();
       this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
       this.stats.dom.style.position = "relative";
+      this.stats.dom.className += ' vis-3d-stats'
       this.container.appendChild(this.stats.dom);
     }
     this.camera = this.initCamera();
@@ -144,7 +145,7 @@ export class Neu3D {
     this.lut = this.initLut();
     this.loadingManager = this.initLoadingManager();
     let controlPanelDiv = document.createElement('div');
-    controlPanelDiv.id = 'vis-3d-settings';
+    controlPanelDiv.className = 'vis-3d-settings';
 
     this.controlPanel = this.initControlPanel(options['datGUI']);
     controlPanelDiv.appendChild(this.controlPanel.domElement);
@@ -308,10 +309,11 @@ export class Neu3D {
    */
   initControlPanel(options={}){
     let GUIOptions =  {
-      autoPlace: (options.autoPlace) ? options.autoPlace : false, 
-      resizable: (options.resizable) ? options.resizable : true, 
-      scrollable: (options.scrollable) ? options.scrollable : true, 
-      closeOnTop: (options.closeOnTop) ? options.closeOnTop : true, 
+      autoPlace: (options.autoPlace !== undefined) ? options.autoPlace : false, 
+      resizable: (options.resizable !== undefined) ? options.resizable : true, 
+      scrollable: (options.scrollable !== undefined) ? options.scrollable : true, 
+      closeOnTop: (options.closeOnTop !== undefined) ? options.closeOnTop : true, 
+      createButtons: (options.createButtons !== undefined) ? options.createButtons : true, 
       load: datGuiPresets
     };
     for (let key in options){
@@ -319,29 +321,32 @@ export class Neu3D {
         GUIOptions[key] = options[key];
       }
     }
+
     let controlPanel = new dat.GUI(GUIOptions);
     controlPanel.__closeButton.style.visibility = 'hidden';
     let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Number of Neurons: ');
     neuronNum.domElement.style["pointerEvents"] = "None";
     neuronNum.domElement.parentNode.parentNode.classList.add('noneurons');
-    function _createBtn (name, icon, iconAttrs, tooltip, func) {
-      let newButton = function () {
-        this[name] = func;
-      };
-      let btn = new newButton();
-      let buttonid = controlPanel.add(btn, name).title(tooltip).icon(icon,"strip",iconAttrs);
-      return buttonid;
-    }
+    if (GUIOptions['createButtons']){
+      function _createBtn (name, icon, iconAttrs, tooltip, func) {
+        let newButton = function () {
+          this[name] = func;
+        };
+        let btn = new newButton();
+        let buttonid = controlPanel.add(btn, name).title(tooltip).icon(icon,"strip",iconAttrs);
+        return buttonid;
+      }
 
-    _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { document.getElementById('neu3d-file-upload').click(); });
-    _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { this.resetView() });
-    _createBtn("resetVisibleView", "fa fa-align-justify",{}, "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
-    _createBtn("hideAll", "fa fa-eye-slash",{}, "Hide All", () => { this.hideAll() });
-    _createBtn("showAll", "fa fa-eye",{}, "Show All", () => { this.showAll() });
-    _createBtn("takeScreenshot", "fa fa-camera",{}, "Download Screenshot", () => { this._take_screenshot = true;});
-    _createBtn("removeUnpin", "fa fa-trash", {}, "Remove Unpinned Neurons", ()=> {this.removeUnpinned();})
-    _createBtn("removeUnpin", "fa fa-map-upin", {}, "Unpin All", () => { this.unpinAll(); })
-    _createBtn("showSettings", "fa fa-cogs", {}, "Display Settings", () => { controlPanel.__closeButton.click(); })
+      _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { document.getElementById('neu3d-file-upload').click(); });
+      _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { this.resetView() });
+      _createBtn("resetVisibleView", "fa fa-align-justify",{}, "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
+      _createBtn("hideAll", "fa fa-eye-slash",{}, "Hide All", () => { this.hideAll() });
+      _createBtn("showAll", "fa fa-eye",{}, "Show All", () => { this.showAll() });
+      _createBtn("takeScreenshot", "fa fa-camera",{}, "Download Screenshot", () => { this._take_screenshot = true;});
+      _createBtn("removeUnpin", "fa fa-trash", {}, "Remove Unpinned Neurons", ()=> {this.removeUnpinned();})
+      _createBtn("removeUnpin", "fa fa-map-upin", {}, "Unpin All", () => { this.unpinAll(); })
+      _createBtn("showSettings", "fa fa-cogs", {}, "Display Settings", () => { controlPanel.__closeButton.click(); })
+    }
     // add settings
     let f_vis = controlPanel.addFolder('Settings');
     let f0 = f_vis.addFolder('Display Mode');

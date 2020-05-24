@@ -1,9 +1,9 @@
 // Type definitions for mesh3D
 // Project:mesh3D
 // Definitions by: Tingkai Liu
-export { Neu3D };
+export = Neu3D;
 declare class Neu3D {
-    constructor(container: HTMLDivElement, data?: object, metadata?: object, stats?: boolean);
+    constructor(container: HTMLDivElement, data?: object, metadata?: object, options?: INeu3DOptions);
     container: HTMLDivElement;
     meshDict: any; // should be PropertyManager;
     uiVars: any; // should be PropertyManager;
@@ -50,4 +50,16 @@ declare class Neu3D {
 
     hideAll(): void;
     showAll(): void;
+}
+
+interface INeu3DOptions {
+    stats: boolean,
+    datGUI: {
+        autoPlace?: boolean,
+        resizable?: boolean,
+        scrollable?: boolean,
+        closeOnTop?: boolean,
+        createButtons?: boolean,
+        load?: any // preset
+    }
 }

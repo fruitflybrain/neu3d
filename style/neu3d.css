@@ -12,14 +12,12 @@
   left: 0px;
 }
 
-#vis-3d-settings {
+.vis-3d-settings {
   position: absolute;
   resize: both;
   top: 0px;
   right: 20px;
 }
-
-
 
 .semi-square {
   -webkit-border-radius: 5px;
