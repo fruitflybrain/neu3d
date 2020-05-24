@@ -11,6 +11,7 @@ declare class Neu3D {
     _take_screenshot: boolean;
     backrenderSSAO: any; // should be THREE.SSAOPass;
     controlPanel: any; // should be dat.GUI;
+    _metadata: IMetadata;//
 
     on(key: string, func: Function): void;
     addJson(json: object): Promise<void>;
@@ -60,6 +61,23 @@ interface INeu3DOptions {
         scrollable?: boolean,
         closeOnTop?: boolean,
         createButtons?: boolean,
-        load?: any // preset
+        preset?: string, // identifier in `load` JSON
+        load?: JSON // json object associated with the presets
     }
+}
+
+interface IMetadata {
+    colormap: string
+    maxColorNum: Number,
+    allowPin: boolean,
+    allowHighlight: boolean,
+    enablePositionReset: boolean,
+    resetPosition: ICoords,
+    upSign: Number
+}
+
+interface ICoords {
+    x: Number,
+    y: Number,
+    z: Number
 }

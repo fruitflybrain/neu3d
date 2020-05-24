@@ -60,13 +60,13 @@ export class Neu3D {
     this.resINeed = 0;
     /* default metadata */
     this._metadata = {
-      "colormap": "rainbow_gist",
-      "maxColorNum": 1747591,
-      "allowPin": true,
-      "allowHighlight": true,
-      "enablePositionReset": false,
-      "resetPosition": { 'x': 0., 'y': 0., 'z': 0. },
-      "upSign": 1.,
+      colormap: "rainbow_gist",
+      maxColorNum: 1747591,
+      allowPin: true,
+      allowHighlight: true,
+      enablePositionReset: false,
+      resetPosition: { 'x': 0., 'y': 0., 'z': 0. },
+      upSign: 1.,
     };
     if (metadata !== undefined)
       for (let key in this._metadata){
@@ -86,6 +86,12 @@ export class Neu3D {
       defaultRadius: 0.5,
       defaultSomaRadius: 3.0,
       defaultSynapseRadius: 0.2,
+      minRadius: 0.1,
+      minSomaRadius: 1.0,
+      minSynapseRadius: 0.1,
+      maxRadius: 1.0,
+      maxSomaRadius: 10.0,
+      maxSynapseRadius: 1.,
       backgroundOpacity: 1.0,
       backgroundWireframeOpacity: 0.07,
       neuron3d: false,
@@ -314,6 +320,7 @@ export class Neu3D {
       scrollable: (options.scrollable !== undefined) ? options.scrollable : true, 
       closeOnTop: (options.closeOnTop !== undefined) ? options.closeOnTop : true, 
       createButtons: (options.createButtons !== undefined) ? options.createButtons : true, 
+      preset: (options.preset !== undefined) ? options.preset : "Low", 
       load: datGuiPresets
     };
     for (let key in options){
@@ -323,6 +330,12 @@ export class Neu3D {
     }
 
     let controlPanel = new dat.GUI(GUIOptions);
+    controlPanel.remember(this.settings);
+    controlPanel.remember(this.settings.toneMappingPass);
+    controlPanel.remember(this.settings.bloomPass);
+    controlPanel.remember(this.settings.effectFXAA);
+    controlPanel.remember(this.settings.backrenderSSAO);
+
     controlPanel.__closeButton.style.visibility = 'hidden';
     let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Number of Neurons: ');
     neuronNum.domElement.style["pointerEvents"] = "None";
@@ -359,15 +372,15 @@ export class Neu3D {
     f1.addColor(this.settings, 'backgroundColor').name("Background");
     let f1_1 = f1.addFolder('Opacity');
 
-    f1_1.add(this.settings, 'defaultOpacity', 0.0, 1.0);
-    f1_1.add(this.settings, 'synapseOpacity', 0.0, 1.0);
-    f1_1.add(this.settings, 'nonHighlightableOpacity', 0.0, 1.0);
-    f1_1.add(this.settings, 'lowOpacity', 0.0, 1.0);
-    f1_1.add(this.settings, 'pinOpacity', 0.0, 1.0);
-    f1_1.add(this.settings, 'pinLowOpacity', 0.0, 1.0);
-    f1_1.add(this.settings, 'highlightedObjectOpacity', 0.0, 1.0);
-    f1_1.add(this.settings, 'backgroundOpacity', 0.0, 1.0);
-    f1_1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0);
+    f1_1.add(this.settings, 'defaultOpacity', 0.0, 1.0).listen();
+    f1_1.add(this.settings, 'synapseOpacity', 0.0, 1.0).listen();
+    f1_1.add(this.settings, 'nonHighlightableOpacity', 0.0, 1.0).listen();
+    f1_1.add(this.settings, 'lowOpacity', 0.0, 1.0).listen();
+    f1_1.add(this.settings, 'pinOpacity', 0.0, 1.0).listen();
+    f1_1.add(this.settings, 'pinLowOpacity', 0.0, 1.0).listen();
+    f1_1.add(this.settings, 'highlightedObjectOpacity', 0.0, 1.0).listen();
+    f1_1.add(this.settings, 'backgroundOpacity', 0.0, 1.0).listen();
+    f1_1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0).listen();
     
     let f1_2 = f1.addFolder('Advanced');
 
@@ -375,24 +388,37 @@ export class Neu3D {
     f1_2.add(this.settings.bloomPass, 'radius', 0.0, 10.0).name("BloomPass Radius");;
     f1_2.add(this.settings.bloomPass, 'strength', 0.0, 1.0).name("BloomPass Strength");;
     f1_2.add(this.settings.bloomPass, 'threshold', 0.0, 2.0).name("BloomPass Threshold");;
-    f1_2.add(this.settings.effectFXAA, 'enabled').name("FXAA");
-    f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO");
-
+    f1_2.add(this.settings.effectFXAA, 'enabled').name("FXAA").listen();
+    f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO").listen();
 
     let f2 = f_vis.addFolder('Size');
-    f2.add(this.settings, 'defaultRadius');
-    f2.add(this.settings, 'defaultSomaRadius');
-    f2.add(this.settings, 'defaultSynapseRadius');
+    f2.add(this.settings, 'defaultRadius', 
+          this.settings.minRadius, this.settings.maxRadius).listen();
+    f2.add(this.settings, 'defaultSomaRadius', 
+                          this.settings.minSomaRadius, this.settings.maxSomaRadius).listen();
+    f2.add(this.settings, 'defaultSynapseRadius', 
+            this.settings.minSynapseRadius, this.settings.maxSynapseRadius).listen();
+    
+    let ctl_minR = f2.add(this.settings, 'minRadius', 0).listen();
+    ctl_minR.onChange((value)=>{ value = Math.min(value, this.settings.maxRadius);})
+    let ctl_maxR =f2.add(this.settings, 'maxRadius', 0).listen();
+    ctl_maxR.onChange((value)=>{ value = Math.max(value, this.settings.minRadius);})
+    let ctl_minSomaR =f2.add(this.settings, 'minSomaRadius', 0).listen();
+    ctl_minSomaR.onChange((value)=>{ value = Math.min(value, this.settings.maxSomaRadius);})
+    let ctl_maxSomaR =f2.add(this.settings, 'maxSomaRadius', 0).listen();
+    ctl_maxSomaR.onChange((value)=>{ value = Math.max(value, this.settings.minSomaRadius);})
+    let ctl_minSynR =f2.add(this.settings, 'minSynapseRadius', 0).listen();
+    ctl_minSynR.onChange((value)=>{ value = Math.min(value, this.settings.maxSynapseRadius);})
+    let ctl_maxSynR =f2.add(this.settings, 'maxSynapseRadius', 0).listen();
+    ctl_maxSynR.onChange((value)=>{ value = Math.max(value, this.settings.minSynapseRadius);})
+    
+    
 
     // let f3 = f_vis.addFolder('Animation');
     // f3.add(this.states, 'animate');
     // f3.add(this.settings, 'meshOscAmp', 0.0, 1.0);
 
-    controlPanel.remember(this.settings);
-    controlPanel.remember(this.settings.toneMappingPass);
-    controlPanel.remember(this.settings.bloomPass);
-    controlPanel.remember(this.settings.effectFXAA);
-    controlPanel.remember(this.settings.backrenderSSAO);
+
 
     controlPanel.open();
     
@@ -448,11 +474,11 @@ export class Neu3D {
     if (width < 768 && width / height >= 1)
       camera.position.z = 2600;
 
-    if (this._metadata["enablePositionReset"] == true) {
-      camera.position.z = this._metadata["resetPosition"]['z'];
-      camera.position.y = this._metadata["resetPosition"]['y'];
-      camera.position.x = this._metadata["resetPosition"]['x'];
-      camera.up.y = this._metadata["upSign"];
+    if (this._metadata.enablePositionReset == true) {
+      camera.position.z = this._metadata.resetPosition.z;
+      camera.position.y = this._metadata.resetPosition.y;
+      camera.position.x = this._metadata.resetPosition.x;
+      camera.up.y = this._metadata.upSign;
     }
 
     return camera;
@@ -534,10 +560,12 @@ export class Neu3D {
 
     this.backrenderScene = new THREE.RenderPass(this.scenes.back, this.camera);
     this.backrenderSSAO = new THREE.SSAOPass(this.scenes.back, this.camera, width, height);
+    this.backrenderSSAO.enabled = this.settings.backrenderSSAO.enabled;
     this.volumeScene = new THREE.Scene();
     this.volumeScene.background = null;
     this.volumeRenderPass = new THREE.RenderPass(this.volumeScene, this.camera);
     this.effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
+    this.effectFXAA.enabled = this.settings.effectFXAA.enabled;
     this.effectFXAA.uniforms['resolution'].value.set(1 / Math.max(width, 1440), 1 / Math.max(height, 900));
 
     this.bloomPass = new THREE.UnrealBloomPass(
@@ -1621,11 +1649,11 @@ export class Neu3D {
    * Reset camera and control position
    */
   resetView() {
-    if (this._metadata["enablePositionReset"] == true) {
-      this.camera.position.z = this._metadata["resetPosition"]['z'];
-      this.camera.position.y = this._metadata["resetPosition"]['y'];
-      this.camera.position.x = this._metadata["resetPosition"]['x'];
-      this.camera.up.y = this._metadata["upSign"];
+    if (this._metadata.enablePositionReset == true) {
+      this.camera.position.z = this._metadata.resetPosition.z;
+      this.camera.position.y = this._metadata.resetPosition.y;
+      this.camera.position.x = this._metadata.resetPosition.x;
+      this.camera.up.y = this._metadata.upSign;
     }
     this.controls.target0.x = 0.5 * (this.boundingBox.minX + this.boundingBox.maxX);
     this.controls.target0.y = 0.5 * (this.boundingBox.minY + this.boundingBox.maxY);

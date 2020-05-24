@@ -20,6 +20,13 @@ function createMultiMaterialObject(geometry, materials) {
   return group;
 }
 
+/** Clip value in between min/max */
+Math.clip = function(number, min, max) {
+  if (max < min){
+    return number
+  }
+  return Math.max(min, Math.min(number, max));
+}
 
 /**
 * Register Object to `meshDict`
@@ -161,10 +168,13 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
           }
           let d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
           if (!p.radius || !c.radius){
-            geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
-          }else{
-            geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
+            p.radius = this.settings.defaultRadius;
+            c.radius = this.settings.defaultRadius;
           }
+          geometry = new THREE.CylinderGeometry(
+            Math.clip(p.radius, this.settings.minRadius, this.settings.maxRadius),
+            Math.clip(c.radius, this.settings.minRadius, this.settings.maxRadius),
+            d.length(), 4, 1, 0);
           geometry.translate(0, 0.5 * d.length(), 0);
           geometry.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
           geometry.lookAt(d.clone());
@@ -204,11 +214,11 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
       }
       }
       if (c.type == 1) {
-        if (c.radius){
-          sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
-        }else{
-          sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8);
+        if (!c.radius){
+          c.radius = this.settings.defaultSomaRadius;
         }
+        sphereGeometry = new THREE.SphereGeometry(
+          Math.clip(c.radius, this.settings.minSomaRadius, this.settings.maxSomaRadius, 8, 8));
         sphereGeometry.translate(c.x, c.y, c.z);
         let sphereMaterial = new THREE.MeshLambertMaterial({ color: color, transparent: true });
         object.add(new THREE.Mesh(sphereGeometry, sphereMaterial));
@@ -219,11 +229,11 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
           if (mergedGeometry == undefined){
             mergedGeometry = new THREE.Geometry();
           }
-          if (c.radius){
-            sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
-          }else{
-            sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8);
+          if (!c.radius){
+            c.radius = this.settings.defaultSynapseRadius;
           }
+          sphereGeometry = new THREE.SphereGeometry(
+            Math.clip(c.radius, this.settings.minSynapseRadius, this.settings.maxSynapseRadius), 8, 8);
           sphereGeometry.translate(c.x, c.y, c.z);
           //let sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
           //object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
@@ -302,10 +312,13 @@ Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
           }
           let d = new THREE.Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
           if (!p.radius || !c.radius){
-            geometry = new THREE.CylinderGeometry(this.settings.defaultRadius, this.settings.defaultRadius, d.length(), 4, 1, 0);
-          } else {
-            geometry = new THREE.CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
+            p.radius = this.settings.defaultRadius;
+            c.radius = this.settings.defaultRadius;
           }
+          geometry = new THREE.CylinderGeometry(
+            Math.clip(p.radius, this.settings.minRadius, this.settings.maxRadius),
+            Math.clip(c.radius, this.settings.minRadius, this.settings.maxRadius),
+            d.length(), 4, 1, 0);
           geometry.translate(0, 0.5 * d.length(), 0);
           geometry.applyMatrix(new THREE.Matrix4().makeRotationX(Math.PI / 2));
           geometry.lookAt(d.clone());
@@ -344,11 +357,11 @@ Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
         }
       }
       if (c.type == 1) {
-        if (c.radius){
-          sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
-        }else{
-          sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSomaRadius, 8, 8);
+        if (!c.radius){
+          c.radius = this.settings.defaultSomaRadius;
         }
+        sphereGeometry = new THREE.SphereGeometry(
+          Math.clip(c.radius, this.settings.minSomaRadius, this.settings.maxSomaRadius), 8, 8);
         sphereGeometry.translate(c.x, c.y, c.z);
         let sphereMaterial = new THREE.MeshLambertMaterial({ color: color, transparent: true });
         object.add(new THREE.Mesh(sphereGeometry, sphereMaterial));
@@ -359,11 +372,12 @@ Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
           if (mergedGeometry == undefined){
             mergedGeometry = new THREE.Geometry();
           }
-          if (c.radius){
-            sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8);
-          }else {
-            sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8);
+          if (!c.radius){
+            c.radius = this.settings.defaultSynapseRadius
           }
+          sphereGeometry = new THREE.SphereGeometry(
+            Math.clip(c.radius, this.settings.minSynapseRadius, this.settings.maxSynapseRadius),
+            8, 8);
           sphereGeometry.translate(c.x, c.y, c.z);
           //let sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
           //object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
