@@ -831,9 +831,13 @@ export class Neu3D {
           console.log('mesh object already exists... skip rendering...');
           continue;
         }
-        let unit = new PropertyManager(json.ffbo_json[key]);
+        let unit;
+        if  (json.ffbo_json[key]._PropMan) {
+          unit = json.ffbo_json[key]
+        } else{
+          unit = new PropertyManager(json.ffbo_json[key]);
+        }
         unit.boundingBox = Object.assign({}, this.defaultBoundingBox);
-
         setAttrIfNotDefined(unit, 'highlight', true);
         setAttrIfNotDefined(unit, 'opacity', -1.0); // <TODO> what does this do?
         setAttrIfNotDefined(unit, 'visibility', true);
