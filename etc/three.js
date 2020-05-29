@@ -14,6 +14,7 @@ var THREE = global.THREE = require('three'); // pollute global namespace
 
 // TODO: Eventually include these only if they are needed by a component.
 require("three/examples/js/math/Lut");
+require("three/examples/js/math/SimplexNoise");
 require("three/examples/js/shaders/CopyShader");
 require("three/examples/js/shaders/ConvolutionShader");
 require("three/examples/js/shaders/FXAAShader");
@@ -33,6 +34,7 @@ require("three/examples/js/postprocessing/UnrealBloomPass");
 require("three/examples/js/postprocessing/AdaptiveToneMappingPass");
 require("three/examples/js/controls/TrackballControls");
 require("three/examples/js/controls/DragControls");
+require("three/examples/js/loaders/OBJLoader");
 // require("three/examples/js/utils/SceneUtils");
 
 module.exports = THREE;

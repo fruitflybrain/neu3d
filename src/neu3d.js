@@ -9,8 +9,9 @@ fontawesome.library.add(regular);
 fontawesome.library.add(solid);
 
 const STATS = require('../etc/stats');
-const Detector = require("three/examples/js/Detector");
+const Detector = require("three/examples/js/WEBGL");
 const THREE = require('../etc/three');
+
 
 import dat from '../etc/dat.gui';
 import '../style/neu3d.css';
@@ -20,7 +21,7 @@ var isOnMobile = checkOnMobile();
 
 function checkOnMobile() {
 
-  if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) )
+  if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
     return true;
   else
     return false;
@@ -42,7 +43,7 @@ function getRandomIntInclusive(min, max) {
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+// if (!Detector.webgl) Detector.addGetWebGLMessage();
 
 
 
@@ -54,13 +55,13 @@ export class Neu3D {
    * @param {JSON | undefined } metadata : optional metadata
    * @param {Object} [options={}] : additional options 
    */
-  constructor(container, data, metadata, options={}) {
+  constructor(container, data, metadata, options = {}) {
     this.container = container;
     this.frameCounter = 0;
     this.resINeed = 0;
     /* default metadata */
     this._metadata = {
-      colormap: "rainbow_gist",
+      colormap: "rainbow",
       maxColorNum: 1747591,
       allowPin: true,
       allowHighlight: true,
@@ -69,8 +70,8 @@ export class Neu3D {
       upSign: 1.,
     };
     if (metadata !== undefined)
-      for (let key in this._metadata){
-        if ((key in metadata) && (metadata[key] !== undefined)){
+      for (let key in this._metadata) {
+        if ((key in metadata) && (metadata[key] !== undefined)) {
           this._metadata[key] = metadata[key];
         }
       }
@@ -156,19 +157,19 @@ export class Neu3D {
     this.controlPanel = this.initControlPanel(options['datGUI']);
     controlPanelDiv.appendChild(this.controlPanel.domElement);
     this.container.appendChild(controlPanelDiv);
-    
+
     this.container.addEventListener('click', this.onDocumentMouseClick.bind(this), false);
     this.container.addEventListener('dblclick', this.onDocumentMouseDBLClick.bind(this), false);
     if (isOnMobile) {
       this.container.addEventListener('taphold', this.onDocumentMouseDBLClickMobile.bind(this));
       document.body.addEventListener('contextmenu', function () { return false; });
-    }    
+    }
     this.container.addEventListener('mouseenter', this.onDocumentMouseEnter.bind(this), false);
     this.container.addEventListener('mousemove', this.onDocumentMouseMove.bind(this), false);
     this.container.addEventListener('mouseleave', this.onDocumentMouseLeave.bind(this), false);
     this.container.addEventListener('drop', this.onDocumentDrop.bind(this), false); // drop file load swc
-    this.container.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation()}, false); // drop file load swc
-    this.container.addEventListener('dragenter', (e) => { e.preventDefault(); e.stopPropagation()} , false); // drop file load swc
+    this.container.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation() }, false); // drop file load swc
+    this.container.addEventListener('dragenter', (e) => { e.preventDefault(); e.stopPropagation() }, false); // drop file load swc
 
     this.container.addEventListener('resize', this.onWindowResize.bind(this), false);
     this.animOpacity = {};
@@ -219,11 +220,12 @@ export class Neu3D {
     this.on('pinned', ((e) => { this.updatePinned(e); this.updateOpacity(e); }));
     this.on('visibility', ((e) => { this.onUpdateVisibility(e.path[0]); }));
     //this.on('num', (function () { this.updateInfoPanel(); }).bind(this)); 
-    this.on('num', ()=>{ this.controlPanel.__controllers[0].setValue(this.uiVars.frontNum); });
+    this.on('num', () => { this.controlPanel.__controllers[0].setValue(this.uiVars.frontNum); });
 
     this.on('highlight', ((e) => { this.updateOpacity(e); this.onUpdateHighlight(e); }));
-    this.settings.on("change", ((e) => { 
-      this.updateOpacity(e);}), [
+    this.settings.on("change", ((e) => {
+      this.updateOpacity(e);
+    }), [
         "pinLowOpacity", "pinOpacity", "defaultOpacity", "backgroundOpacity",
         "backgroundWireframeOpacity", "synapseOpacity",
         "highlightedObjectOpacity", "nonHighlightableOpacity", "lowOpacity"
@@ -231,20 +233,20 @@ export class Neu3D {
     this.settings.on('change', ((e) => {
       this[e.path[0]][e.prop] = e.value;
     }), ['radius', 'strength', 'threshold', 'enabled']);
-    this.settings.toneMappingPass.on('change', ((e)=> {
+    this.settings.toneMappingPass.on('change', ((e) => {
       this.toneMappingPass.setMinLuminance(1 - this.settings.toneMappingPass.brightness);
     }), 'brightness');
-    this.settings.on('change', ((e)=> {
+    this.settings.on('change', ((e) => {
       this.setBackgroundColor(e.value);
     }), 'backgroundColor');
 
-    if (data != undefined && Object.keys(data).length > 0){
+    if (data != undefined && Object.keys(data).length > 0) {
       this.addJson(data);
     }
 
     this.animate();
     this._defaultSettings = this.export_settings();
-    
+
     // add file input
     let ffbomesh = this;
     let fileUploadInput = document.createElement('input');
@@ -265,6 +267,16 @@ export class Neu3D {
             };
             ffbomesh.addJson({ ffbo_json: json });
           }
+          else {
+            let name = file.name.split('.')[0];
+            let json = {};
+            json[name] = {
+              label: name,
+              dataStr: event.target.result,
+              filetype: 'swc'
+            };
+            ffbomesh.addJson({ ffbo_json: json, type: 'obj' });
+          }
         }, this, file);
         reader.readAsText(file);
       });
@@ -272,16 +284,16 @@ export class Neu3D {
 
     // this input has to be added as siblinig of vis-3d
     // becuase vis-3d blocks click event propagation.
-    this.container.insertAdjacentElement('afterend',fileUploadInput);
+    this.container.insertAdjacentElement('afterend', fileUploadInput);
 
     // <DEBUG>: this resize event is not working right now
-    this.container.addEventListener('resize',()=>{
+    this.container.addEventListener('resize', () => {
       // console.log('div resize');
       this.onWindowResize();
     })
     window.onresize = this.onWindowResize.bind(this);
     var _tooltips = document.getElementsByClassName("tooltip")
-    for (var l of _tooltips){
+    for (var l of _tooltips) {
       let element = document.createElement('SPAN');
       element.classList.add('tooltiptext');
       element.innerHTML = l.getAttribute('title');
@@ -313,18 +325,18 @@ export class Neu3D {
    * Initialize Control Panel dat.GUI
    * @param {object} options 
    */
-  initControlPanel(options={}){
-    let GUIOptions =  {
-      autoPlace: (options.autoPlace !== undefined) ? options.autoPlace : false, 
-      resizable: (options.resizable !== undefined) ? options.resizable : true, 
-      scrollable: (options.scrollable !== undefined) ? options.scrollable : true, 
-      closeOnTop: (options.closeOnTop !== undefined) ? options.closeOnTop : true, 
-      createButtons: (options.createButtons !== undefined) ? options.createButtons : true, 
-      preset: (options.preset !== undefined) ? options.preset : "Low", 
+  initControlPanel(options = {}) {
+    let GUIOptions = {
+      autoPlace: (options.autoPlace !== undefined) ? options.autoPlace : false,
+      resizable: (options.resizable !== undefined) ? options.resizable : true,
+      scrollable: (options.scrollable !== undefined) ? options.scrollable : true,
+      closeOnTop: (options.closeOnTop !== undefined) ? options.closeOnTop : true,
+      createButtons: (options.createButtons !== undefined) ? options.createButtons : true,
+      preset: (options.preset !== undefined) ? options.preset : "Low",
       load: datGuiPresets
     };
-    for (let key in options){
-      if (!(key in GUIOptions)){
+    for (let key in options) {
+      if (!(key in GUIOptions)) {
         GUIOptions[key] = options[key];
       }
     }
@@ -340,23 +352,23 @@ export class Neu3D {
     let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Number of Neurons: ');
     neuronNum.domElement.style["pointerEvents"] = "None";
     neuronNum.domElement.parentNode.parentNode.classList.add('noneurons');
-    if (GUIOptions['createButtons']){
-      function _createBtn (name, icon, iconAttrs, tooltip, func) {
+    if (GUIOptions['createButtons']) {
+      function _createBtn(name, icon, iconAttrs, tooltip, func) {
         let newButton = function () {
           this[name] = func;
         };
         let btn = new newButton();
-        let buttonid = controlPanel.add(btn, name).title(tooltip).icon(icon,"strip",iconAttrs);
+        let buttonid = controlPanel.add(btn, name).title(tooltip).icon(icon, "strip", iconAttrs);
         return buttonid;
       }
 
       _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { document.getElementById('neu3d-file-upload').click(); });
       _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { this.resetView() });
-      _createBtn("resetVisibleView", "fa fa-align-justify",{}, "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
-      _createBtn("hideAll", "fa fa-eye-slash",{}, "Hide All", () => { this.hideAll() });
-      _createBtn("showAll", "fa fa-eye",{}, "Show All", () => { this.showAll() });
-      _createBtn("takeScreenshot", "fa fa-camera",{}, "Download Screenshot", () => { this._take_screenshot = true;});
-      _createBtn("removeUnpin", "fa fa-trash", {}, "Remove Unpinned Neurons", ()=> {this.removeUnpinned();})
+      _createBtn("resetVisibleView", "fa fa-align-justify", {}, "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
+      _createBtn("hideAll", "fa fa-eye-slash", {}, "Hide All", () => { this.hideAll() });
+      _createBtn("showAll", "fa fa-eye", {}, "Show All", () => { this.showAll() });
+      _createBtn("takeScreenshot", "fa fa-camera", {}, "Download Screenshot", () => { this._take_screenshot = true; });
+      _createBtn("removeUnpin", "fa fa-trash", {}, "Remove Unpinned Neurons", () => { this.removeUnpinned(); })
       _createBtn("removeUnpin", "fa fa-map-upin", {}, "Unpin All", () => { this.unpinAll(); })
       _createBtn("showSettings", "fa fa-cogs", {}, "Display Settings", () => { controlPanel.__closeButton.click(); })
     }
@@ -381,7 +393,7 @@ export class Neu3D {
     f1_1.add(this.settings, 'highlightedObjectOpacity', 0.0, 1.0).listen();
     f1_1.add(this.settings, 'backgroundOpacity', 0.0, 1.0).listen();
     f1_1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0).listen();
-    
+
     let f1_2 = f1.addFolder('Advanced');
 
     f1_2.add(this.settings.toneMappingPass, 'brightness').name("ToneMap Brightness");
@@ -392,27 +404,27 @@ export class Neu3D {
     f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO").listen();
 
     let f2 = f_vis.addFolder('Size');
-    f2.add(this.settings, 'defaultRadius', 
-          this.settings.minRadius, this.settings.maxRadius).listen();
-    f2.add(this.settings, 'defaultSomaRadius', 
-                          this.settings.minSomaRadius, this.settings.maxSomaRadius).listen();
-    f2.add(this.settings, 'defaultSynapseRadius', 
-            this.settings.minSynapseRadius, this.settings.maxSynapseRadius).listen();
-    
+    f2.add(this.settings, 'defaultRadius',
+      this.settings.minRadius, this.settings.maxRadius).listen();
+    f2.add(this.settings, 'defaultSomaRadius',
+      this.settings.minSomaRadius, this.settings.maxSomaRadius).listen();
+    f2.add(this.settings, 'defaultSynapseRadius',
+      this.settings.minSynapseRadius, this.settings.maxSynapseRadius).listen();
+
     let ctl_minR = f2.add(this.settings, 'minRadius', 0).listen();
-    ctl_minR.onChange((value)=>{ value = Math.min(value, this.settings.maxRadius);})
-    let ctl_maxR =f2.add(this.settings, 'maxRadius', 0).listen();
-    ctl_maxR.onChange((value)=>{ value = Math.max(value, this.settings.minRadius);})
-    let ctl_minSomaR =f2.add(this.settings, 'minSomaRadius', 0).listen();
-    ctl_minSomaR.onChange((value)=>{ value = Math.min(value, this.settings.maxSomaRadius);})
-    let ctl_maxSomaR =f2.add(this.settings, 'maxSomaRadius', 0).listen();
-    ctl_maxSomaR.onChange((value)=>{ value = Math.max(value, this.settings.minSomaRadius);})
-    let ctl_minSynR =f2.add(this.settings, 'minSynapseRadius', 0).listen();
-    ctl_minSynR.onChange((value)=>{ value = Math.min(value, this.settings.maxSynapseRadius);})
-    let ctl_maxSynR =f2.add(this.settings, 'maxSynapseRadius', 0).listen();
-    ctl_maxSynR.onChange((value)=>{ value = Math.max(value, this.settings.minSynapseRadius);})
-    
-    
+    ctl_minR.onChange((value) => { value = Math.min(value, this.settings.maxRadius); })
+    let ctl_maxR = f2.add(this.settings, 'maxRadius', 0).listen();
+    ctl_maxR.onChange((value) => { value = Math.max(value, this.settings.minRadius); })
+    let ctl_minSomaR = f2.add(this.settings, 'minSomaRadius', 0).listen();
+    ctl_minSomaR.onChange((value) => { value = Math.min(value, this.settings.maxSomaRadius); })
+    let ctl_maxSomaR = f2.add(this.settings, 'maxSomaRadius', 0).listen();
+    ctl_maxSomaR.onChange((value) => { value = Math.max(value, this.settings.minSomaRadius); })
+    let ctl_minSynR = f2.add(this.settings, 'minSynapseRadius', 0).listen();
+    ctl_minSynR.onChange((value) => { value = Math.min(value, this.settings.maxSynapseRadius); })
+    let ctl_maxSynR = f2.add(this.settings, 'maxSynapseRadius', 0).listen();
+    ctl_maxSynR.onChange((value) => { value = Math.max(value, this.settings.minSynapseRadius); })
+
+
 
     // let f3 = f_vis.addFolder('Animation');
     // f3.add(this.states, 'animate');
@@ -421,7 +433,7 @@ export class Neu3D {
 
 
     controlPanel.open();
-    
+
     return controlPanel;
   }
 
@@ -434,26 +446,26 @@ export class Neu3D {
     let ffbomesh = this;
 
     this.activityData = activityData;
-    let t = t_i || 0; 
+    let t = t_i || 0;
     let t_max = activityData[Object.keys(activityData)[0]].length;
     let interp = 0;
     this.it1 = setInterval(frame, interval);
     this.it2 = setInterval(intFrame, interpolation_interval);
     function intFrame() {
-        interp += interpolation_interval / interval;
-        let t_current = t;
-        let t_next = t+1;
-        if (t_next == t_max)
+      interp += interpolation_interval / interval;
+      let t_current = t;
+      let t_next = t + 1;
+      if (t_next == t_max)
         t_next = 0;
-        for (let key in activityData) {
-            ffbomesh.meshDict[key]['opacity'] = activityData[key][t_current] * (1-interp) + activityData[key][t_next] * (interp);
-        }
-        ffbomesh.resetOpacity();
+      for (let key in activityData) {
+        ffbomesh.meshDict[key]['opacity'] = activityData[key][t_current] * (1 - interp) + activityData[key][t_next] * (interp);
+      }
+      ffbomesh.resetOpacity();
     }
     function frame() {
-        interp = 0;
-        t = t + 1;
-        if (t == t_max)
+      interp = 0;
+      t = t + 1;
+      if (t == t_max)
         t = 0;
     }
   }
@@ -466,7 +478,7 @@ export class Neu3D {
     this.fov = 20;
     this.prevhfov = 2 * Math.atan(Math.tan(Math.PI * this.fov / 2 / 180) * width / height);
 
-    let camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 10000000 );
+    let camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 10000000);
     camera.position.z = 1800;
 
     if (width < 768 && width / height < 1)
@@ -494,13 +506,13 @@ export class Neu3D {
   }
 
   updateResolution() {
-    
+
     if (this.stats.getFPS() < 30 && this.settings.render_resolution > 0.25) {
       this.settings.render_resolution = this.settings.render_resolution - 0.005;
       if (this.settings.render_resolution < 0.25)
         this.settings.render_resolution = 0.25;
       if (this.settings.backrenderSSAO.enabled == true)
-      this.highSettingsFPS = 1.0 + (1-1/this.stats.getFPS())*this.highSettingsFPS;
+        this.highSettingsFPS = 1.0 + (1 - 1 / this.stats.getFPS()) * this.highSettingsFPS;
     }
     else if (this.stats.getFPS() > 58 && this.settings.render_resolution < 2.0) {
       this.settings.render_resolution = this.settings.render_resolution + 0.005;
@@ -508,31 +520,31 @@ export class Neu3D {
         this.settings.render_resolution = 2.0;
     }
     else if (this.stats.getFPS() > 30 && this.settings.render_resolution < 1.0) {
-     this.settings.render_resolution = this.settings.render_resolution + 0.005;
-     if (this.settings.render_resolution > 1.0)
-       this.settings.render_resolution = 1.0;
-   }
-   else if (this.stats.getFPS() > 30 && this.settings.render_resolution > 1.0) {
-     this.settings.render_resolution = this.settings.render_resolution - 0.005;
-   }
+      this.settings.render_resolution = this.settings.render_resolution + 0.005;
+      if (this.settings.render_resolution > 1.0)
+        this.settings.render_resolution = 1.0;
+    }
+    else if (this.stats.getFPS() > 30 && this.settings.render_resolution > 1.0) {
+      this.settings.render_resolution = this.settings.render_resolution - 0.005;
+    }
     if (this.stats.getFPS() > 58 && this.settings.render_resolution >= 1.95 && this.settings.backrenderSSAO.enabled == false && this.highSettingsFPS > 45)
-     this.settings.backrenderSSAO.enabled = true;
+      this.settings.backrenderSSAO.enabled = true;
     else if (this.settings.render_resolution < 1.00)
-     this.settings.backrenderSSAO.enabled = false;
+      this.settings.backrenderSSAO.enabled = false;
 
 
-    if(this.settings.render_resolution != this.resINeed){
+    if (this.settings.render_resolution != this.resINeed) {
       //console.log("UPDATING");
       this.renderer.setPixelRatio(window.devicePixelRatio * this.settings.render_resolution);
       this.resINeed = this.settings.render_resolution;
     }
   }
 
-  updateShaders(){
-    if(this.stats.getFPS() < 30 && this.settings.render_resolution > 0.25){
+  updateShaders() {
+    if (this.stats.getFPS() < 30 && this.settings.render_resolution > 0.25) {
       this.settings.effectFXAA.enabled = false;
       this.settings.backrenderSSAO.enabled = false;
-    }else if (this.stats.getFPS() > 50 && this.settings.render_resolution >= 1.95 && this.settings.backrenderSSAO.enabled == false && this.highSettingsFPS > 45){
+    } else if (this.stats.getFPS() > 50 && this.settings.render_resolution >= 1.95 && this.settings.backrenderSSAO.enabled == false && this.highSettingsFPS > 45) {
       this.settings.backrenderSSAO.enabled = true;
       this.settings.effectFXAA.enabled = true;
     }
@@ -556,6 +568,7 @@ export class Neu3D {
     let width = this.container.clientWidth;
     this.renderScene = new THREE.RenderPass(this.scenes.front, this.camera);
     this.renderScene.clear = false;
+    this.renderScene.clearAlpha = true;
     this.renderScene.clearDepth = true;
 
     this.backrenderScene = new THREE.RenderPass(this.scenes.back, this.camera);
@@ -591,9 +604,9 @@ export class Neu3D {
     this.composer.addPass(this.toneMappingPass);
 
     this.composer.addPass(this.bloomPass);
-    this.composer.addPass(this.volumeRenderPass);
+    // this.composer.addPass(this.volumeRenderPass);
     this.composer.setSize(width * window.devicePixelRatio,
-                          height * window.devicePixelRatio);
+      height * window.devicePixelRatio);
   }
 
   /** Initialize Scene */
@@ -604,13 +617,13 @@ export class Neu3D {
     };
 
     scenes.front.background = null;
-    scenes.front.add( this.camera);
+    scenes.front.add(this.camera);
 
     scenes.back.background = new THREE.Color(0x030305);
-    scenes.back.add( this.camera );
+    scenes.back.add(this.camera);
 
-    scenes.front.add( this.groups.front );
-    scenes.back.add( this.groups.back );
+    scenes.front.add(this.groups.front);
+    scenes.back.add(this.groups.back);
     return scenes;
   }
 
@@ -618,8 +631,8 @@ export class Neu3D {
   initLut() {
     this.maxColorNum = this._metadata.maxColorNum;
     let lut = new THREE.Lut(this._metadata.colormap, this.maxColorNum);
-    lut.setMin( 0 );
-    lut.setMax( 1 );
+    lut.setMin(0);
+    lut.setMax(1);
     return lut;
   }
 
@@ -695,7 +708,7 @@ export class Neu3D {
     return lightsHelper;
   }
 
-  
+
   /** 
    * Initialize LoadingManager
    * https://threejs.org/docs/#api/en/loaders/managers/LoadingManager
@@ -729,7 +742,7 @@ export class Neu3D {
       if (!resetBackground && this.meshDict[key].background) {
         continue;
       }
-      if (this.meshDict[key]['pinned']){
+      if (this.meshDict[key]['pinned']) {
         this.meshDict[key]['pinned'] = false;
       }
       let meshobj = this.meshDict[key].object;
@@ -766,11 +779,11 @@ export class Neu3D {
     let commandList = json['commands'] || [];
     let args = json['args'] || undefined;
 
-    neuList = this.asarray( neuList );
-    commandList = this.asarray( commandList );
-    for ( let i = 0; i < commandList.length; ++i ) {
+    neuList = this.asarray(neuList);
+    commandList = this.asarray(commandList);
+    for (let i = 0; i < commandList.length; ++i) {
       let c = commandList[i].toLowerCase();
-      this.commandDispatcher[c].call( this, neuList, args);
+      this.commandDispatcher[c].call(this, neuList, args);
     }
   }
 
@@ -780,7 +793,7 @@ export class Neu3D {
    */
   addJson(json) {
     return new Promise((resolve) => {
-      if ( (json === undefined) || !("ffbo_json" in json) ) {
+      if ((json === undefined) || !("ffbo_json" in json)) {
         console.log('mesh json is undefined');
         return;
       }
@@ -792,18 +805,18 @@ export class Neu3D {
         "showAfterLoadAll": false,
         "radius_scale": 1.,
       };
-      for (let key in metadata){
-        if ((key in json) && (json[key] !== undefined)){
+      for (let key in metadata) {
+        if ((key in json) && (json[key] !== undefined)) {
           metadata[key] = json[key];
         }
       }
-      if (('reset' in json) && json.reset){
+      if (('reset' in json) && json.reset) {
         this.reset();
       }
       /* set colormap */
       let keyList = Object.keys(json.ffbo_json);
       let colorNum, id2float, lut;
-      
+
       if (metadata.colororder === "order") {
         colorNum = keyList.length;
         id2float = function (i) { return i / colorNum; };
@@ -811,17 +824,17 @@ export class Neu3D {
         colorNum = this.maxColorNum;
         id2float = function (i) { return getRandomIntInclusive(1, colorNum) / colorNum; };
       }
-      
-      if (metadata.colororder === "order" && (colorNum !== this.maxColorNum || metadata.colormap !== "rainbow_gist")) {
+
+      if (metadata.colororder === "order" && (colorNum !== this.maxColorNum || metadata.colormap !== "rainbow")) {
         colorNum = keyList.length;
         lut = new THREE.Lut(metadata.colormap, colorNum);
         lut.setMin(0);
         lut.setMax(1);
-      } else{
+      } else {
         lut = this.lut;
       }
 
-      if (metadata.showAfterLoadAll){
+      if (metadata.showAfterLoadAll) {
         this.groups.front.visible = false;
       }
 
@@ -832,9 +845,9 @@ export class Neu3D {
           continue;
         }
         let unit;
-        if  (json.ffbo_json[key]._PropMan) {
+        if (json.ffbo_json[key]._PropMan) {
           unit = json.ffbo_json[key]
-        } else{
+        } else {
           unit = new PropertyManager(json.ffbo_json[key]);
         }
         unit.boundingBox = Object.assign({}, this.defaultBoundingBox);
@@ -855,16 +868,21 @@ export class Neu3D {
         setAttrIfNotDefined(unit, 'yz_rot', 0.);
 
 
-        if (Array.isArray(unit.color)){
+        if (Array.isArray(unit.color)) {
           unit.color = new THREE.Color(...unit.color);
         }
         /* read mesh */
         if (metadata.type === "morphology_json") {
           this.loadMorphJSONCallBack(key, unit, metadata.visibility).bind(this)();
-        } else if (('dataStr' in unit) && ('filename' in unit)) {
+        }
+        else if (metadata.type === "obj") {
+          this.loadObjCallBack(key, unit, metadata.visibility).bind(this)();
+        }
+        else if (('dataStr' in unit) && ('filename' in unit)) {
           console.log('mesh object has both data string and filename... should only have one... skip rendering');
           continue;
-        } else if ('filename' in unit) {
+        }
+        else if ('filename' in unit) {
           unit['filetype'] = unit.filename.split('.').pop();
           let loader = new THREE.FileLoader(this.loadingManager);
           if (unit['filetype'] == "json")
@@ -955,13 +973,13 @@ export class Neu3D {
   }
 
   animate() {
-    if (this.stats){
+    if (this.stats) {
       this.stats.begin();
     }
     this.controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
-    if (this.states.mouseOver && this.dispatch.syncControls){
+    if (this.states.mouseOver && this.dispatch.syncControls) {
       this.dispatch.syncControls(this);
-      if(options['adaptive']){
+      if (options['adaptive']) {
         this.updateResolution();
         this.updateShaders();
         /*
@@ -977,7 +995,7 @@ export class Neu3D {
       }
     }
     this.render();
-    if (this.stats){
+    if (this.stats) {
       this.stats.end();
     }
     requestAnimationFrame(this.animate.bind(this));
@@ -1006,6 +1024,16 @@ export class Neu3D {
           };
           neu3D_obj.addJson({ ffbo_json: json });
         }
+        else {
+          let name = file.name.split('.')[0];
+          let json = {};
+          json[name] = {
+            label: name,
+            dataStr: event.target.result,
+            filetype: 'swc'
+          };
+          neu3D_obj.addJson({ ffbo_json: json, type: 'obj' });
+        }
       }, this, file);
       reader.readAsText(file);
     });
@@ -1016,7 +1044,7 @@ export class Neu3D {
    * @param {*} event 
    */
   onDocumentMouseClick(event) {
-    if (event !== undefined){
+    if (event !== undefined) {
       event.preventDefault();
     }
 
@@ -1032,30 +1060,30 @@ export class Neu3D {
    * @param {*} event 
    */
   onDocumentMouseDBLClick(event) {
-    if (event !== undefined){
+    if (event !== undefined) {
       event.preventDefault();
     }
     let intersected = this.getIntersection([this.groups.front]);
     if (intersected != undefined) {
-      if (!intersected['highlight']){
+      if (!intersected['highlight']) {
         return;
       }
       this.togglePin(intersected);
     }
   }
-  
+
 
   /**
    * Double Click Mobile
    * @param {*} event 
    */
   onDocumentMouseDBLClickMobile(event) {
-    if (event !== undefined){
+    if (event !== undefined) {
       event.preventDefault();
     }
     let intersected = this.getIntersection([this.groups.front]);
     if (intersected != undefined) {
-      if (!intersected['highlight']){
+      if (!intersected['highlight']) {
         return;
       }
       this.togglePin(intersected);
@@ -1094,7 +1122,7 @@ export class Neu3D {
     this.states.mouseOver = false;
     this.highlight(undefined);
   }
-  
+
 
   /**
    * Response to window resize 
@@ -1119,8 +1147,8 @@ export class Neu3D {
     this.camera.updateProjectionMatrix();
 
     this.renderer.setSize(width, height);
-    this.composer.setSize( width * window.devicePixelRatio,
-                           height * window.devicePixelRatio);
+    this.composer.setSize(width * window.devicePixelRatio,
+      height * window.devicePixelRatio);
     this.effectFXAA.uniforms['resolution'].value.set(1 / Math.max(width, 1440), 1 / Math.max(height, 900));
     this.controls.handleResize();
     this.render();
@@ -1134,22 +1162,22 @@ export class Neu3D {
    * Render 
    */
   render() {
-    if (this.states.highlight){
+    if (this.states.highlight) {
       // do nothing
-    } else{
+    } else {
       for (let key in this.meshDict) {
         if (this.meshDict[key].object !== undefined) {
           let x = new Date().getTime();
           if (this.meshDict[key]['background']) {
             let obj = this.meshDict[key].object.children;
-            if (this.meshDict[key]['opacity'] >= 0.00){
+            if (this.meshDict[key]['opacity'] >= 0.00) {
               obj[0].material.opacity = this.meshDict[key]['opacity'] * (this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005)));
-            }else{
+            } else {
               obj[0].material.opacity = this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005));
               obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
             }
-            
-            
+
+
             obj[0].material.opacity = this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005));
             obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
           } else {
@@ -1184,7 +1212,7 @@ export class Neu3D {
    * @param {Array<object>} groups 
    */
   getIntersection(groups) {
-    if (groups === undefined){
+    if (groups === undefined) {
       return undefined;
     }
     let val = undefined;
@@ -1206,43 +1234,43 @@ export class Neu3D {
 
   /** Show front neurons */
   showFrontAll() {
-    for (let val of this.groups.front.children){
+    for (let val of this.groups.front.children) {
       this.meshDict[val.rid].visibility = true;
     }
   }
 
   /** hide front neurons */
   hideFrontAll() {
-    for (let val of this.groups.front.children){
+    for (let val of this.groups.front.children) {
       this.meshDict[val.rid].visibility = false;
     }
   }
 
   /** Show back neurons */
   showBackAll() {
-    for (let val of this.groups.back.children){
+    for (let val of this.groups.back.children) {
       this.meshDict[val.rid].visibility = true;
     }
   }
 
   /** Hide front neurons */
   hideBackAll() {
-    for (let val of this.groups.back.children){
+    for (let val of this.groups.back.children) {
       this.meshDict[val.rid].visibility = false;
     }
   }
 
   /** Show all neurons */
   showAll() {
-    for (let key in this.meshDict){
+    for (let key in this.meshDict) {
       this.meshDict[key].visibility = true;
     }
   }
 
   /** Hide all neurons */
   hideAll() {
-    for (let key in this.meshDict){
-      if (!this.meshDict[key]['pinned']){
+    for (let key in this.meshDict) {
+      if (!this.meshDict[key]['pinned']) {
         this.meshDict[key].visibility = false;
       }
     }
@@ -1251,10 +1279,10 @@ export class Neu3D {
   /** export settings */
   export_settings() {
     let backgroundColor = [0.15, 0.01, 0.15];
-    if (this.groups.back.children.length){
+    if (this.groups.back.children.length) {
       backgroundColor = this.groups.back.children[0].children[0].material.color.toArray();
     }
-    if (this.settings.backgroundColor !== undefined){
+    if (this.settings.backgroundColor !== undefined) {
       backgroundColor = this.settings.backgroundColor;
     }
     let set = Object.assign({}, this.settings, {
@@ -1283,7 +1311,7 @@ export class Neu3D {
   show(id) {
     id = this.asarray(id);
     for (let i = 0; i < id.length; ++i) {
-      if (!(id[i] in this.meshDict)){
+      if (!(id[i] in this.meshDict)) {
         continue;
       }
       this.meshDict[id[i]].visibility = true;
@@ -1297,9 +1325,9 @@ export class Neu3D {
   hide(id) {
     id = this.asarray(id);
     for (let i = 0; i < id.length; ++i) {
-      if (!(id[i] in this.meshDict)){
+      if (!(id[i] in this.meshDict)) {
         continue;
-      } 
+      }
       this.meshDict[id[i]].visibility = false;
     }
   }
@@ -1382,13 +1410,13 @@ export class Neu3D {
       return;
     }
 
-    if (typeof (d) === 'string' && (d in this.meshDict)){
+    if (typeof (d) === 'string' && (d in this.meshDict)) {
       d = this.meshDict[d];
     }
-      
+
     if ((d['highlight']) !== false) {
       this.states.highlight = d['rid'];
-    }else{
+    } else {
       this.states.highlight = false;
     }
 
@@ -1405,7 +1433,7 @@ export class Neu3D {
    * @param {event} e 
    */
   onUpdateHighlight(e) {
-    if (e.old_value){
+    if (e.old_value) {
       this.meshDict[e.old_value]['object']['visible'] = this.meshDict[e.old_value]['visibility'];
     }
     if (e.value === false) {
@@ -1445,8 +1473,8 @@ export class Neu3D {
       return;
       // Either entering pinned mode or pinned mode settings changing
     } else if ((e.prop == 'highlight' && this.states.pinned) ||
-               (e.prop == 'pinned' && e.value && this.uiVars.pinnedObjects.size == 1) ||
-               (e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')) {
+      (e.prop == 'pinned' && e.value && this.uiVars.pinnedObjects.size == 1) ||
+      (e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')) {
       for (const key of Object.keys(this.meshDict)) {
         var val = this.meshDict[key];
         if (!val['background']) {
@@ -1470,24 +1498,24 @@ export class Neu3D {
       this.resetOpacity();
     }
   }
-  
+
 
   /** Reset Opacity of all objects in workspace */
   resetOpacity() {
     for (const key of Object.keys(this.meshDict)) {
       if (!this.meshDict[key]['background']) {
         if (!('morph_type' in this.meshDict[key]) ||
-            (this.meshDict[key]['morph_type'] != 'Synapse SWC')) {
+          (this.meshDict[key]['morph_type'] != 'Synapse SWC')) {
           for (let i in this.meshDict[key].object.children) {
-            if (this.meshDict[key]['opacity'] >= 0.){
+            if (this.meshDict[key]['opacity'] >= 0.) {
               this.meshDict[key].object.children[i].material.opacity = this.meshDict[key]['opacity'] * this.settings.defaultOpacity;
             } else {
               this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
             }
           }
         } else {
-          for (let i in this.meshDict[key].object.children){
-            if (this.meshDict[key]['opacity'] >= 0.){
+          for (let i in this.meshDict[key].object.children) {
+            if (this.meshDict[key]['opacity'] >= 0.) {
               this.meshDict[key].object.children[i].material.opacity = this.meshDict[key]['opacity'] * this.settings.synapseOpacity;
             } else {
               this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
@@ -1495,10 +1523,10 @@ export class Neu3D {
           }
         }
       } else {
-        if (this.meshDict[key]['opacity'] >= 0.){
+        if (this.meshDict[key]['opacity'] >= 0.) {
           this.meshDict[key].object.children[0].material.opacity = this.meshDict[key]['opacity'] * this.settings.backgroundOpacity;
           this.meshDict[key].object.children[1].material.opacity = this.meshDict[key]['opacity'] * this.settings.backgroundWireframeOpacity;
-        } else{
+        } else {
           this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
           this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
         }
@@ -1512,7 +1540,7 @@ export class Neu3D {
    * @param {any} variable 
    */
   asarray(variable) {
-    if (variable.constructor !== Array){
+    if (variable.constructor !== Array) {
       variable = [variable];
     }
     return variable;
@@ -1540,7 +1568,7 @@ export class Neu3D {
   pin(id) {
     id = this.asarray(id);
     for (let i = 0; i < id.length; ++i) {
-      if (!(id[i] in this.meshDict) || this.meshDict[id[i]]['pinned']){
+      if (!(id[i] in this.meshDict) || this.meshDict[id[i]]['pinned']) {
         continue;
       }
       this.meshDict[id[i]]['pinned'] = true;
@@ -1554,7 +1582,7 @@ export class Neu3D {
   unpin(id) {
     id = this.asarray(id);
     for (let i = 0; i < id.length; ++i) {
-      if (!(id[i] in this.meshDict) || !this.meshDict[id[i]]['pinned']){
+      if (!(id[i] in this.meshDict) || !this.meshDict[id[i]]['pinned']) {
         continue;
       }
       this.meshDict[id[i]]['pinned'] = false;
@@ -1574,7 +1602,7 @@ export class Neu3D {
   getUnpinned() {
     let list = [];
     for (let key of Object.keys(this.meshDict)) {
-      if (!this.meshDict[key]['background'] && !this.meshDict[key]['pinned']){
+      if (!this.meshDict[key]['background'] && !this.meshDict[key]['pinned']) {
         list.push(key);
       }
     }
@@ -1588,7 +1616,7 @@ export class Neu3D {
   remove(id) {
     id = this.asarray(id);
     for (let i = 0; i < id.length; ++i) {
-      if (!(id[i] in this.meshDict)){
+      if (!(id[i] in this.meshDict)) {
         continue;
       }
       delete this.meshDict[id[i]];
@@ -1614,7 +1642,7 @@ export class Neu3D {
   setColor(id, color) {
     id = this.asarray(id);
     for (let i = 0; i < id.length; ++i) {
-      if (!(id[i] in this.meshDict)){
+      if (!(id[i] in this.meshDict)) {
         continue;
       }
       let meshobj = this.meshDict[id[i]].object;
@@ -1625,7 +1653,7 @@ export class Neu3D {
           meshobj.children[j].geometry.colors[k].set(color);
         }
       }
-      this.meshDict[id[i]].color = new THREE.Color(color);
+      this.meshDict[id[i]].color = new THREE.Color( (color));
     }
   }
 
@@ -1634,7 +1662,7 @@ export class Neu3D {
    * @param {Array} color 
    */
   setBackgroundColor(color) {
-    if (Array.isArray(color)){
+    if (Array.isArray(color)) {
       color = new THREE.Color().fromArray(color);
     }
     for (let i = 0; i < this.groups.back.children.length; ++i) {
@@ -1713,7 +1741,7 @@ export class Neu3D {
    * @param {string} d id of object
    */
   togglePin(d) {
-    if (!this._metadata.allowPin){
+    if (!this._metadata.allowPin) {
       return;
     }
     if (typeof (d) === 'string' && (d in this.meshDict)) {
@@ -1726,10 +1754,10 @@ export class Neu3D {
    * Unpin all neurons
    */
   unpinAll() {
-    if (!this._metadata.allowPin){
+    if (!this._metadata.allowPin) {
       return;
-    } 
-    for (let key of this.uiVars.pinnedObjects){
+    }
+    for (let key of this.uiVars.pinnedObjects) {
       this.meshDict[key]['pinned'] = false;
     }
   }
@@ -1755,11 +1783,11 @@ export class Neu3D {
     this.domRect = this.renderer.domElement.getBoundingClientRect();
     let toolTipRect = this.toolTipDiv.getBoundingClientRect();
     let left = this.uiVars.toolTipPosition.x + 10;
-    if (left + toolTipRect.width > this.domRect.right){
+    if (left + toolTipRect.width > this.domRect.right) {
       left = this.domRect.right - 10 - toolTipRect.width;
     }
     let top = this.uiVars.toolTipPosition.y + 10;
-    if (top + toolTipRect.height > this.domRect.bottom){
+    if (top + toolTipRect.height > this.domRect.bottom) {
       top = this.uiVars.toolTipPosition.y - 10 - toolTipRect.height;
     }
     this.toolTipDiv.style.left = left + "px";
@@ -1796,10 +1824,10 @@ export class Neu3D {
    * @param {*} ffbomesh 
    */
   syncControls(ffbomesh) {
-    if (this === ffbomesh){
+    if (this === ffbomesh) {
       return;
     }
-      
+
     this.controls.target.copy(ffbomesh.controls.target);
     this.camera.position.copy(ffbomesh.camera.position);
     this.camera.up.copy(ffbomesh.camera.up);

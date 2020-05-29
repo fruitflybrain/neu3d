@@ -422,5 +422,47 @@ Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
   };
 }
 
+Neu3D.prototype.loadObjCallBack = function (key, unit, visibility) {
+  return () => {
+    // instantiate a loader
+    var loader = new THREE.OBJLoader();
+    var _this = this;
+    loader.load = function load(url, localtext, onLoad, onProgress, onError) {
+      var scope = this;
+      var loader = new THREE.XHRLoader(scope.manager);
+      loader.setPath(this.path);
+      loader.load(url, function (text) {
+        if (url == "") {
+          text = localtext;
+        }
+        onLoad(scope.parse(text));
+      }, onProgress, onError);
+    };
+    // load a resource
+    loader.load(
+      '', unit['dataStr'],
+      function (object) {
+        object.visible = visibility;
+        _this._registerObject(key, unit, object);
+        delete unit['identifier'];
+        delete unit['x'];
+        delete unit['y'];
+        delete unit['z'];
+        delete unit['r'];
+        delete unit['parent'];
+        delete unit['sample'];
+        delete unit['type'];
+      },
+      function (xhr) {
+        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+      },
+      function (error) {
+        console.log('An error happened');
+      }
+    );
+
+  };
+}
+
 
 export { Neu3D };
