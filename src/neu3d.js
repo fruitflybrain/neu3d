@@ -2,11 +2,7 @@ import { PropertyManager } from './propertymanager';
 import { FFBOLightsHelper } from './lightshelper';
 
 // add FontAwesome
-import fontawesome from '@fortawesome/fontawesome';
-import solid from '@fortawesome/fontawesome-free-solid';
-import regular from '@fortawesome/fontawesome-free-regular';
-fontawesome.library.add(regular);
-fontawesome.library.add(solid);
+import '@fortawesome/fontawesome-free/js/all.js';
 
 const STATS = require('../etc/stats');
 const Detector = require("three/examples/js/WEBGL");
