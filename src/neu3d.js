@@ -342,7 +342,7 @@ export class Neu3D {
     controlPanel.remember(this.settings.toneMappingPass);
     controlPanel.remember(this.settings.bloomPass);
     controlPanel.remember(this.settings.effectFXAA);
-    controlPanel.remember(this.settings.backrenderSSAO);
+    // controlPanel.remember(this.settings.backrenderSSAO);
 
     controlPanel.__closeButton.style.visibility = 'hidden';
     let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Number of Neurons: ');
@@ -393,11 +393,11 @@ export class Neu3D {
     let f1_2 = f1.addFolder('Advanced');
 
     f1_2.add(this.settings.toneMappingPass, 'brightness').name("ToneMap Brightness");
-    f1_2.add(this.settings.bloomPass, 'radius', 0.0, 10.0).name("BloomPass Radius");;
-    f1_2.add(this.settings.bloomPass, 'strength', 0.0, 1.0).name("BloomPass Strength");;
-    f1_2.add(this.settings.bloomPass, 'threshold', 0.0, 2.0).name("BloomPass Threshold");;
+    f1_2.add(this.settings.bloomPass, 'radius', 0.0, 10.0).name("BloomRadius");;
+    f1_2.add(this.settings.bloomPass, 'strength', 0.0, 1.0).name("BloomStrength");;
+    f1_2.add(this.settings.bloomPass, 'threshold', 0.0, 2.0).name("BloomThreshold");;
     f1_2.add(this.settings.effectFXAA, 'enabled').name("FXAA").listen();
-    f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO").listen();
+    // f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO").listen();
 
     let f2 = f_vis.addFolder('Size');
     f2.add(this.settings, 'defaultRadius',
