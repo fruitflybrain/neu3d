@@ -55,6 +55,11 @@ export class Neu3D {
     this.container = container;
     this.frameCounter = 0;
     this.resINeed = 0;
+    this.activeRender = true; // Whether the animate function should render the contents of this container in every frame
+    this.powerSaving = false; // Whether power saving measures are active or not
+    if (options['powerSaving']) {
+      this.powerSaving = true;
+    }
     /* default metadata */
     this._metadata = {
       colormap: "rainbow",
@@ -990,7 +995,9 @@ export class Neu3D {
 
       }
     }
-    this.render();
+    if ((this.activeRender && this.powerSaving)||(!(this.powerSaving))){
+      this.render();
+    }
     if (this.stats) {
       this.stats.end();
     }
@@ -1107,6 +1114,7 @@ export class Neu3D {
   onDocumentMouseEnter(event) {
     event.preventDefault();
     this.states.mouseOver = true;
+    this.activeRender = true;
   }
 
   /**TODO: Add comment
@@ -1117,6 +1125,7 @@ export class Neu3D {
     event.preventDefault();
     this.states.mouseOver = false;
     this.highlight(undefined);
+    this.activeRender = false;
   }
 
 
