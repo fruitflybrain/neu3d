@@ -594,7 +594,7 @@ export class Neu3D {
 
     this.composer = new THREE.EffectComposer(this.renderer);
     this.composer.addPass(this.backrenderScene);
-    this.composer.addPass(this.backrenderSSAO);
+    // this.composer.addPass(this.backrenderSSAO);
     this.composer.addPass(this.renderScene);
     this.composer.addPass(this.effectFXAA);
     this.composer.addPass(this.toneMappingPass);
