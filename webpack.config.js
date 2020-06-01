@@ -15,7 +15,7 @@ module.exports = {
     filename: 'neu3d.min.js',
     library: 'Neu3D',
     libraryTarget: 'umd',
-    umdNamedDefine:true,
+    umdNamedDefine: false,
     libraryExport: 'Neu3D',
     path: path.resolve(__dirname, 'lib')
   },

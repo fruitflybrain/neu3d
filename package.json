@@ -7,7 +7,10 @@
   "scripts": {
     "build": "npx webpack --config webpack.config.js",
     "watch": "npx webpack --config webpack.config.js --watch",
-    "test": "echo \"To see it in action, server HTML server in root after build\""
+    "test": "echo \"To see it in action, server HTML server in root after build\"",
+    "dev": "npx webpack --config webpack.config.js --watch",
+    "clean": "rimraf lib",
+    "clean:node_modules": "rimraf node_modules lib"
   },
   "repository": {
     "type": "git",
@@ -34,6 +37,7 @@
   },
   "devDependencies": {
     "css-loader": "^2.1.1",
+    "rimraf": "^3.0.2",
     "style-loader": "^0.21.0",
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11"
