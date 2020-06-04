@@ -74,6 +74,8 @@ interface IMetadata {
     allowHighlight: boolean,
     enablePositionReset: boolean,
     resetPosition: ICoords,
+    upVector: ICoords,
+    cameraTarget: ICoords,
     upSign: Number
 }
 
