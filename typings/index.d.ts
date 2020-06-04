@@ -27,6 +27,7 @@ declare class Neu3D {
     import_settings(settings: object): void;
     export_settings(): object;
     onWindowResize(): void;
+    updateControls(): void;
 
 
     setColor(id: string, color: any): void;

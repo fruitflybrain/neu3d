@@ -563,6 +563,13 @@ export class Neu3D {
     return controls;
   }
 
+  updateControls() {
+    this.controls.position0.x = this._metadata.resetPosition.x;
+    this.controls.position0.y = this._metadata.resetPosition.y;
+    this.controls.position0.z = this._metadata.resetPosition.z;
+    // this.controls.up0.y = this._metadata.upSign;
+  }
+
   /** Initialize Post Processing */
   initPostProcessing() {
     let height = this.container.clientHeight;
