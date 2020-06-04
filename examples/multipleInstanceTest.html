@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Neu3d Test</title>
+    <script type="text/javascript" src=" https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="../lib/neu3d.min.js"> </script>
+  </head>
+  <body>
+    <div id="vis-3d" class="vis-3d" style="width: 50%; height: 100%; left: 0%; top: 0%;"></div><div id="vis-3d2" class="vis-3d" style="width: 50%; height: 100%; left: 50%; top: 0%;"></div>
+    <script>
+      const parentDiv = document.getElementById('vis-3d');
+      let options = {
+        'stats': true, // set to false if you don't want to see stats
+        'adaptive': true,
+        'stats': true, 
+        'datGUI': {
+          autoPlace: false,
+          resizable: false,
+          closed: true,
+          hideable: true
+        }
+      }
+      
+      var neu3d = new Neu3D(parentDiv,
+                               undefined,
+                               { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } },
+                               options);
+      window.neu3d = neu3d;
+      $.getJSON("../data/data.json", function (json) {
+        neu3d.addJson({
+          ffbo_json: json,
+          showAfterLoadAll: true
+        });
+      });
+
+      var neu3d2 = new Neu3D(document.getElementById('vis-3d2'),
+                               undefined,
+                               { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } },
+                               options);
+      window.neu3d2 = neu3d2; 
+      $.getJSON("../data/data.json", function (json) {
+        neu3d2.addJson({
+          ffbo_json: json,
+          showAfterLoadAll: true
+        });
+      });
+
+
+      $(document).ready(() => {
+        neu3d.onWindowResize();
+        neu3d2.onWindowResize();
+      });
+    </script>
+  </body>
+</html>
