@@ -574,6 +574,9 @@ export class Neu3D {
     this.controls.up0.x = this._metadata.upVector.x;
     this.controls.up0.y = this._metadata.upVector.y;
     this.controls.up0.z = this._metadata.upVector.z;
+    this.controls.target0.x = this._metadata.cameraTarget.x;
+    this.controls.target0.y = this._metadata.cameraTarget.y;
+    this.controls.target0.z = this._metadata.cameraTarget.z;
     // this.controls.up0.y = this._metadata.upSign;
   }
 
