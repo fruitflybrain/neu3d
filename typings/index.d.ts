@@ -8,6 +8,7 @@ declare class Neu3D {
     meshDict: any; // should be PropertyManager;
     uiVars: any; // should be PropertyManager;
     settings: any; // should be PropertyManager;
+    states: any; // should be PropertyManager;
     _take_screenshot: boolean;
     backrenderSSAO: any; // should be THREE.SSAOPass;
     controlPanel: any; // should be dat.GUI;
