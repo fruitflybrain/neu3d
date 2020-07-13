@@ -23,7 +23,7 @@ export class FFBOLightsHelper {
     lh.controls = controls;
     lh.scene = scene;
     lh.on('change', function (e) {
-      light = this[e['path'][0]];
+      let light = this[e['path'][0]];
       if (e['value']) {
         light._object.intensity = light.intensity;
       }
@@ -97,8 +97,8 @@ export class FFBOLightsHelper {
   //    if track = false and the camera/controls target has changed
   import(settings) {
     for (let key in settings) {
-      light = (key in this) ? this[key] : undefined;
-      lightImporter = (settings[key].type == "AmbientLight" ? this._ambientLightImporter :
+      let light = (key in this) ? this[key] : undefined;
+      let lightImporter = (settings[key].type == "AmbientLight" ? this._ambientLightImporter :
         (settings[key].type == "DirectionalLight" ? this._directionalLightImporter : this._spotLightImporter)).bind(this);
       try {
         this[key] = lightImporter(settings[key], light);

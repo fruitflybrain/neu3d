@@ -5,7 +5,7 @@ import { FFBOLightsHelper } from './lightshelper';
 import '@fortawesome/fontawesome-free/js/all.js';
 
 const STATS = require('../etc/stats');
-const Detector = require("three/examples/js/WEBGL");
+// const Detector = require("three/examples/js/WEBGL");
 const THREE = require('../etc/three');
 
 

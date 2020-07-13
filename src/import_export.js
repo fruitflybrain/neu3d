@@ -8,7 +8,7 @@ Neu3D.prototype.import_settings = function(settings) {
   }
   
   if ('postProcessing' in settings) {
-    postProcessing = settings.postProcessing;
+    let postProcessing = settings.postProcessing;
     delete settings.postProcessing;
     if (postProcessing.fxaa != undefined){
       this.settings.effectFXAA.enabled = postProcessing.fxaa;
@@ -31,7 +31,7 @@ Neu3D.prototype.import_settings = function(settings) {
   }
   
   if ('backgroundColor' in settings) {
-    bg = settings.backgroundColor;
+    let bg = settings.backgroundColor;
     setTimeout( ()=> {
       this.setBackgroundColor(bg);
     }, 4000);
