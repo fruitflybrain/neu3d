@@ -736,7 +736,7 @@ export class Neu3D {
     loadingManager.onLoad = () => {
       this.controls.target0.x = 0.5 * (this.boundingBox.minX + this.boundingBox.maxX);
       this.controls.target0.y = 0.5 * (this.boundingBox.minY + this.boundingBox.maxY);
-      this.controls.reset();
+      // this.controls.reset();
       this.groups.front.visible = true;
     };
     return loadingManager;

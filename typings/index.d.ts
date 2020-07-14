@@ -11,6 +11,7 @@ declare class Neu3D {
     states: any; // should be PropertyManager;
     _take_screenshot: boolean;
     backrenderSSAO: any; // should be THREE.SSAOPass;
+    controls: any; // should be THREE.TrackballControls
     controlPanel: any; // should be dat.GUI;
     _metadata: IMetadata;//
 
