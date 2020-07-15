@@ -1,7 +1,7 @@
 // Type definitions for mesh3D
 // Project:mesh3D
 // Definitions by: Tingkai Liu
-export = Neu3D;
+export { Neu3D };
 declare class Neu3D {
     constructor(container: HTMLDivElement, data?: object, metadata?: object, options?: INeu3DOptions);
     container: HTMLDivElement;
