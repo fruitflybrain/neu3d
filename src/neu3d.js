@@ -256,6 +256,7 @@ export class Neu3D {
     fileUploadInput.id = "neu3d-file-upload";
     fileUploadInput.setAttribute("type", "file");
     fileUploadInput.style.visibility = 'hidden';
+    fileUploadInput.style.display = 'none';
     fileUploadInput.onchange = (evt) => {
       $.each(evt.target.files, function (i, file) {
         let reader = new FileReader();
