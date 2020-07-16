@@ -14,6 +14,7 @@ declare class Neu3D {
     controls: any; // should be THREE.TrackballControls
     controlPanel: any; // should be dat.GUI;
     _metadata: IMetadata;//
+    fileUploadInput: HTMLInputElement; //
 
     on(key: string, func: Function): void;
     addJson(json: object): Promise<void>;

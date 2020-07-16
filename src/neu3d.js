@@ -15,6 +15,19 @@ import { datGuiPresets } from './presets.js';
 
 var isOnMobile = checkOnMobile();
 
+// used for generating unique file upload div id
+function generateGuid() {
+  var result, i, j;
+  result = '';
+  for(j=0; j<32; j++) {
+    if( j == 8 || j == 12 || j == 16 || j == 20) 
+      result = result + '-';
+    i = Math.floor(Math.random()*16).toString(16).toUpperCase();
+    result = result + i;
+  }
+  return result;
+}
+
 function checkOnMobile() {
 
   if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
@@ -253,7 +266,8 @@ export class Neu3D {
     // add file input
     let ffbomesh = this;
     let fileUploadInput = document.createElement('input');
-    fileUploadInput.id = "neu3d-file-upload";
+    
+    fileUploadInput.id = `neu3d-file-upload-${generateGuid()}`;
     fileUploadInput.setAttribute("type", "file");
     fileUploadInput.style.visibility = 'hidden';
     fileUploadInput.style.display = 'none';
@@ -288,7 +302,9 @@ export class Neu3D {
 
     // this input has to be added as siblinig of vis-3d
     // becuase vis-3d blocks click event propagation.
-    this.container.insertAdjacentElement('afterend', fileUploadInput);
+    document.body.appendChild(fileUploadInput);
+    this.fileUploadInput = fileUploadInput; // expose div
+    // this.container.insertAdjacentElement('afterend', fileUploadInput);
 
     // <DEBUG>: this resize event is not working right now
     this.container.addEventListener('resize', () => {
