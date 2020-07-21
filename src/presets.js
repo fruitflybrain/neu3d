@@ -1,3 +1,5 @@
+import { Lut } from 'three/examples/jsm/math/Lut';
+
 export const datGuiPresets ={
   "preset": "Default",
   "closed": false,
@@ -31,7 +33,7 @@ export const datGuiPresets ={
         "threshold": 0.3
       },
       "3": {
-        "enabled": true
+        "enabled": false
       },
       "4": {
         "enabled": false
@@ -146,7 +148,7 @@ export const datGuiPresets ={
 
 
 
-THREE.Lut.prototype.addColorMap( 'rainbow_gist', [
+Lut.prototype.addColorMap( 'rainbow_gist', [
   [ 0.000000, '0xff0028' ], [ 0.031250, '0xff0100' ], [ 0.062500, '0xff2c00' ],
   [ 0.093750, '0xff5700' ], [ 0.125000, '0xff8200' ], [ 0.156250, '0xffae00' ],
   [ 0.187500, '0xffd900' ], [ 0.218750, '0xf9ff00' ], [ 0.250000, '0xceff00' ],
@@ -161,7 +163,7 @@ THREE.Lut.prototype.addColorMap( 'rainbow_gist', [
 ]);
 
 
-THREE.Lut.prototype.addColorMap( 'no_purple', [
+Lut.prototype.addColorMap( 'no_purple', [
   [0.000000, '0xFF4000'],
   [0.017544, '0xFF4D00'],
   [0.035088, '0xFF5900'],
