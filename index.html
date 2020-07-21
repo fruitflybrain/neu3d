@@ -21,9 +21,9 @@
         }
       }
       var neu3d = new Neu3D(parentDiv,
-                               undefined,
-                               { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } },
-                               options);
+                            undefined,
+                            { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } },
+                            options);
 
       window.neu3d = neu3d; // expose neu3d instance to console for experimentation
 
@@ -37,7 +37,7 @@
 
       $(document).ready(() => {
         neu3d.onWindowResize();
-        document.getElementById('neu3d-file-upload').click();
+        neu3d.fileUploadInput.click();
       });
     </script>
   </body>
