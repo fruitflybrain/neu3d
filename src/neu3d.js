@@ -805,7 +805,11 @@ export class Neu3D {
         meshobj.children[i].material.dispose();
       }
       --this.uiVars.meshNum;
-      this.groups.front.remove(meshobj);
+      if (this.meshDict[key].background) {
+        this.groups.back.remove(meshobj);  
+      } else {
+        this.groups.back.remove(meshobj);
+      }
       meshobj = null;
       delete this.meshDict[key];
     }
