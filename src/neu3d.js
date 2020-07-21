@@ -1,12 +1,29 @@
 import { PropertyManager } from './propertymanager';
 import { FFBOLightsHelper } from './lightshelper';
+import { 
+  Vector2, Raycaster,
+  Group, WebGLRenderer,
+  Scene, Vector3, LoadingManager, 
+  PerspectiveCamera, Color, FileLoader, GammaEncoding
+} from 'three';
+
+import { Lut } from 'three/examples/jsm/math/Lut'
+import { AdaptiveToneMappingPass } from 'three/examples/jsm/postprocessing/AdaptiveToneMappingPass';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
+import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
+import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls';
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader';
+
 
 // add FontAwesome
 import '@fortawesome/fontawesome-free/js/all.js';
 
 const STATS = require('../etc/stats');
 // const Detector = require("three/examples/js/WEBGL");
-const THREE = require('../etc/three');
+// const THREE = require('../etc/three');
 
 
 import dat from '../etc/dat.gui';
@@ -133,10 +150,10 @@ export class Neu3D {
     this.meshDict = new PropertyManager();
     this.uiVars = new PropertyManager({
       pinnedObjects: new Set(),
-      toolTipPosition: new THREE.Vector2(),
+      toolTipPosition: new Vector2(),
       highlightedObjects: null,
       currentIntersected: undefined,
-      cursorPosition: new THREE.Vector2(-100000, -100000),
+      cursorPosition: new Vector2(-100000, -100000),
       meshNum: 0,
       frontNum: 0,
       backNum: 0,
@@ -146,9 +163,9 @@ export class Neu3D {
     // In case of non-unique labels, will hold the rid for the last object
     // added with that label
     this._labelToRid = {};
-    // THREE.Mesh.raycast = acceleratedRaycast;
-    this.raycaster = new THREE.Raycaster();
-    this.raycaster.linePrecision = 3;
+    // Mesh.raycast = acceleratedRaycast;
+    this.raycaster = new Raycaster();
+    this.raycaster.params.Line.threshold = 3;
     if (options['stats']) {
       this.stats = STATS.Stats();
       this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
@@ -159,8 +176,8 @@ export class Neu3D {
     this.camera = this.initCamera();
     this.renderer = this.initRenderer();
     this.groups = {
-      front: new THREE.Group(),
-      back: new THREE.Group()
+      front: new Group(),
+      back: new Group()
     };
     this.scenes = this.initScenes();
     this.controls = this.initControls();
@@ -366,7 +383,7 @@ export class Neu3D {
     controlPanel.remember(this.settings.toneMappingPass);
     controlPanel.remember(this.settings.bloomPass);
     controlPanel.remember(this.settings.effectFXAA);
-    // controlPanel.remember(this.settings.backrenderSSAO);
+    controlPanel.remember(this.settings.backrenderSSAO);
 
     controlPanel.__closeButton.style.visibility = 'hidden';
     let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Number of Neurons: ');
@@ -382,7 +399,7 @@ export class Neu3D {
         return buttonid;
       }
 
-      _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { document.getElementById('neu3d-file-upload').click(); });
+      _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { this.fileUploadInput.click(); });
       _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { this.resetView() });
       _createBtn("resetVisibleView", "fa fa-align-justify", {}, "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
       _createBtn("hideAll", "fa fa-eye-slash", {}, "Hide All", () => { this.hideAll() });
@@ -421,7 +438,7 @@ export class Neu3D {
     f1_2.add(this.settings.bloomPass, 'strength', 0.0, 1.0).name("BloomStrength");;
     f1_2.add(this.settings.bloomPass, 'threshold', 0.0, 2.0).name("BloomThreshold");;
     f1_2.add(this.settings.effectFXAA, 'enabled').name("FXAA").listen();
-    // f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO").listen();
+    f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO").listen();
 
     let f2 = f_vis.addFolder('Size');
     f2.add(this.settings, 'defaultRadius',
@@ -498,7 +515,7 @@ export class Neu3D {
     this.fov = 20;
     this.prevhfov = 2 * Math.atan(Math.tan(Math.PI * this.fov / 2 / 180) * width / height);
 
-    let camera = new THREE.PerspectiveCamera(this.fov, width / height, 0.1, 10000000);
+    let camera = new PerspectiveCamera(this.fov, width / height, 0.1, 10000000);
     camera.position.z = 1800;
 
     if (width < 768 && width / height < 1)
@@ -520,7 +537,7 @@ export class Neu3D {
 
   /** Initialize WebGL Renderer */
   initRenderer() {
-    let renderer = new THREE.WebGLRenderer({ 'logarithmicDepthBuffer': true });
+    let renderer = new WebGLRenderer({ 'logarithmicDepthBuffer': true });
     renderer.setPixelRatio(window.devicePixelRatio * this.settings.render_resolution);
     renderer.setSize(this.container.clientWidth, this.container.clientHeight);
     this.container.appendChild(renderer.domElement);
@@ -574,15 +591,15 @@ export class Neu3D {
 
   /** Initialize Mouse Control */
   initControls() {
-    let controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
+    let controls = new TrackballControls(this.camera, this.renderer.domElement);
     controls.rotateSpeed = 2.0;
     controls.zoomSpeed = 1.0;
     controls.panSpeed = 2.0;
     controls.staticMoving = true;
     controls.dynamicDampingFactor = 0.3;
-    controls.addEventListener('change', this.render.bind(this));
     return controls;
   }
+
 
   updateControls() {
     this.controls.position0.x = this._metadata.resetPosition.x;
@@ -601,23 +618,23 @@ export class Neu3D {
   initPostProcessing() {
     let height = this.container.clientHeight;
     let width = this.container.clientWidth;
-    this.renderScene = new THREE.RenderPass(this.scenes.front, this.camera);
+    this.renderScene = new RenderPass(this.scenes.front, this.camera);
     this.renderScene.clear = false;
     this.renderScene.clearAlpha = true;
     this.renderScene.clearDepth = true;
 
-    this.backrenderScene = new THREE.RenderPass(this.scenes.back, this.camera);
-    this.backrenderSSAO = new THREE.SSAOPass(this.scenes.back, this.camera, width, height);
+    this.backrenderScene = new RenderPass(this.scenes.back, this.camera);
+    this.backrenderSSAO = new SSAOPass(this.scenes.back, this.camera, width, height);
     this.backrenderSSAO.enabled = this.settings.backrenderSSAO.enabled;
-    this.volumeScene = new THREE.Scene();
+    this.volumeScene = new Scene();
     this.volumeScene.background = null;
-    this.volumeRenderPass = new THREE.RenderPass(this.volumeScene, this.camera);
-    this.effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
+    this.volumeRenderPass = new RenderPass(this.volumeScene, this.camera);
+    this.effectFXAA = new ShaderPass(FXAAShader);
     this.effectFXAA.enabled = this.settings.effectFXAA.enabled;
     this.effectFXAA.uniforms['resolution'].value.set(1 / Math.max(width, 1440), 1 / Math.max(height, 900));
 
-    this.bloomPass = new THREE.UnrealBloomPass(
-      new THREE.Vector2(width, height),
+    this.bloomPass = new UnrealBloomPass(
+      new Vector2(width, height),
       this.settings.bloomPass.strength,
       this.settings.bloomPass.radius,
       this.settings.bloomPass.threshold
@@ -625,36 +642,38 @@ export class Neu3D {
 
     this.bloomPass.renderToScreen = true;
 
-    this.toneMappingPass = new THREE.AdaptiveToneMappingPass(true, width);
+    this.toneMappingPass = new AdaptiveToneMappingPass(true, width);
     this.toneMappingPass.setMinLuminance(1. - this.settings.toneMappingPass.brightness);
 
-    this.renderer.gammaInput = true;
-    this.renderer.gammaOutput = true;
+    // this.renderer.gammaInput = true;
+    // this.renderer.gammaOutput = true;
+    this.renderer.outputEncoding = GammaEncoding;
 
-    this.composer = new THREE.EffectComposer(this.renderer);
+    this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(this.backrenderScene);
-    // this.composer.addPass(this.backrenderSSAO);
+    this.composer.addPass(this.backrenderSSAO);
     this.composer.addPass(this.renderScene);
     this.composer.addPass(this.effectFXAA);
     this.composer.addPass(this.toneMappingPass);
-
     this.composer.addPass(this.bloomPass);
-    // this.composer.addPass(this.volumeRenderPass);
-    this.composer.setSize(width * window.devicePixelRatio,
-      height * window.devicePixelRatio);
+    // // this.composer.addPass(this.volumeRenderPass);
+    this.composer.setSize(
+      width * window.devicePixelRatio,
+      height * window.devicePixelRatio
+    );
   }
 
   /** Initialize Scene */
   initScenes() {
     let scenes = {
-      front: new THREE.Scene(),
-      back: new THREE.Scene()
+      front: new Scene(),
+      back: new Scene()
     };
 
     scenes.front.background = null;
     scenes.front.add(this.camera);
 
-    scenes.back.background = new THREE.Color(0x030305);
+    scenes.back.background = new Color(0x030305);
     scenes.back.add(this.camera);
 
     scenes.front.add(this.groups.front);
@@ -665,7 +684,7 @@ export class Neu3D {
   /** Initialize Look Up Table(Lut) for Color */
   initLut() {
     this.maxColorNum = this._metadata.maxColorNum;
-    let lut = new THREE.Lut(this._metadata.colormap, this.maxColorNum);
+    let lut = new Lut(this._metadata.colormap, this.maxColorNum);
     lut.setMin(0);
     lut.setMax(1);
     return lut;
@@ -688,26 +707,26 @@ export class Neu3D {
 
     lightsHelper.addDirectionalLight({
       intensity: 0.1,
-      position: new THREE.Vector3(0, 0, 5000),
+      position: new Vector3(0, 0, 5000),
       key: 'frontDirectional_1'
     });
 
     lightsHelper.addDirectionalLight({
       intensity: 0.55,
-      position: new THREE.Vector3(0, 0, 5000),
+      position: new Vector3(0, 0, 5000),
       scene: this.scenes.back,
       key: 'backDirectional_1'
     });
 
     lightsHelper.addDirectionalLight({
       intensity: 0.1,
-      position: new THREE.Vector3(0, 0, -5000),
+      position: new Vector3(0, 0, -5000),
       key: 'frontDirectional_2'
     });
 
     lightsHelper.addDirectionalLight({
       intensity: 0.55,
-      position: new THREE.Vector3(0, 0, -5000),
+      position: new Vector3(0, 0, -5000),
       scene: this.scenes.back,
       key: 'backDirectional_2'
     });
@@ -749,7 +768,7 @@ export class Neu3D {
    * https://threejs.org/docs/#api/en/loaders/managers/LoadingManager
   */
   initLoadingManager() {
-    let loadingManager = new THREE.LoadingManager();
+    let loadingManager = new LoadingManager();
     loadingManager.onLoad = () => {
       this.controls.target0.x = 0.5 * (this.boundingBox.minX + this.boundingBox.maxX);
       this.controls.target0.y = 0.5 * (this.boundingBox.minY + this.boundingBox.maxY);
@@ -862,7 +881,7 @@ export class Neu3D {
 
       if (metadata.colororder === "order" && (colorNum !== this.maxColorNum || metadata.colormap !== "rainbow")) {
         colorNum = keyList.length;
-        lut = new THREE.Lut(metadata.colormap, colorNum);
+        lut = new Lut(metadata.colormap, colorNum);
         lut.setMin(0);
         lut.setMax(1);
       } else {
@@ -904,7 +923,7 @@ export class Neu3D {
 
 
         if (Array.isArray(unit.color)) {
-          unit.color = new THREE.Color(...unit.color);
+          unit.color = new Color(...unit.color);
         }
         /* read mesh */
         if (metadata.type === "morphology_json") {
@@ -919,7 +938,7 @@ export class Neu3D {
         }
         else if ('filename' in unit) {
           unit['filetype'] = unit.filename.split('.').pop();
-          let loader = new THREE.FileLoader(this.loadingManager);
+          let loader = new FileLoader(this.loadingManager);
           if (unit['filetype'] == "json")
             loader.load(unit.filename, this.loadMeshCallBack(key, unit, metadata.visibility).bind(this));
           else if (unit['filetype'] == "swc")
@@ -1170,7 +1189,7 @@ export class Neu3D {
     let height = this.container.clientHeight;
     let width = this.container.clientWidth;
     let aspect = width / height;
-    let cam_dir = new THREE.Vector3();
+    let cam_dir = new Vector3();
     cam_dir.subVectors(this.camera.position, this.controls.target);
     let prevDist = cam_dir.length();
     cam_dir.normalize();
@@ -1692,7 +1711,7 @@ export class Neu3D {
           meshobj.children[j].geometry.colors[k].set(color);
         }
       }
-      this.meshDict[id[i]].color = new THREE.Color( (color));
+      this.meshDict[id[i]].color = new Color( (color));
     }
   }
 
@@ -1702,7 +1721,7 @@ export class Neu3D {
    */
   setBackgroundColor(color) {
     if (Array.isArray(color)) {
-      color = new THREE.Color().fromArray(color);
+      color = new Color().fromArray(color);
     }
     for (let i = 0; i < this.groups.back.children.length; ++i) {
       let meshobj = this.groups.back.children[i];
@@ -1747,14 +1766,14 @@ export class Neu3D {
     this.camera.updateProjectionMatrix();
     setTimeout(() => {
       let positions = [
-        new THREE.Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.minY, this.visibleBoundingBox.minZ),
-        new THREE.Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.minY, this.visibleBoundingBox.maxZ),
-        new THREE.Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.maxY, this.visibleBoundingBox.minZ),
-        new THREE.Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.maxY, this.visibleBoundingBox.maxZ),
-        new THREE.Vector3(this.visibleBoundingBox.maxX, this.visibleBoundingBox.minY, this.visibleBoundingBox.minZ),
-        new THREE.Vector3(this.visibleBoundingBox.maxX, this.visibleBoundingBox.minY, this.visibleBoundingBox.maxZ),
-        new THREE.Vector3(this.visibleBoundingBox.maxX, this.visibleBoundingBox.maxY, this.visibleBoundingBox.minZ),
-        new THREE.Vector3(this.visibleBoundingBox.maxX, this.visibleBoundingBox.maxY, this.visibleBoundingBox.maxZ)
+        new Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.minY, this.visibleBoundingBox.minZ),
+        new Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.minY, this.visibleBoundingBox.maxZ),
+        new Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.maxY, this.visibleBoundingBox.minZ),
+        new Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.maxY, this.visibleBoundingBox.maxZ),
+        new Vector3(this.visibleBoundingBox.maxX, this.visibleBoundingBox.minY, this.visibleBoundingBox.minZ),
+        new Vector3(this.visibleBoundingBox.maxX, this.visibleBoundingBox.minY, this.visibleBoundingBox.maxZ),
+        new Vector3(this.visibleBoundingBox.maxX, this.visibleBoundingBox.maxY, this.visibleBoundingBox.minZ),
+        new Vector3(this.visibleBoundingBox.maxX, this.visibleBoundingBox.maxY, this.visibleBoundingBox.maxZ)
       ];
       // From https://stackoverflow.com/a/11771236
       let targetFov = 0.0;
@@ -1764,7 +1783,7 @@ export class Neu3D {
         targetFov = Math.max(targetFov, angle);
       }
       let currentFov = Math.PI * this.fov / 2 / 180;
-      let cam_dir = new THREE.Vector3();
+      let cam_dir = new Vector3();
       cam_dir.subVectors(this.camera.position, this.controls.target);
       let prevDist = cam_dir.length();
       cam_dir.normalize();

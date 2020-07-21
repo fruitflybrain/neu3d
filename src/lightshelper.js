@@ -1,5 +1,5 @@
 import { PropertyManager } from './propertymanager';
-const THREE = require('../etc/three');
+import { AmbientLight, Vector3, DirectionalLight, SpotLight } from 'three';
 
 function guidGenerator() {
   var S4 = function() {
@@ -130,7 +130,7 @@ export class FFBOLightsHelper {
     let intensity = getProperty(properties, 'intensity', 1.0);
     let key = getProperty(properties, 'key', guidGenerator());
     this[key] = new PropertyManager({
-      _object: new THREE.AmbientLight(color, intensity),
+      _object: new AmbientLight(color, intensity),
       color: color,
       intensity: intensity,
       enabled: true
@@ -154,11 +154,11 @@ export class FFBOLightsHelper {
     let scene = getProperty(properties, 'scene', this.scene);
     let color = getProperty(properties, 'color', 0xffffff);
     let intensity = getProperty(properties, 'intensity', 1.0);
-    let position = getProperty(properties, 'position', new THREE.Vector3(0, 0, 1000));
-    let target = getProperty(properties, 'target', new THREE.Vector3(0, 0, 0));
+    let position = getProperty(properties, 'position', new Vector3(0, 0, 1000));
+    let target = getProperty(properties, 'target', new Vector3(0, 0, 0));
     let key = getProperty(properties, 'key', guidGenerator());
     this[key] = new PropertyManager({
-      _object: new THREE.DirectionalLight(color, intensity),
+      _object: new DirectionalLight(color, intensity),
       color: color,
       intensity: intensity,
       position: position,
@@ -213,7 +213,7 @@ export class FFBOLightsHelper {
     let track = getProperty(properties, 'track', true);
     let key = getProperty(properties, 'key', guidGenerator());
     this[key] = new PropertyManager({
-      _object: new THREE.SpotLight(color, intensity),
+      _object: new SpotLight(color, intensity),
       color: color,
       intensity: intensity,
       angle: angle,
