@@ -34,6 +34,11 @@ import '../style/neu3d.css';
 
 var isOnMobile = checkOnMobile();
 
+// return next power of 2 of given number
+function nextPow2(x) {
+  return Math.pow(2, Math.round(Math.max(x,0)).toString(2).length);
+}
+
 // used for generating unique file upload div id
 function generateGuid() {
   var result, i, j;
@@ -644,7 +649,7 @@ export class Neu3D {
 
     this.bloomPass.renderToScreen = true;
 
-    this.toneMappingPass = new AdaptiveToneMappingPass(true, width);
+    this.toneMappingPass = new AdaptiveToneMappingPass(true, nextPow2(width));
     this.toneMappingPass.setMinLuminance(1. - this.settings.toneMappingPass.brightness);
 
     // this.renderer.gammaInput = true;
