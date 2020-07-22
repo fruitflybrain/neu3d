@@ -810,7 +810,7 @@ export class Neu3D {
       if (this.meshDict[key].background) {
         this.groups.back.remove(meshobj);  
       } else {
-        this.groups.back.remove(meshobj);
+        this.groups.front.remove(meshobj);
       }
       meshobj = null;
       delete this.meshDict[key];
