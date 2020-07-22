@@ -37,13 +37,19 @@ Neu3D.prototype._registerObject = function(key, unit, object) {
   }
   // TODO: move the code below to a function
   if (!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')) {
-    if (this.settings.defaultOpacity !== 1){
+    if (unit['background']) {
       for (let i = 0; i < unit['object'].children.length; i++){
-        unit['object'].children[i].material.opacity = this.settings.defaultOpacity;
+        unit['object'].children[i].material.opacity = this.settings.backgroundOpacity;
+      }
+    } else {
+      if (this.settings.defaultOpacity !== 1){
+        for (let i = 0; i < unit['object'].children.length; i++){
+          unit['object'].children[i].material.opacity = this.settings.defaultOpacity;
+        }
       }
     }
-  }
-  else {
+    
+  } else {
     if (this.settings.synapseOpacity !== 1){
       for (let i = 0; i < unit['object'].children.length; i++){
         unit['object'].children[i].material.opacity = this.settings.synapseOpacity;
@@ -54,10 +60,12 @@ Neu3D.prototype._registerObject = function(key, unit, object) {
 }
 
 
-/** TODO: Add comment
- * @param {*} key 
+/** Load Mesh from JSON into MeshDict
+ * Used primarily for loading background meshes
+ * 
+ * @param {string} key name of the mesh loaded
  * @param {*} unit 
- * @param {*} visibility 
+ * @param {boolean} visibility if the mesh should be visible
  */
 Neu3D.prototype.loadMeshCallBack = function(key, unit, visibility) {
   return (jsonString) => {
@@ -149,67 +157,71 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
     let mergedGeometry = undefined;
     let geometry = undefined;
     let sphereGeometry = undefined;
-    
+
     for (let idx in swcObj) {
       let c = swcObj[idx];
-      if (idx == Math.round(len / 2) && unit.position == undefined)
-      unit.position = new Vector3(c.x, c.y, c.z);
+      if (idx == Math.round(len / 2) && unit.position == undefined){
+        unit.position = new Vector3(c.x, c.y, c.z);
+      }
       this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
       this.updateBoundingBox(c.x, c.y, c.z);
-      if (c.parent != -1) {
-        let p = swcObj[c.parent];
-        if (p != undefined)
-        {
-        if (this.settings.neuron3d) {
-          if (mergedGeometry == undefined){
-            mergedGeometry = new Geometry();
-          }
-          let d = new Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
-          if (!p.radius || !c.radius){
-            p.radius = this.settings.defaultRadius;
-            c.radius = this.settings.defaultRadius;
-          }
-          geometry = new CylinderGeometry(
-            Math.clip(p.radius, this.settings.minRadius, this.settings.maxRadius),
-            Math.clip(c.radius, this.settings.minRadius, this.settings.maxRadius),
-            d.length(), 4, 1, 0);
-          geometry.translate(0, 0.5 * d.length(), 0);
-          geometry.applyMatrix(new Matrix4().makeRotationX(Math.PI / 2));
-          geometry.lookAt(d.clone());
-          geometry.translate((c.x + c.x) / 2, -0.0 * d.length() + (c.y + c.y) / 2, (c.z + c.z) / 2);
-          mergedGeometry.merge(geometry);
-          geometry = null;
-          
-          if (this.settings.neuron3dMode == 2) {
-            geometry = new SphereGeometry(c.radius, 8, 8);
+      if (c.parent != -1) { // if not soma
+        let p = swcObj[c.parent]; // parent object
+        if (p != undefined) { // create parent object if undefined
+          if (this.settings.neuron3d) {
+            if (mergedGeometry == undefined) {
+              mergedGeometry = new Geometry();
+            }
+            // line from parent to current node
+            let d = new Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
+
+            // set radius of the parent and current radius
+            if (!p.radius){
+              p.radius = this.settings.defaultRadius;
+            } 
+            if (!c.radius) {
+              c.radius = this.settings.defaultRadius;
+            }
+            p.radius = Math.clip(p.radius, this.settings.minRadius, this.settings.maxRadius);
+            c.radius = Math.clip(c.radius, this.settings.minRadius, this.settings.maxRadius);
+            geometry = new CylinderGeometry( p.radius, c.radius, d.length(), 4, 1, 0);
+            geometry.translate(0, 0.5 * d.length(), 0);
             geometry.applyMatrix(new Matrix4().makeRotationX(Math.PI / 2));
-            geometry.lookAt(d);
-            geometry.translate((c.x + c.x) / 2, (c.y + c.y) / 2, (c.z + c.z) / 2);
+            geometry.lookAt(d.clone());
+            geometry.translate((c.x + c.x) / 2, -0.0 * d.length() + (c.y + c.y) / 2, (c.z + c.z) / 2);
             mergedGeometry.merge(geometry);
             geometry = null;
-          }else if (this.settings.neuron3dMode == 3) {
-            if (p.parent != -1) {
-              let p2 = swcObj[p.parent];
-              let a = new Vector3(0.9 * p.x + 0.1 * p2.x, 0.9 * p.y + 0.1 * p2.y, 0.9 * p.z + 0.1 * p2.z);
-              let b = new Vector3(0.9 * p.x + 0.1 * c.x, 0.9 * p.y + 0.1 * c.y, 0.9 * p.z + 0.1 * c.z);
-              let curve = new QuadraticBezierCurve3(a, new Vector3(p.x, p.y, p.z), b);
-              geometry = new TubeGeometry(curve, 8, p.radius, 4, false);
+
+            if (this.settings.neuron3dMode == 2) {
+              geometry = new SphereGeometry(c.radius, 8, 8);
+              geometry.applyMatrix(new Matrix4().makeRotationX(Math.PI / 2));
+              geometry.lookAt(d);
+              geometry.translate((c.x + c.x) / 2, (c.y + c.y) / 2, (c.z + c.z) / 2);
               mergedGeometry.merge(geometry);
               geometry = null;
+            }else if (this.settings.neuron3dMode == 3) {
+              if (p.parent != -1) { // makesure the parent is not direct descendant of the soma
+                let p2 = swcObj[p.parent];
+                let a = new Vector3(0.9 * p.x + 0.1 * p2.x, 0.9 * p.y + 0.1 * p2.y, 0.9 * p.z + 0.1 * p2.z);
+                let b = new Vector3(0.9 * p.x + 0.1 * c.x, 0.9 * p.y + 0.1 * c.y, 0.9 * p.z + 0.1 * c.z);
+                let curve = new QuadraticBezierCurve3(a, new Vector3(p.x, p.y, p.z), b);
+                geometry = new TubeGeometry(curve, 8, p.radius, 4, false);
+                mergedGeometry.merge(geometry);
+                geometry = null;
+              }
+            }
+          } else { // if soma
+            if (geometry == undefined){
+              geometry = new Geometry();
+            }
+            if (p != undefined) {
+              geometry.vertices.push(new Vector3(c.x, c.y, c.z));
+              geometry.vertices.push(new Vector3(p.x, p.y, p.z));
+              geometry.colors.push(color);
+              geometry.colors.push(color);
             }
           }
-        }else {
-          if (geometry == undefined)
-          geometry = new Geometry();
-          if (p != undefined)
-          {
-            geometry.vertices.push(new Vector3(c.x, c.y, c.z));
-            geometry.vertices.push(new Vector3(p.x, p.y, p.z));
-            geometry.colors.push(color);
-            geometry.colors.push(color);
         }
-        }
-      }
       }
       if (c.type == 1) {
         if (!c.radius){
@@ -238,8 +250,9 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
           mergedGeometry.merge(sphereGeometry);
           unit['position'] = new Vector3(c.x, c.y, c.z);
         } else {
-          if (pointGeometry == undefined)
-          pointGeometry = new Geometry();
+          if (pointGeometry == undefined){
+            pointGeometry = new Geometry();
+          }
           pointGeometry.vertices.push(new Vector3(c.x, c.y, c.z));
         }
       }
@@ -309,14 +322,15 @@ Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
             mergedGeometry = new Geometry();
           }
           let d = new Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
-          if (!p.radius || !c.radius){
+          if (!p.radius){
             p.radius = this.settings.defaultRadius;
+          } 
+          if (!c.radius) {
             c.radius = this.settings.defaultRadius;
           }
-          geometry = new CylinderGeometry(
-            Math.clip(p.radius, this.settings.minRadius, this.settings.maxRadius),
-            Math.clip(c.radius, this.settings.minRadius, this.settings.maxRadius),
-            d.length(), 4, 1, 0);
+          p.radius = Math.clip(p.radius, this.settings.minRadius, this.settings.maxRadius);
+          c.radius = Math.clip(c.radius, this.settings.minRadius, this.settings.maxRadius),
+          geometry = new CylinderGeometry(p.radius, c.radius, d.length(), 4, 1, 0);
           geometry.translate(0, 0.5 * d.length(), 0);
           geometry.applyMatrix(new Matrix4().makeRotationX(Math.PI / 2));
           geometry.lookAt(d.clone());

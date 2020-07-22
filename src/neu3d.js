@@ -24,11 +24,13 @@ import '@fortawesome/fontawesome-free/js/all.js';
 const STATS = require('../etc/stats');
 // const Detector = require("three/examples/js/WEBGL");
 // const THREE = require('../etc/three');
-
-
 import dat from '../etc/dat.gui';
-import '../style/neu3d.css';
+
+// import dat from 'dat.gui';
 import { datGuiPresets } from './presets.js';
+
+import '../style/neu3d.css';
+
 
 var isOnMobile = checkOnMobile();
 
@@ -910,7 +912,11 @@ export class Neu3D {
         }
         unit.boundingBox = Object.assign({}, this.defaultBoundingBox);
         setAttrIfNotDefined(unit, 'highlight', true);
-        setAttrIfNotDefined(unit, 'opacity', -1.0); // <TODO> what does this do?
+        if (unit.background){
+          setAttrIfNotDefined(unit, 'opacity', this.settings.backgroundOpacity);
+        } else {
+          setAttrIfNotDefined(unit, 'opacity', this.settings.defaultOpacity);
+        }
         setAttrIfNotDefined(unit, 'visibility', true);
         setAttrIfNotDefined(unit, 'background', false);
         setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
@@ -929,34 +935,32 @@ export class Neu3D {
         if (Array.isArray(unit.color)) {
           unit.color = new Color(...unit.color);
         }
+
         /* read mesh */
         if (metadata.type === "morphology_json") {
           this.loadMorphJSONCallBack(key, unit, metadata.visibility).bind(this)();
-        }
-        else if (metadata.type === "obj") {
+        } else if (metadata.type === "obj") {
           this.loadObjCallBack(key, unit, metadata.visibility).bind(this)();
-        }
-        else if (('dataStr' in unit) && ('filename' in unit)) {
+        } else if (('dataStr' in unit) && ('filename' in unit)) {
           console.log('mesh object has both data string and filename... should only have one... skip rendering');
           continue;
-        }
-        else if ('filename' in unit) {
+        } else if ('filename' in unit) {
           unit['filetype'] = unit.filename.split('.').pop();
           let loader = new FileLoader(this.loadingManager);
-          if (unit['filetype'] == "json")
+          if (unit['filetype'] == "json"){
             loader.load(unit.filename, this.loadMeshCallBack(key, unit, metadata.visibility).bind(this));
-          else if (unit['filetype'] == "swc")
+          } else if (unit['filetype'] == "swc") {
             loader.load(unit.filename, this.loadSWCCallBack(key, unit, metadata.visibility).bind(this));
-          else {
+          } else {
             console.log('mesh object has unrecognized data format... skip rendering');
             continue;
           }
         } else if ('dataStr' in unit) {
-          if (unit['filetype'] == "json")
+          if (unit['filetype'] == "json") {
             this.loadMeshCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
-          else if (unit['filetype'] == "swc")
+          } else if (unit['filetype'] == "swc") {
             this.loadSWCCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
-          else {
+          } else {
             console.log('mesh object has unrecognized data format... skip rendering');
             continue;
           }
@@ -964,6 +968,8 @@ export class Neu3D {
           console.log('mesh object has neither filename nor data string... skip rendering');
           continue;
         }
+
+        console.log(unit);
       }
       resolve();
     });
@@ -1227,23 +1233,25 @@ export class Neu3D {
     if (this.states.highlight) {
       // do nothing
     } else {
-      for (let key in this.meshDict) {
-        if (this.meshDict[key].object !== undefined) {
-          let x = new Date().getTime();
-          if (this.meshDict[key]['background']) {
-            let obj = this.meshDict[key].object.children;
-            if (this.meshDict[key]['opacity'] >= 0.00) {
-              obj[0].material.opacity = this.meshDict[key]['opacity'] * (this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005)));
-            } else {
+      if (this.settings.meshOscAmp > 0) {
+        for (let key in this.meshDict) {
+          if (this.meshDict[key].object !== undefined) {
+            let x = new Date().getTime();
+            if (this.meshDict[key]['background']) {
+              let obj = this.meshDict[key].object.children;
+              if (this.meshDict[key]['opacity'] >= 0.00) {
+                obj[0].material.opacity = this.meshDict[key]['opacity'] * (this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005)));
+              } else {
+                obj[0].material.opacity = this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005));
+                obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
+              }
+  
+  
               obj[0].material.opacity = this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005));
               obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
+            } else {
+              //TODO: check what this else loop does
             }
-
-
-            obj[0].material.opacity = this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005));
-            obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
-          } else {
-            //TODO: check what this else loop does
           }
         }
       }
