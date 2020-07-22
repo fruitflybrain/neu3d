@@ -38,9 +38,8 @@ Neu3D.prototype._registerObject = function(key, unit, object) {
   // TODO: move the code below to a function
   if (!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')) {
     if (unit['background']) {
-      for (let i = 0; i < unit['object'].children.length; i++){
-        unit['object'].children[i].material.opacity = this.settings.backgroundOpacity;
-      }
+      unit['object'].children[0].material.opacity = this.settings.backgroundOpacity;
+      unit['object'].children[1].material.opacity = this.settings.backgroundWireframeOpacity;
     } else {
       if (this.settings.defaultOpacity !== 1){
         for (let i = 0; i < unit['object'].children.length; i++){
