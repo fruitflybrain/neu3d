@@ -968,8 +968,6 @@ export class Neu3D {
           console.log('mesh object has neither filename nor data string... skip rendering');
           continue;
         }
-
-        console.log(unit);
       }
       resolve();
     });
