@@ -59,43 +59,34 @@ Neu3D.prototype._registerObject = function(key, unit, object) {
   this.meshDict[key] = unit;
 }
 
-
-/** Load Mesh from JSON into MeshDict
- * Used primarily for loading background meshes
- * 
- * @param {string} key name of the mesh loaded
+/** TODO: Add comment
+ * @param {*} key 
  * @param {*} unit 
- * @param {boolean} visibility if the mesh should be visible
+ * @param {*} visibility 
  */
 Neu3D.prototype.loadMeshCallBack = function(key, unit, visibility) {
   return (jsonString) => {
     let json = JSON.parse(jsonString);
     let color = unit['color'];
-    let geometry = new BufferGeometry();
+    let geometry = new Geometry();
     let vtx = json['vertices'];
     let idx = json['faces'];
-    // for (let j = 0; j < vtx.length / 3; j++) {
-    //   let x = parseFloat(vtx[3 * j + 0]);
-    //   let y = parseFloat(vtx[3 * j + 1]);
-    //   let z = parseFloat(vtx[3 * j + 2]);
-    //   geometry.vertices.push(new Vector3(x, y, z));
-    //   this.updateObjectBoundingBox(unit, x, y, z);
-    //   this.updateBoundingBox(x, y, z);
-    // }
-    // for (let j = 0; j < idx.length / 3; j++) {
-    //   geometry.faces.push(new Face3(parseInt(idx[3 * j + 0]), parseInt(idx[3 * j + 1]), parseInt(idx[3 * j + 2])));
-    // }
-    // geometry.mergeVertices();
-    geometry.setAttribute('position',  new Float32BufferAttribute( vtx, 3 ))
-    geometry.setIndex(idx);
+    for (let j = 0; j < vtx.length / 3; j++) {
+      let x = parseFloat(vtx[3 * j + 0]);
+      let y = parseFloat(vtx[3 * j + 1]);
+      let z = parseFloat(vtx[3 * j + 2]);
+      geometry.vertices.push(new Vector3(x, y, z));
+      this.updateObjectBoundingBox(unit, x, y, z);
+      this.updateBoundingBox(x, y, z);
+    }
+    for (let j = 0; j < idx.length / 3; j++) {
+      geometry.faces.push(new Face3(parseInt(idx[3 * j + 0]), parseInt(idx[3 * j + 1]), parseInt(idx[3 * j + 2])));
+    }
+    geometry.mergeVertices();
     geometry.computeFaceNormals();
     geometry.computeVertexNormals();
-
-    geometry.computeBoundingBox();
-    const { x, y, z } = geometry.boundingBox.max;
-    this.updateObjectBoundingBox(unit, x, y, z);
-    this.updateBoundingBox(x, y, z);
     let materials = [
+      //new THREE.MeshPhongMaterial( { color: color, flatShading: true, shininess: 0, transparent: true } ),
       new MeshLambertMaterial({ color: color, transparent: true, side: 2, flatShading: true }),
       new MeshBasicMaterial({ color: color, wireframe: true, transparent: true })
     ];
@@ -108,6 +99,56 @@ Neu3D.prototype.loadMeshCallBack = function(key, unit, visibility) {
     this._registerObject(key, unit, object);
   };
 }
+
+
+// /** Load Mesh from JSON into MeshDict
+//  * Used primarily for loading background meshes
+//  * 
+//  * @param {string} key name of the mesh loaded
+//  * @param {*} unit 
+//  * @param {boolean} visibility if the mesh should be visible
+//  */
+// Neu3D.prototype.loadMeshCallBack = function(key, unit, visibility) {
+//   return (jsonString) => {
+//     let json = JSON.parse(jsonString);
+//     let color = unit['color'];
+//     let geometry = new BufferGeometry();
+//     let vtx = json['vertices'];
+//     let idx = json['faces'];
+//     // for (let j = 0; j < vtx.length / 3; j++) {
+//     //   let x = parseFloat(vtx[3 * j + 0]);
+//     //   let y = parseFloat(vtx[3 * j + 1]);
+//     //   let z = parseFloat(vtx[3 * j + 2]);
+//     //   geometry.vertices.push(new Vector3(x, y, z));
+//     //   this.updateObjectBoundingBox(unit, x, y, z);
+//     //   this.updateBoundingBox(x, y, z);
+//     // }
+//     // for (let j = 0; j < idx.length / 3; j++) {
+//     //   geometry.faces.push(new Face3(parseInt(idx[3 * j + 0]), parseInt(idx[3 * j + 1]), parseInt(idx[3 * j + 2])));
+//     // }
+//     // geometry.mergeVertices();
+//     geometry.setAttribute('position',  new Float32BufferAttribute( vtx, 3 ))
+//     geometry.setIndex(idx);
+//     geometry.computeFaceNormals();
+//     geometry.computeVertexNormals();
+
+//     geometry.computeBoundingBox();
+//     const { x, y, z } = geometry.boundingBox.max;
+//     this.updateObjectBoundingBox(unit, x, y, z);
+//     this.updateBoundingBox(x, y, z);
+//     let materials = [
+//       new MeshLambertMaterial({ color: color, transparent: true, side: 2, flatShading: true }),
+//       new MeshBasicMaterial({ color: color, wireframe: true, transparent: true })
+//     ];
+
+//     let object = SceneUtils.createMultiMaterialObject(geometry, materials);
+//     if (!this.settings.meshWireframe){
+//       object.children[1].visible = false;
+//     }
+//     object.visible = visibility;
+//     this._registerObject(key, unit, object);
+//   };
+// }
 
 
 
