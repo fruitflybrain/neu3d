@@ -96,8 +96,10 @@ export class Neu3D {
     if (options['powerSaving']) {
       this.powerSaving = true;
     }
+    
     this._animationId = null; // animation frame id, useful for stopping animation
     this._containerEventListener = {}; // function references to event listeners on container div
+    this._addedDOMElements = [];
     /* default metadata */
     this._metadata = {
       colormap: "rainbow",
@@ -179,6 +181,7 @@ export class Neu3D {
       this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
       this.stats.dom.style.position = "relative";
       this.stats.dom.className += ' vis-3d-stats'
+      this._addedDOMElements.push(this.stats.dom);
       this.container.appendChild(this.stats.dom);
     }
     this.camera = this.initCamera();
@@ -197,6 +200,7 @@ export class Neu3D {
 
     this.controlPanel = this.initControlPanel(options['datGUI']);
     controlPanelDiv.appendChild(this.controlPanel.domElement);
+    this._addedDOMElements.push(controlPanelDiv);
     this.container.appendChild(controlPanelDiv);
 
     this.addContainerEventListener();
@@ -322,6 +326,7 @@ export class Neu3D {
     // this input has to be added as siblinig of vis-3d
     // becuase vis-3d blocks click event propagation.
     document.body.appendChild(fileUploadInput);
+    this._addedDOMElements.push(fileUploadInput);
     this.fileUploadInput = fileUploadInput; // expose div
 
     var _tooltips = document.getElementsByClassName("tooltip")
@@ -335,11 +340,9 @@ export class Neu3D {
   }
 
   removeDivs() {
-    this.fileUploadInput.remove();
-    this.toolTipDiv.remove();
-
-    
-    this.container.innerHTML = "";
+    for (let el of this._addedDOMElements){
+      el.remove();
+    }
   }
 
   /**
@@ -382,16 +385,14 @@ export class Neu3D {
     }
 
     let controlPanel = new dat.GUI(GUIOptions);
-
-    // controlPanel.remember(this.settings);
-    // controlPanel.remember(this.settings.toneMappingPass);
-    // controlPanel.remember(this.settings.bloomPass);
-    // controlPanel.remember(this.settings.effectFXAA);
-    // controlPanel.remember(this.settings.backrenderSSAO);
-
-    // controlPanel.__closeButton.style.visibility = 'hidden';
+    controlPanel.remember(this.settings);
+    controlPanel.remember(this.settings.toneMappingPass);
+    controlPanel.remember(this.settings.bloomPass);
+    controlPanel.remember(this.settings.effectFXAA);
+    controlPanel.remember(this.settings.backrenderSSAO);
+    controlPanel.__closeButton.style.visibility = 'hidden';
     this._controlPanelBtnIds = []
-    let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Number of Neurons: ');
+    let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('# Neurons: ');
     neuronNum.domElement.style["pointerEvents"] = "None";
     neuronNum.domElement.parentNode.parentNode.classList.add('noneurons');
     if (GUIOptions['createButtons']) {
@@ -400,7 +401,7 @@ export class Neu3D {
           this[name] = func;
         };
         let btn = new newButton();
-        let buttonid = controlPanel.add(btn, name); //.title(tooltip).icon(icon, "strip", iconAttrs);
+        let buttonid = controlPanel.add(btn, name).title(tooltip).icon(icon, "strip", iconAttrs);
         return buttonid;
       }
 
@@ -432,19 +433,19 @@ export class Neu3D {
     f0.add(this.settings, 'synapseMode');
 
     let f1 = f_vis.addFolder('Visualization');
-    f1.add(this.settings, 'meshWireframe').name("Display Wireframe");
+    f1.add(this.settings, 'meshWireframe').name("Show Wireframe");
     f1.addColor(this.settings, 'backgroundColor').name("Background");
     let f1_1 = f1.addFolder('Opacity');
 
-    f1_1.add(this.settings, 'defaultOpacity', 0.0, 1.0).listen();
-    f1_1.add(this.settings, 'synapseOpacity', 0.0, 1.0).listen();
-    f1_1.add(this.settings, 'nonHighlightableOpacity', 0.0, 1.0).listen();
-    f1_1.add(this.settings, 'lowOpacity', 0.0, 1.0).listen();
-    f1_1.add(this.settings, 'pinOpacity', 0.0, 1.0).listen();
-    f1_1.add(this.settings, 'pinLowOpacity', 0.0, 1.0).listen();
-    f1_1.add(this.settings, 'highlightedObjectOpacity', 0.0, 1.0).listen();
-    f1_1.add(this.settings, 'backgroundOpacity', 0.0, 1.0).listen();
-    f1_1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0).listen();
+    f1_1.add(this.settings, 'defaultOpacity', 0.0, 1.0);//.listen();
+    f1_1.add(this.settings, 'synapseOpacity', 0.0, 1.0);//.listen();
+    f1_1.add(this.settings, 'nonHighlightableOpacity', 0.0, 1.0);//.listen();
+    f1_1.add(this.settings, 'lowOpacity', 0.0, 1.0);//.listen();
+    f1_1.add(this.settings, 'pinOpacity', 0.0, 1.0);//.listen();
+    f1_1.add(this.settings, 'pinLowOpacity', 0.0, 1.0);//.listen();
+    f1_1.add(this.settings, 'highlightedObjectOpacity', 0.0, 1.0);//.listen();
+    f1_1.add(this.settings, 'backgroundOpacity', 0.0, 1.0);//.listen();
+    f1_1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0);//.listen();
 
     let f1_2 = f1.addFolder('Advanced');
 
@@ -452,31 +453,42 @@ export class Neu3D {
     f1_2.add(this.settings.bloomPass, 'radius', 0.0, 10.0).name("BloomRadius");;
     f1_2.add(this.settings.bloomPass, 'strength', 0.0, 1.0).name("BloomStrength");;
     f1_2.add(this.settings.bloomPass, 'threshold', 0.0, 2.0).name("BloomThreshold");;
-    f1_2.add(this.settings.effectFXAA, 'enabled').name("FXAA").listen();
-    f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO").listen();
+    f1_2.add(this.settings.effectFXAA, 'enabled').name("FXAA");//.listen();
+    f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO");//.listen();
 
     let f2 = f_vis.addFolder('Size');
-    f2.add(this.settings, 'defaultRadius',
-      this.settings.minRadius, this.settings.maxRadius).listen();
-    f2.add(this.settings, 'defaultSomaRadius',
-      this.settings.minSomaRadius, this.settings.maxSomaRadius).listen();
-    f2.add(this.settings, 'defaultSynapseRadius',
-      this.settings.minSynapseRadius, this.settings.maxSynapseRadius).listen();
+    f2.add(this.settings, 'defaultRadius', this.settings.minRadius, this.settings.maxRadius);//.listen();
+    f2.add(this.settings, 'defaultSomaRadius', this.settings.minSomaRadius, this.settings.maxSomaRadius);//.listen();
+    f2.add(this.settings, 'defaultSynapseRadius', this.settings.minSynapseRadius, this.settings.maxSynapseRadius);//.listen();
 
-    let ctl_minR = f2.add(this.settings, 'minRadius', 0).listen();
+    let ctl_minR = f2.add(this.settings, 'minRadius', 0);//.listen();
     ctl_minR.onChange((value) => { value = Math.min(value, this.settings.maxRadius); })
-    let ctl_maxR = f2.add(this.settings, 'maxRadius', 0).listen();
+    let ctl_maxR = f2.add(this.settings, 'maxRadius', 0);//.listen();
     ctl_maxR.onChange((value) => { value = Math.max(value, this.settings.minRadius); })
-    let ctl_minSomaR = f2.add(this.settings, 'minSomaRadius', 0).listen();
+    let ctl_minSomaR = f2.add(this.settings, 'minSomaRadius', 0);//.listen();
     ctl_minSomaR.onChange((value) => { value = Math.min(value, this.settings.maxSomaRadius); })
-    let ctl_maxSomaR = f2.add(this.settings, 'maxSomaRadius', 0).listen();
+    let ctl_maxSomaR = f2.add(this.settings, 'maxSomaRadius', 0);//.listen();
     ctl_maxSomaR.onChange((value) => { value = Math.max(value, this.settings.minSomaRadius); })
-    let ctl_minSynR = f2.add(this.settings, 'minSynapseRadius', 0).listen();
+    let ctl_minSynR = f2.add(this.settings, 'minSynapseRadius', 0);//.listen();
     ctl_minSynR.onChange((value) => { value = Math.min(value, this.settings.maxSynapseRadius); })
-    let ctl_maxSynR = f2.add(this.settings, 'maxSynapseRadius', 0).listen();
+    let ctl_maxSynR = f2.add(this.settings, 'maxSynapseRadius', 0);//.listen();
     ctl_maxSynR.onChange((value) => { value = Math.max(value, this.settings.minSynapseRadius); })
 
 
+    this.settings.on("change", ((e) => {
+      controlPanel.updateDisplay();
+    }), [ 
+      'neuron3d', 'neuron3dMode', 'synapseMode', 'meshWireframe', 'defaultOpacity', 
+      'synapseOpacity', 'nonHighlightableOpacity', 'lowOpacity', 'pinOpacity', 'pinLowOpacity', 
+      'highlightedObjectOpacity', 'backgroundOpacity', 'backgroundWireframeOpacity',
+      'defaultRadius', 'defaultSomaRadius', 'defaultSynapseRadius', 'minRadius', 'maxRadius', 
+      'minSomaRadius', 'maxSomaRadius', 'minSynapseRadius', 'maxSynapseRadius', 'backgroundColor'
+    ]);
+    this.settings.toneMappingPass.on('change', ((e)=>{controlPanel.updateDisplay();}), ['brightness']);
+    this.settings.bloomPass.on('change', ((e)=>{controlPanel.updateDisplay();}), ['radius', 'strength', 'threshold']);
+    this.settings.effectFXAA.on('change', ((e)=>{controlPanel.updateDisplay();}), ['enabled']);
+    this.settings.backrenderSSAO.on('change', ((e)=>{controlPanel.updateDisplay();}), ['enabled']);
+    this.uiVars.on('change', ((e)=>{controlPanel.updateDisplay();}), ['frontNum']);
 
     // let f3 = f_vis.addFolder('Animation');
     // f3.add(this.states, 'animate');
@@ -2038,6 +2050,7 @@ export class Neu3D {
    */
   createToolTip() {
     this.toolTipDiv = document.createElement('div');
+    this._addedDOMElements.push(this.toolTipDiv);
     this.toolTipDiv.style.cssText = 'position: fixed; text-align: center; width: auto; min-width: 100px; height: auto; padding: 2px; font: 12px arial; z-index: 999; background: #ccc; border: solid #212121 3px; border-radius: 8px; pointer-events: none; opacity: 0.0; color: #212121';
     this.toolTipDiv.style.transition = "opacity 0.5s";
     this.container.appendChild(this.toolTipDiv);
