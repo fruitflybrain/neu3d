@@ -4,7 +4,7 @@ import {
   Vector2, Raycaster,
   Group, WebGLRenderer,
   Scene, Vector3, LoadingManager, 
-  PerspectiveCamera, Color, FileLoader, GammaEncoding
+  PerspectiveCamera, Color, FileLoader, GammaEncoding, LessEqualStencilFunc
 } from 'three';
 
 import { Lut } from 'three/examples/jsm/math/Lut'
@@ -25,7 +25,6 @@ const STATS = require('../etc/stats');
 // const Detector = require("three/examples/js/WEBGL");
 // const THREE = require('../etc/three');
 import dat from '../etc/dat.gui';
-
 // import dat from 'dat.gui';
 import { datGuiPresets } from './presets.js';
 
@@ -97,6 +96,8 @@ export class Neu3D {
     if (options['powerSaving']) {
       this.powerSaving = true;
     }
+    this._animationId = null; // animation frame id, useful for stopping animation
+    this._containerEventListener = {}; // function references to event listeners on container div
     /* default metadata */
     this._metadata = {
       colormap: "rainbow",
@@ -198,20 +199,8 @@ export class Neu3D {
     controlPanelDiv.appendChild(this.controlPanel.domElement);
     this.container.appendChild(controlPanelDiv);
 
-    this.container.addEventListener('click', this.onDocumentMouseClick.bind(this), false);
-    this.container.addEventListener('dblclick', this.onDocumentMouseDBLClick.bind(this), false);
-    if (isOnMobile) {
-      this.container.addEventListener('taphold', this.onDocumentMouseDBLClickMobile.bind(this));
-      document.body.addEventListener('contextmenu', function () { return false; });
-    }
-    this.container.addEventListener('mouseenter', this.onDocumentMouseEnter.bind(this), false);
-    this.container.addEventListener('mousemove', this.onDocumentMouseMove.bind(this), false);
-    this.container.addEventListener('mouseleave', this.onDocumentMouseLeave.bind(this), false);
-    this.container.addEventListener('drop', this.onDocumentDrop.bind(this), false); // drop file load swc
-    this.container.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation() }, false); // drop file load swc
-    this.container.addEventListener('dragenter', (e) => { e.preventDefault(); e.stopPropagation() }, false); // drop file load swc
+    this.addContainerEventListener();
 
-    this.container.addEventListener('resize', this.onWindowResize.bind(this), false);
     this.animOpacity = {};
     this.defaultBoundingBox = { 'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000 };
     this.boundingBox = Object.assign({}, this.defaultBoundingBox);
@@ -287,6 +276,12 @@ export class Neu3D {
     this.animate();
     this._defaultSettings = this.export_settings();
 
+    this.addDivs();
+    // DEBUG
+    // window.onresize = this.onWindowResize.bind(this);
+  } // ENDOF Constructor
+
+  addDivs(){ 
     // add file input
     let ffbomesh = this;
     let fileUploadInput = document.createElement('input');
@@ -328,14 +323,7 @@ export class Neu3D {
     // becuase vis-3d blocks click event propagation.
     document.body.appendChild(fileUploadInput);
     this.fileUploadInput = fileUploadInput; // expose div
-    // this.container.insertAdjacentElement('afterend', fileUploadInput);
 
-    // <DEBUG>: this resize event is not working right now
-    this.container.addEventListener('resize', () => {
-      // console.log('div resize');
-      this.onWindowResize();
-    })
-    window.onresize = this.onWindowResize.bind(this);
     var _tooltips = document.getElementsByClassName("tooltip")
     for (var l of _tooltips) {
       let element = document.createElement('SPAN');
@@ -344,7 +332,15 @@ export class Neu3D {
       l.appendChild(element);
       l.removeAttribute('title');
     }
-  } // ENDOF Constructor
+  }
+
+  removeDivs() {
+    this.fileUploadInput.remove();
+    this.toolTipDiv.remove();
+
+    
+    this.container.innerHTML = "";
+  }
 
   /**
    * Setup callback
@@ -386,13 +382,15 @@ export class Neu3D {
     }
 
     let controlPanel = new dat.GUI(GUIOptions);
-    controlPanel.remember(this.settings);
-    controlPanel.remember(this.settings.toneMappingPass);
-    controlPanel.remember(this.settings.bloomPass);
-    controlPanel.remember(this.settings.effectFXAA);
-    controlPanel.remember(this.settings.backrenderSSAO);
 
-    controlPanel.__closeButton.style.visibility = 'hidden';
+    // controlPanel.remember(this.settings);
+    // controlPanel.remember(this.settings.toneMappingPass);
+    // controlPanel.remember(this.settings.bloomPass);
+    // controlPanel.remember(this.settings.effectFXAA);
+    // controlPanel.remember(this.settings.backrenderSSAO);
+
+    // controlPanel.__closeButton.style.visibility = 'hidden';
+    this._controlPanelBtnIds = []
     let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('Number of Neurons: ');
     neuronNum.domElement.style["pointerEvents"] = "None";
     neuronNum.domElement.parentNode.parentNode.classList.add('noneurons');
@@ -402,19 +400,29 @@ export class Neu3D {
           this[name] = func;
         };
         let btn = new newButton();
-        let buttonid = controlPanel.add(btn, name).title(tooltip).icon(icon, "strip", iconAttrs);
+        let buttonid = controlPanel.add(btn, name); //.title(tooltip).icon(icon, "strip", iconAttrs);
         return buttonid;
       }
 
-      _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { this.fileUploadInput.click(); });
-      _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { this.resetView() });
-      _createBtn("resetVisibleView", "fa fa-align-justify", {}, "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
-      _createBtn("hideAll", "fa fa-eye-slash", {}, "Hide All", () => { this.hideAll() });
-      _createBtn("showAll", "fa fa-eye", {}, "Show All", () => { this.showAll() });
-      _createBtn("takeScreenshot", "fa fa-camera", {}, "Download Screenshot", () => { this._take_screenshot = true; });
-      _createBtn("removeUnpin", "fa fa-trash", {}, "Remove Unpinned Neurons", () => { this.removeUnpinned(); })
-      _createBtn("removeUnpin", "fa fa-map-upin", {}, "Unpin All", () => { this.unpinAll(); })
-      _createBtn("showSettings", "fa fa-cogs", {}, "Display Settings", () => { controlPanel.__closeButton.click(); })
+      let btnId = ''
+      btnId = _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { this.fileUploadInput.click(); });
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { this.resetView() });
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("resetVisibleView", "fa fa-align-justify", {}, "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("hideAll", "fa fa-eye-slash", {}, "Hide All", () => { this.hideAll() });
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("showAll", "fa fa-eye", {}, "Show All", () => { this.showAll() });
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("takeScreenshot", "fa fa-camera", {}, "Download Screenshot", () => { this._take_screenshot = true; });
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("removeUnpin", "fa fa-trash", {}, "Remove Unpinned Neurons", () => { this.removeUnpinned(); })
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("removeUnpin", "fa fa-map-upin", {}, "Unpin All", () => { this.unpinAll(); })
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("showSettings", "fa fa-cogs", {}, "Display Settings", () => { controlPanel.__closeButton.click(); })
+      this._controlPanelBtnIds.push(btnId);
     }
     // add settings
     let f_vis = controlPanel.addFolder('Settings');
@@ -633,9 +641,9 @@ export class Neu3D {
     this.backrenderScene = new RenderPass(this.scenes.back, this.camera);
     this.backrenderSSAO = new SSAOPass(this.scenes.back, this.camera, width, height);
     this.backrenderSSAO.enabled = this.settings.backrenderSSAO.enabled;
-    this.volumeScene = new Scene();
-    this.volumeScene.background = null;
-    this.volumeRenderPass = new RenderPass(this.volumeScene, this.camera);
+    // this.volumeScene = new Scene();
+    // this.volumeScene.background = null;
+    // this.volumeRenderPass = new RenderPass(this.volumeScene, this.camera);
     this.effectFXAA = new ShaderPass(FXAAShader);
     this.effectFXAA.enabled = this.settings.effectFXAA.enabled;
     this.effectFXAA.uniforms['resolution'].value.set(1 / Math.max(width, 1440), 1 / Math.max(height, 900));
@@ -827,6 +835,181 @@ export class Neu3D {
       this.boundingBox = { 'maxY': -100000, 'minY': 100000, 'maxX': -100000, 'minX': 100000, 'maxZ': -100000, 'minZ': 100000 };
     }
   }
+
+  addContainerEventListener(){
+    let func_0 = this.onDocumentMouseClick.bind(this);
+    this.container.addEventListener('click', func_0, false);
+    this._containerEventListener['click'] = func_0;
+
+    let func_1 = this.onDocumentMouseDBLClick.bind(this);
+    this.container.addEventListener('dblclick', func_1, false);
+    this._containerEventListener['dblclick'] = func_1;
+
+    if (isOnMobile) {
+      let func_2 = this.onDocumentMouseDBLClickMobile.bind(this);
+      this.container.addEventListener('taphold', func_2);
+      document.body.addEventListener('contextmenu', this.blockContextMenu);
+      this._containerEventListener['taphold'] = func_2;
+    }
+    let func_4 = this.onDocumentMouseEnter.bind(this);
+    this.container.addEventListener('mouseenter', func_4, false);
+    this._containerEventListener['mouseenter'] = func_4;
+    let func_5 = this.onDocumentMouseMove.bind(this);
+    this.container.addEventListener('mousemove', func_5, false);
+    this._containerEventListener['mousemove'] = func_5;
+    let func_6 = this.onDocumentMouseLeave.bind(this);
+    this.container.addEventListener('mouseleave', func_6, false);
+    this._containerEventListener['mouseleave'] = func_6;
+    let func_7 = this.onDocumentDrop.bind(this);
+    this.container.addEventListener('drop', func_7, false); // drop file load swc
+    this._containerEventListener['drop'] = func_7;
+    let func_8 = this.blockDragEvents.bind(this);
+    this.container.addEventListener('dragover', func_8, false); // drop file load swc
+    this._containerEventListener['dragover'] = func_8;
+    let func_9 = this.blockDragEvents.bind(this);
+    this.container.addEventListener('dragenter', func_9, false); // drop file load swc
+    this._containerEventListener['dragenter'] = func_9;
+    let func_10 = this.onWindowResize.bind(this);
+    this.container.addEventListener('resize', func_10, false);
+    this._containerEventListener['resize'] = func_10;
+  }
+
+  removeContainerEventListener(){
+    for (let [evtName, func] of Object.entries(this._containerEventListener)){
+      this.container.removeEventListener(evtName, func, false);
+    }
+    document.body.removeEventListener('contextmenu', this.blockContextMenu);
+  }
+
+  /**
+   * Correctly destroy dat GUI
+   */
+  disposeControlPanel() {
+    let folder = this.controlPanel.__folders['Settings'].__folders['Display Mode'];
+    this.controlPanel.__folders['Settings'].removeFolder(folder);
+    folder = this.controlPanel.__folders['Settings'].__folders['Visualization'].__folders['Opacity']
+    this.controlPanel.__folders['Settings'].__folders['Visualization'].removeFolder(folder);
+    folder = this.controlPanel.__folders['Settings'].__folders['Visualization'].__folders['Advanced']
+    this.controlPanel.__folders['Settings'].__folders['Visualization'].removeFolder(folder);
+    folder = this.controlPanel.__folders['Settings'].__folders['Visualization'];
+    this.controlPanel.__folders['Settings'].removeFolder(folder);
+    folder = this.controlPanel.__folders['Settings'].__folders['Size'];
+    this.controlPanel.__folders['Settings'].removeFolder(folder);
+    folder = this.controlPanel.__folders['Settings'];
+    this.controlPanel.removeFolder(folder);
+    for (let b of this._controlPanelBtnIds) {
+      this.controlPanel.remove(b);
+    }
+    for (let c of this.controlPanel.__controllers){
+      this.controlPanel.remove(c)   
+    } 
+    this.controlPanel.updateDisplay();
+    this.controlPanel.destroy();    
+  }
+  /**
+   * Dispose everything and release memory
+   */
+  dispose() {
+    this.reset(true);
+    this.render();
+    cancelAnimationFrame(this._animationId);
+
+    // dispose control panel
+    this.disposeControlPanel();
+    this.controlPanel.domElement.remove();
+    delete this.controlPanel;
+
+    // remove listener
+    this.removeContainerEventListener();
+
+    // delete scenes
+    this.scenes.front.dispose();
+    this.scenes.back.dispose();
+    delete this.scenes.front;
+    delete this.scenes.back;
+    delete this.scenes;
+    // this.scenes = null;
+
+    delete this.groups.front;
+    // this.groups.front = null;
+    delete this.groups.back;
+    // this.groups.back = null;
+    delete this.groups;
+    // this.groups = null;
+
+
+    this.controls.dispose();
+    delete this.controls;
+    // this.controls = null;
+    delete this.lightsHelper;
+    // this.lightsHelper = null;
+    delete this.backrenderScene;
+    // this.backrenderScene = null;
+
+    // dispose post processors
+    this.backrenderSSAO.dispose();
+    delete this.backrenderSSAO;
+    // this.backrenderSSAO = null;
+    delete this.renderScene;
+    // this.renderScene = null;
+    delete this.effectFXAA;
+    // this.effectFXAA = null;
+    this.toneMappingPass.dispose();
+    delete this.toneMappingPass;
+    // this.toneMappingPass = null;
+    this.bloomPass.dispose();
+    delete this.bloomPass;
+    // this.bloomPass = null;
+    delete this.composer;
+    // this.composer = null;
+
+    delete this.loadingManager;
+
+    // dispose color
+    delete this.lut;
+    // this.lut = null;
+
+    //dispose camera &
+    delete this.camera;
+    // this.camera = null;
+
+
+    delete this.raycaster;
+    // this.raycaster = null;
+
+    delete this.domRect;
+    // this.domRect = null
+
+    // dispose renderer completely
+    this.renderer.dispose();
+    delete this.renderer;
+    // this.renderer = null;
+
+    // dispose data objects
+    delete this._metadata;
+    // this._metadata = null;
+    delete this.states;
+
+    this.stats.dom.remove();
+    delete this.stats;
+    // this.states = null;
+    delete this.meshDict;
+    // this.meshDict = null;
+    delete this.settings;
+    // this.settings = null;
+    delete this.uiVars;
+    // this.uiVars = null;    
+    delete this.dispatch;
+    // this.dispatch = null;
+    delete this.commandDispatcher;
+    // this.commandDispatcher = null;
+    delete this.callbackRegistry;
+    // this.callbackRegistry = null;
+
+    // remove divs
+    this.removeDivs();
+  }
+
 
   _configureCallbacks() {
     this.settings.on("change", (e) => {
@@ -1067,7 +1250,7 @@ export class Neu3D {
     if (this.stats) {
       this.stats.end();
     }
-    requestAnimationFrame(this.animate.bind(this));
+    this._animationId = requestAnimationFrame(this.animate.bind(this));
   }
 
 
@@ -1122,6 +1305,16 @@ export class Neu3D {
       this.select(intersected.rid);
     }
   }
+
+  blockDragEvents(event) {
+    event.preventDefault(); 
+    event.stopPropagation()
+  }
+
+  blockContextMenu() {
+    return false;
+  }
+
 
 
   /**
@@ -1236,7 +1429,7 @@ export class Neu3D {
     if (this.states.highlight) {
       // do nothing
     } else {
-      if (this.settings.meshOscAmp > 0) {
+      if (this.settings.meshOscAmp && this.settings.meshOscAmp > 0) {
         for (let key in this.meshDict) {
           if (this.meshDict[key].object !== undefined) {
             let x = new Date().getTime();
@@ -1722,9 +1915,9 @@ export class Neu3D {
       for (let j = 0; j < meshobj.children.length; ++j) {
         meshobj.children[j].material.color.set(color);
         meshobj.children[j].geometry.colorsNeedUpdate = true;
-        for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
-          meshobj.children[j].geometry.colors[k].set(color);
-        }
+        // for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
+        //   meshobj.children[j].geometry.colors[k].set(color);
+        // }
       }
       this.meshDict[id[i]].color = new Color( (color));
     }
@@ -1743,9 +1936,9 @@ export class Neu3D {
       for (let j = 0; j < meshobj.children.length; ++j) {
         meshobj.children[j].material.color.set(color);
         meshobj.children[j].geometry.colorsNeedUpdate = true;
-        for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
-          meshobj.children[j].geometry.colors[k].set(color);
-        }
+        // for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
+        //   meshobj.children[j].geometry.colors[k].set(color);
+        // }
       }
     }
   }

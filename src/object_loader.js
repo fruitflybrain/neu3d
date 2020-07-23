@@ -2,9 +2,9 @@ import { Neu3D } from './neu3d';
 import { 
   Vector3, Face3, Object3D, Matrix4, Mesh,
   MeshLambertMaterial, MeshBasicMaterial, PointsMaterial, LineBasicMaterial, 
-  Geometry, CylinderGeometry,  SphereGeometry, TubeGeometry, BufferGeometry,
+  Geometry, CylinderGeometry,  SphereGeometry, TubeGeometry, 
   QuadraticBezierCurve3,  VertexColors, LineSegments, 
-  XHRLoader, Float32BufferAttribute
+  XHRLoader
 } from 'three';
 import { 
   SceneUtils
