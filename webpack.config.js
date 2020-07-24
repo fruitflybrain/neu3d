@@ -5,12 +5,6 @@ module.exports = {
   mode: 'development',
   entry: './index.js',
   target: 'web',
-  plugins: [
-    new webpack.ProvidePlugin({
-      THREE: 'three',
-      $: 'jquery'
-    }),
-  ],
   output: {
     filename: 'neu3d.min.js',
     library: 'Neu3D',

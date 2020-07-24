@@ -226,7 +226,7 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
             c.radius = Math.clip(c.radius, this.settings.minRadius, this.settings.maxRadius);
             geometry = new CylinderGeometry( p.radius, c.radius, d.length(), 4, 1, 0);
             geometry.translate(0, 0.5 * d.length(), 0);
-            geometry.applyMatrix(new Matrix4().makeRotationX(Math.PI / 2));
+            geometry.applyMatrix4(new Matrix4().makeRotationX(Math.PI / 2));
             geometry.lookAt(d.clone());
             geometry.translate((c.x + c.x) / 2, -0.0 * d.length() + (c.y + c.y) / 2, (c.z + c.z) / 2);
             mergedGeometry.merge(geometry);
@@ -234,7 +234,7 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
 
             if (this.settings.neuron3dMode == 2) {
               geometry = new SphereGeometry(c.radius, 8, 8);
-              geometry.applyMatrix(new Matrix4().makeRotationX(Math.PI / 2));
+              geometry.applyMatrix4(new Matrix4().makeRotationX(Math.PI / 2));
               geometry.lookAt(d);
               geometry.translate((c.x + c.x) / 2, (c.y + c.y) / 2, (c.z + c.z) / 2);
               mergedGeometry.merge(geometry);
@@ -372,14 +372,14 @@ Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
           c.radius = Math.clip(c.radius, this.settings.minRadius, this.settings.maxRadius),
           geometry = new CylinderGeometry(p.radius, c.radius, d.length(), 4, 1, 0);
           geometry.translate(0, 0.5 * d.length(), 0);
-          geometry.applyMatrix(new Matrix4().makeRotationX(Math.PI / 2));
+          geometry.applyMatrix4(new Matrix4().makeRotationX(Math.PI / 2));
           geometry.lookAt(d.clone());
           geometry.translate((c.x + c.x) / 2, -0.0 * d.length() + (c.y + c.y) / 2, (c.z + c.z) / 2);
           mergedGeometry.merge(geometry);
           geometry = null;
           if (this.settings.neuron3dMode == 2) {
             geometry = new SphereGeometry(c.radius, 8, 8);
-            geometry.applyMatrix(new Matrix4().makeRotationX(Math.PI / 2));
+            geometry.applyMatrix4(new Matrix4().makeRotationX(Math.PI / 2));
             geometry.lookAt(d);
             geometry.translate((c.x + c.x) / 2, (c.y + c.y) / 2, (c.z + c.z) / 2);
             mergedGeometry.merge(geometry);
