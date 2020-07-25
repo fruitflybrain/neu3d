@@ -1,5 +1,10 @@
 import { PropertyManager } from './propertymanager';
-import { AmbientLight, Vector3, DirectionalLight, SpotLight } from 'three';
+import { 
+  AmbientLight, Vector3, DirectionalLight, SpotLight, PerspectiveCamera, Scene 
+} from 'three';
+import {
+  TrackballControls
+} from 'three/examples/jsm/controls/TrackballControls';
 
 function guidGenerator() {
   var S4 = function() {
@@ -17,7 +22,10 @@ function getProperty(properties, propertyName, def){
 }
 
 export class FFBOLightsHelper {
-  constructor(camera, controls, scene) {
+  constructor(
+    camera:PerspectiveCamera, 
+    controls: TrackballControls,
+    scene: Scene) {
     let lh = new PropertyManager(this);
     lh.camera = camera;
     lh.controls = controls;
@@ -72,29 +80,20 @@ export class FFBOLightsHelper {
     return light;
   }
   _spotLightImporter(settings, light) {
-    if (light == undefined)
+    if (light == undefined){
       return this.addSpotLight(settings);
-    /*
-      light.enabled = true
-      light.object.intensity = settings.intensity;
-      Object.assign(light.object.color, settings.color);;
-      light.object.angle = settings.angle;
-      light.object.decay = settings.decay;
-      light.posAngle1 = settings.posAngle1;
-      light.posAngle2 = settings.posAngle2;
-      light.distanceFactor = settings.distanceFactor;
-      this._updateSpotLight(light);
-      light.enabled = settings.enabled;
-    */
+    }
     Object.assign(light, settings);
     this._updateSpotLight(light);
     return light;
   }
-  // Note that
-  // 1) All lights that do not already exist (by key) will
-  //    be added to the default scene
-  // 2) SpotLights might not be added to same position as they were exported from
-  //    if track = false and the camera/controls target has changed
+
+  /**  Note that
+  * 1) All lights that do not already exist (by key) will
+  *    be added to the default scene
+  * 2) SpotLights might not be added to same position as they were exported from
+  *    if track = false and the camera/controls target has changed
+  */
   import(settings) {
     for (let key in settings) {
       let light = (key in this) ? this[key] : undefined;
@@ -108,6 +107,7 @@ export class FFBOLightsHelper {
       ;
     }
   }
+
   export() {
     let settings = {};
     for (let key in this) {
@@ -122,6 +122,8 @@ export class FFBOLightsHelper {
     }
     return settings;
   }
+
+
   addAmbientLight(properties = {}) {
     // if (properties == undefined)
     //   properties = {};
@@ -148,6 +150,8 @@ export class FFBOLightsHelper {
     scene.add(this[key]._object);
     return this[key];
   }
+
+
   addDirectionalLight(properties = {}) {
     // if (properties == undefined)
     //   properties = {};
@@ -185,6 +189,8 @@ export class FFBOLightsHelper {
     scene.add(this[key]._object.target);
     return this[key];
   }
+
+
   _updateSpotLight(light) {
     let position = this.camera.position.clone();
     let target = this.controls.target.clone();
@@ -199,6 +205,8 @@ export class FFBOLightsHelper {
     light._object.target.position.copy(target);
     light._object.distance = distance;
   }
+
+
   addSpotLight(properties = {}) {
     // if (properties == undefined)
     //   properties = {};
@@ -252,7 +260,6 @@ function ambientLightExporter(light){
     type: "AmbientLight"
   }
 }
-
 
 
 function directionalLightExporter(light){

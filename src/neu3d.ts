@@ -21,8 +21,6 @@ import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader';
 import '@fortawesome/fontawesome-free/js/all.js';
 
 const STATS = require('../etc/stats');
-// const Detector = require("three/examples/js/WEBGL");
-// const THREE = require('../etc/three');
 import '../style/neu3d.css';
 
 var isOnMobile = checkOnMobile();
@@ -34,7 +32,7 @@ function nextPow2(x) {
 }
 
 // used for generating unique file upload div id
-function generateGuid() {
+function generateGuid(): string {
   var result, i, j;
   result = '';
   for(j=0; j<32; j++) {
@@ -47,8 +45,7 @@ function generateGuid() {
   return result;
 }
 
-function checkOnMobile() {
-
+function checkOnMobile(): boolean {
   if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
     return true;
   }
@@ -250,7 +247,7 @@ export class Neu3D {
       'highlight': ((func) => { this.states.on('change', func, 'highlight'); }),
       'click': ((func) => { this.uiVars.on('change', func, 'selected'); }),
     };
-
+    // resgister callbacks on `this`, which will be passed as callbacks of meshDict and uiVars as above
     this.on('add', ((e) => { this.onAddMesh(e); }));
     this.on('remove', ((e) => { this.onRemoveMesh(e); }));
     this.on('pinned', ((e) => { this.updatePinned(e); this.updateOpacity(e); }));

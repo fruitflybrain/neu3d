@@ -4,41 +4,98 @@
     <title>Neu3d Test</title>
     <script type="text/javascript" src=" https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="./lib/neu3d.min.js"> </script>
+    <script type="text/javascript" src="./etc/dat.gui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tweakpane@1.5.3/dist/tweakpane.min.js"></script>
   </head>
   <body>
-    <div id="vis-3d" class="vis-3d" style="width: 100%; height: 100%;"></div>
     <script>
-      const parentDiv = document.getElementById('vis-3d');
-      let options = {
-        'stats': true, // set to false if you don't want to see stats
-        'adaptive': true,
-        'stats': true, 
-        'datGUI': {
-          autoPlace: false,
-          resizable: false,
-          closed: true,
-          hideable: true
+      function addNeu3D() {
+        const parentDiv = document.getElementById('vis-3d');
+        let options = {
+          'stats': true, // set to false if you don't want to see stats
+          'adaptive': true,
+          'stats': true, 
+          'datGUI': {
+            autoPlace: false,
+            resizable: false,
+            closed: true,
+            hideable: true
+          }
+        }
+        var neu3d = new Neu3D(parentDiv,
+                              undefined,
+                              { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } },
+                              options);
+
+        window.neu3d = neu3d; // expose neu3d instance to console for experimentation
+
+        $.getJSON("./data/data.json", function (json) {
+          neu3d.addJson({
+            ffbo_json: json,
+            showAfterLoadAll: true
+          });
+        });
+  
+      }
+
+      function removeNeu3D() {
+        window.neu3d.dispose();
+      }
+
+      function testDAT() {
+        var FizzyText = function() {
+        this.message = 'dat.gui';
+        this.speed = 0.8;
+        this.displayOutline = false;
+        }
+
+        for (let n=0; n<100; n++ ){
+          var text = new FizzyText();
+          var gui = new dat.GUI();
+          gui.add(text, 'message');
+          gui.add(text, 'speed', -5, 5);
+          gui.add(text, 'displayOutline');
+          gui.updateDisplay();
+          gui.destroy();
+        }
+      };
+
+      var FizzyText2 = function() {
+        this.message = 'dat.gui';
+        this.speed = 0.8;
+        this.displayOutline = false;
+        }
+
+      function testDAT2() {
+        for (let n=0; n<100; n++ ){
+          var text = new FizzyText2();
+          var gui = new dat.GUI();
+          gui.add(text, 'message');
+          gui.add(text, 'speed', -5, 5);
+          gui.add(text, 'displayOutline');
+          gui.updateDisplay();
+          gui.destroy();
+        }
+      };
+
+      const PARAMS = {
+          speed: 0.5,
+        };
+      function testTweakPane(){
+        for (let n=0; n<100; n++ ){
+          // Pass the object and its key to pane
+          const pane = new Tweakpane();
+          pane.addInput(PARAMS, 'speed');
+          pane.dispose();
         }
       }
-      var neu3d = new Neu3D(parentDiv,
-                            undefined,
-                            { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } },
-                            options);
 
-      window.neu3d = neu3d; // expose neu3d instance to console for experimentation
-
-      $.getJSON("./data/data.json", function (json) {
-        neu3d.addJson({
-          ffbo_json: json,
-          showAfterLoadAll: true
-        });
-      });
-
-
-      $(document).ready(() => {
-        neu3d.onWindowResize();
-        neu3d.fileUploadInput.click();
-      });
     </script>
+    <button onclick="addNeu3D()">Add Neu3D</button>
+    <button onclick="removeNeu3D()">remove Neu3D</button>
+    <button onclick="testDAT()">Test dat.GUI</button>
+    <button onclick="testDAT2()">Test dat.GUI 2</button>
+    <button onclick="testTweakPane()">Test TweakPane</button>
+    <div id="vis-3d" class="vis-3d" style="width: 100%; height: 100%;"></div>
   </body>
 </html>
