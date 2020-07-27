@@ -1,90 +1,80 @@
-import { PropertyManager } from './propertymanager';
 import { 
-  AmbientLight, Vector3, DirectionalLight, SpotLight, PerspectiveCamera, Scene 
+  AmbientLight, Vector3, DirectionalLight,
+  SpotLight, PerspectiveCamera, Scene, Color
 } from 'three';
+import {
+  Signal, ISignal
+} from '@lumino/signaling';
+
 import {
   TrackballControls
 } from 'three/examples/jsm/controls/TrackballControls';
 
-function guidGenerator() {
+/**
+ * Generate unique id
+ */ 
+function guidGenerator(): string {
   var S4 = function() {
     return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
   };
   return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
 }
 
-function getProperty(properties, propertyName, def){
-  if(propertyName in properties)
-    return properties[propertyName]
-  else
-    return def
 
-}
 
 export class FFBOLightsHelper {
+  camera: PerspectiveCamera;
+  controls: TrackballControls;
+  scene: Scene;
+  lights: { [name: string]: Lights.ILight } = {}; // array of lights
+  _updatePause = false;
+
   constructor(
     camera:PerspectiveCamera, 
     controls: TrackballControls,
-    scene: Scene) {
-    let lh = new PropertyManager(this);
-    lh.camera = camera;
-    lh.controls = controls;
-    lh.scene = scene;
-    lh.on('change', function (e) {
-      let light = this[e['path'][0]];
-      if (e['value']) {
-        light._object.intensity = light.intensity;
-      }
-      else {
-        light._object.intensity = 0;
-      }
-    }.bind(lh), 'enabled');
-    lh._updatePause = false;
-    lh.controls.addEventListener("change", function () {
-      if (this._updatePause)
+    scene: Scene
+  ) {
+    controls.addEventListener("change", () => {
+      if (this._updatePause) {
         return;
+      }
       this._updatePause = true;
-      setTimeout(function () {
-        for (let k in this)
-          if (this[k]._object && this[k]._object.type == "SpotLight" && this[k].track)
-            this._updateSpotLight(this[k]);
+      setTimeout(() => {
+        for (let light of Object.values(this.lights)) {
+          if (light._object && light._object.type === "SpotLight" && (light as Lights.INeu3DSpotLight).track) {
+            this.onUpdateSpotLight(light as Lights.Neu3DSpotLight);
+          } 
+        }
         this._updatePause = false;
-      }.bind(this), 5);
-    }.bind(lh));
-    return lh;
+      }, 5);
+    });
+    this.camera = camera;
+    this.controls = controls;
+    this.scene = scene;
   }
-  _ambientLightImporter(settings, light) {
-    if (light == undefined)
+
+  _ambientLightImporter(settings: Partial<Lights.INeu3DAmbientLight>, light?: Lights.INeu3DAmbientLight) {
+    if (light == undefined) {
       return this.addAmbientLight(settings);
-    /*
-      light.enabled = true
-      light.object.intensity = settings.intensity;
-      Object.assign(light.object.color, settings.color);
-      light.enabled = settings.enabled;
-    */
+    }
     Object.assign(light, settings);
     return light;
   }
-  _directionalLightImporter(settings, light) {
-    if (light == undefined)
+
+  _directionalLightImporter(settings: Partial<Lights.INeu3DDirectionalLight>, light?: Lights.INeu3DDirectionalLight) {
+    if (light == undefined) {
       return this.addDirectionalLight(settings);
-    /*
-      light.enabled = true
-      light.object.intensity = settings.intensity;
-      Object.assign(light.object.color, settings.color);;
-      Object.assign(light.object.position, settings.position);
-      Object.assign(light.object.target.position, settings.target);
-      light.enabled = settings.enabled;
-    */
+    }
     Object.assign(light, settings);
     return light;
   }
-  _spotLightImporter(settings, light) {
+
+  _spotLightImporter(settings: Partial<Lights.INeu3DSpotLight>, light?: Lights.Neu3DSpotLight) {
     if (light == undefined){
       return this.addSpotLight(settings);
     }
     Object.assign(light, settings);
-    this._updateSpotLight(light);
+    this.onUpdateSpotLight(light);
     return light;
   }
 
@@ -94,104 +84,127 @@ export class FFBOLightsHelper {
   * 2) SpotLights might not be added to same position as they were exported from
   *    if track = false and the camera/controls target has changed
   */
-  import(settings) {
+  import(settings: { [name: string]: Lights.ILight }) {
     for (let key in settings) {
-      let light = (key in this) ? this[key] : undefined;
-      let lightImporter = (settings[key].type == "AmbientLight" ? this._ambientLightImporter :
-        (settings[key].type == "DirectionalLight" ? this._directionalLightImporter : this._spotLightImporter)).bind(this);
+      let light = (key in this.lights) ? this.lights[key] : undefined;
+      let lightImporter;
+      switch (settings[key].type) {
+        case "AmbientLight":
+          lightImporter = this._ambientLightImporter;
+          break;
+        case "DirectionalLight":
+          lightImporter = this._directionalLightImporter;
+          break;
+        case "SpotLight":
+          lightImporter = this._spotLightImporter;
+          break;
+        default:
+          console.warn(`[Neu3D] Lights Helper import does not recognized type ${settings[key].type}`);
+          break;
+      }
+
       try {
-        this[key] = lightImporter(settings[key], light);
+        this.lights[key] = lightImporter(settings[key], light);
+      } catch (err) {
+        console.error(`[Neu3D] LightsHelper Import Error for settings ${settings}, Error ${err}`);
       }
-      catch (err) {
-      }
-      ;
     }
   }
 
   export() {
-    let settings = {};
-    for (let key in this) {
-      if (!this[key]._object)
+    let settings: any = {};
+    for (let [key, light] of Object.entries(this.lights)) {
+      if (!light._object) {
         continue;
-      if (this[key]._object.type == "AmbientLight")
-        settings[key] = ambientLightExporter(this[key]);
-      if (this[key]._object.type == "DirectionalLight")
-        settings[key] = directionalLightExporter(this[key]);
-      if (this[key]._object.type == "SpotLight")
-        settings[key] = spotLightExporter(this[key]);
+      }
+      switch (light._object.type) {
+        case "AmbientLight":
+          settings[key] = {
+            intensity: (light as Lights.Neu3DAmbientLight).intensity,
+            enabled: (light as Lights.Neu3DAmbientLight).enabled,
+            color: (light as Lights.Neu3DAmbientLight).color,
+            type: "AmbientLight"
+          }
+          break;
+        case "DirectionalLight":
+          settings[key] = {
+            intensity: (light as Lights.Neu3DDirectionalLight).intensity,
+            enabled: (light as Lights.Neu3DDirectionalLight).enabled,
+            color: (light as Lights.Neu3DDirectionalLight).color,
+            position: Object.assign({}, (light as Lights.Neu3DDirectionalLight).position),
+            target: Object.assign({}, (light as Lights.Neu3DDirectionalLight).target),
+            type: "DirectionalLight"
+          }
+          break;
+        case "SpotLight":
+          settings[key] = {
+            intensity: (this.lights[key] as Lights.Neu3DSpotLight).intensity,
+            enabled: (this.lights[key] as Lights.Neu3DSpotLight).enabled,
+            color: (this.lights[key] as Lights.Neu3DSpotLight).color,
+            angle: (this.lights[key] as Lights.Neu3DSpotLight).angle,
+            decay: (this.lights[key] as Lights.Neu3DSpotLight).decay,
+            distanceFactor: (this.lights[key] as Lights.Neu3DSpotLight).distanceFactor,
+            posAngle1: (this.lights[key] as Lights.Neu3DSpotLight).posAngle1,
+            posAngle2: (this.lights[key] as Lights.Neu3DSpotLight).posAngle2,
+            track: (this.lights[key] as Lights.Neu3DSpotLight).track,
+            type: "SpotLight"
+          }
+          break;
+        default:
+          break;
+      }
     }
     return settings;
   }
 
-
-  addAmbientLight(properties = {}) {
-    // if (properties == undefined)
-    //   properties = {};
-    let scene = getProperty(properties, 'scene', this.scene);
-    let color = getProperty(properties, 'color', 0xffffff);
-    let intensity = getProperty(properties, 'intensity', 1.0);
-    let key = getProperty(properties, 'key', guidGenerator());
-    this[key] = new PropertyManager({
+  /**
+   * @param properties 
+   */
+  addAmbientLight(properties?: Partial<Lights.INeu3DAmbientLightOptions>) {
+    let scene = properties.scene ?? this.scene;
+    let color = properties.color ?? 0xffffff;
+    let intensity = properties.intensity ?? 1.0;
+    let key = properties.key ?? guidGenerator();
+    this.lights[key] = new Lights.Neu3DAmbientLight({
+      key: key,
+      type: 'AmbientLight',
       _object: new AmbientLight(color, intensity),
       color: color,
       intensity: intensity,
-      enabled: true
+      enabled: properties.enabled ?? true
     });
-    if ('enabled' in properties)
-      this[key].enabled = properties.enabled;
-    this[key].on("change", function (e) {
-      if (e.prop == "intensity")
-        e.obj.enabled ? (e.obj._object.intensity = e.value) : undefined;
-      else if (e.prop == "color")
-        e.obj._object.color.set(e.value);
-      else
-        Object.assign(e.obj._object[e.prop], e.value);
-    }, ["color", "intensity"]);
-    scene.add(this[key]._object);
-    return this[key];
+    scene.add(this.lights[key]._object);
+    return this.lights[key];
   }
 
 
-  addDirectionalLight(properties = {}) {
-    // if (properties == undefined)
-    //   properties = {};
-    let scene = getProperty(properties, 'scene', this.scene);
-    let color = getProperty(properties, 'color', 0xffffff);
-    let intensity = getProperty(properties, 'intensity', 1.0);
-    let position = getProperty(properties, 'position', new Vector3(0, 0, 1000));
-    let target = getProperty(properties, 'target', new Vector3(0, 0, 0));
-    let key = getProperty(properties, 'key', guidGenerator());
-    this[key] = new PropertyManager({
+  addDirectionalLight(properties?: Partial<Lights.INeu3DDirectionalLightOptions>) {
+    let scene = properties.scene ?? this.scene;
+    let color = properties.color ?? 0xffffff;
+    let intensity = properties.intensity ?? 1.0;
+    let position = properties.position ?? new Vector3(0, 0, 1000);
+    let target = properties.target ?? new Vector3(0, 0, 0);
+    let key = properties.key ?? guidGenerator();
+    this.lights[key] = new Lights.Neu3DDirectionalLight({
+      key: key,
+      type: 'DirectionalLight',
       _object: new DirectionalLight(color, intensity),
-      color: color,
+      color: properties.color ?? 0xffffff,
       intensity: intensity,
       position: position,
       target: target,
-      enabled: true
+      enabled: properties.enabled ?? true
     });
-    this[key]._object.position.copy(position);
-    this[key]._object.target.position.copy(target);
-    if ('enabled' in properties)
-      this[key].enabled = properties.enabled;
-    this[key].on("change", function (e) {
-      if (e.prop == "intensity")
-        e.obj.enabled ? (e.obj._object.intensity = e.value) : undefined;
-      else if (e.prop == "color")
-        e.obj._object.color.set(e.value);
-      else if (e.prop == "position")
-        e.obj._object.position.copy(e.value);
-      else if (e.prop == "target")
-        e.obj._object.target.position.copy(e.value);
-      else
-        e.obj._object[e.prop] = e.value;
-    }, ["color", "intensity", "position", "target"]);
-    scene.add(this[key]._object);
-    scene.add(this[key]._object.target);
-    return this[key];
+
+    this.lights[key]._object.position.copy(position);
+    (this.lights[key]._object as DirectionalLight).target.position.copy(target);
+    scene.add(this.lights[key]._object);
+    scene.add((this.lights[key]._object as DirectionalLight).target);
+    return this.lights[key];
   }
 
 
-  _updateSpotLight(light) {
+  onUpdateSpotLight(light: Lights.Neu3DSpotLight) {
     let position = this.camera.position.clone();
     let target = this.controls.target.clone();
     position.sub(target);
@@ -202,99 +215,222 @@ export class FFBOLightsHelper {
     let distance = position.length() * light.distanceFactor;
     position.add(target);
     light._object.position.copy(position);
-    light._object.target.position.copy(target);
-    light._object.distance = distance;
+    (light._object as SpotLight).target.position.copy(target);
+    (light._object as SpotLight).distance = distance;
   }
 
 
-  addSpotLight(properties = {}) {
-    // if (properties == undefined)
-    //   properties = {};
-    let scene = getProperty(properties, 'scene', this.scene);
-    let color = getProperty(properties, 'color', 0xffffff);
-    let intensity = getProperty(properties, 'intensity', 4.0);
-    let angle = getProperty(properties, 'angle', 1.04);
-    let decay = getProperty(properties, 'decay', 2.0);
-    let distanceFactor = getProperty(properties, 'distanceFactor', 2.0);
-    let posAngle1 = getProperty(properties, 'posAngle1', 80);
-    let posAngle2 = getProperty(properties, 'posAngle2', 80);
-    let track = getProperty(properties, 'track', true);
-    let key = getProperty(properties, 'key', guidGenerator());
-    this[key] = new PropertyManager({
+  addSpotLight(properties?: Partial<Lights.INeu3DSpotLightOptions>) {
+    let key = properties.key ?? guidGenerator();
+    let color = properties.color ?? 0xffffff;
+    let intensity = properties.intensity ?? 4.0;
+    this.lights[key] = new Lights.Neu3DSpotLight({
+      key: key,
+      type: 'SpotLight',
       _object: new SpotLight(color, intensity),
+      enabled: properties.enabled ?? true,
       color: color,
       intensity: intensity,
-      angle: angle,
-      decay: decay,
-      posAngle1: posAngle1,
-      posAngle2: posAngle2,
-      track: track,
-      distanceFactor: distanceFactor,
-      enabled: true
+      angle: properties.angle ?? 1.04,
+      decay: properties.decay ?? 2.0,
+      posAngle1: properties.posAngle1 ?? 80,
+      posAngle2: properties.posAngle2 ?? 80,
+      track: properties.track ?? true,
+      distanceFactor: properties.distanceFactor ?? 2.0
     });
-    if ('enabled' in properties)
-      this[key].enabled = properties.enabled;
-    this[key].on("change", function (e) {
-      if (e.prop == "intensity")
-        e.obj.enabled ? (e.obj._object.intensity = e.value) : undefined;
-      else if (e.prop == "color")
-        e.obj._object.color.set(e.value);
-      else
-        e.obj._object[e.prop] = e.value;
-    }, ["color", "intensity", "angle", "decay"]);
-    this[key].on("change", function (e) {
-      this._updateSpotLight(e.obj);
-    }.bind(this), ["posAngle1", "posAngle2", "distanceFactor"]);
-    this._updateSpotLight(this[key]);
-    scene.add(this[key]._object);
-    scene.add(this[key]._object.target);
-    return this[key];
+
+    // setup allback on spotlight update
+    (this.lights[key] as Lights.Neu3DSpotLight).updateSpotLight.connect((light: Lights.Neu3DSpotLight) => {
+      this.onUpdateSpotLight(light);
+    }, this);
+    
+    this.onUpdateSpotLight(this.lights[key] as Lights.Neu3DSpotLight);
+    this.scene.add(this.lights[key]._object);
+    this.scene.add((this.lights[key]._object as SpotLight).target);
+    return this.lights[key];
   }
 }
 
-function ambientLightExporter(light){
-  return {
-    intensity: light.intensity,
-    enabled: light.enabled,
-    color: light.color,
-    type: "AmbientLight"
+/**
+ * FFBOLight Helper Classes
+ */
+export namespace Lights {
+  export type ILight = INeu3DAmbientLight | INeu3DDirectionalLight | INeu3DSpotLight;
+
+  /**
+   * Class constructor options
+   * Note: `enabled`, `color`, `intensity` will call respective setters 
+   */
+  export interface IBaseOptions{
+    key: string;
+    type: 'AmbientLight' | 'DirectionalLight' | 'SpotLight' | string;
+    _object: AmbientLight | DirectionalLight | SpotLight;
+    enabled: boolean;
+    color: string | number | Color;
+    intensity: number;
+    scene?: Scene;
+  }
+
+  export interface INeu3DBaseLight {
+    key: string;
+    type: 'AmbientLight' | 'DirectionalLight' | 'SpotLight' | string;
+    _object: AmbientLight | DirectionalLight | SpotLight;
+    _enabled: boolean;
+  }
+  
+  export class Neu3DBaseLight implements INeu3DBaseLight{
+    _object: AmbientLight | DirectionalLight | SpotLight;
+    _enabled: boolean = true;
+    type: 'AmbientLight' | 'DirectionalLight' | 'SpotLight' | string;
+    key: string;
+
+    constructor(args: IBaseOptions) {
+      this._object = args._object;
+      this.type = args.type;
+      this.key = args.key;
+      this.color = args.color;
+      this.intensity = args.intensity;
+      this.enabled = args.enabled;
+    }
+
+    set enabled(val: boolean) {
+      this._enabled = val;
+      this._object.intensity = val ? this.intensity: 0;
+    }
+
+    get enabled(): boolean {
+      return this._enabled;
+    }
+
+    get intensity(): number { 
+      return this._object.intensity;
+    }
+
+    set intensity(val: number) {
+      this._object.intensity = this.enabled ? val: undefined;
+    }
+
+    get color(): string | number | Color {
+      return this._object.color;
+    }
+
+    set color(val: string | number | Color) {
+      this._object.color.set(val);
+    }
+  }
+
+  /**
+   * Ambient Light
+   */
+  export interface INeu3DAmbientLightOptions extends IBaseOptions { }
+  export interface INeu3DAmbientLight extends INeu3DBaseLight {}
+  export class Neu3DAmbientLight extends Neu3DBaseLight {}
+
+  /**
+   * Neu3D Directional Light
+   */
+  export interface INeu3DDirectionalLight extends INeu3DBaseLight {}
+  export interface INeu3DDirectionalLightOptions extends IBaseOptions {
+    position: Vector3;
+    target: Vector3;
+  }
+  export class Neu3DDirectionalLight extends Neu3DBaseLight implements INeu3DDirectionalLight {
+    constructor(
+      args: INeu3DDirectionalLightOptions
+    ) {
+      super(args);
+      this.position = args.position;
+      this.target = args.target;
+    }
+
+    set position(val: Vector3) {
+      if (val !== this._object.position) {
+        this._object.position.copy(val);  
+      }
+    }
+
+    get position(): Vector3 {
+      return this._object.position;
+    }
+
+    set target(val: Vector3) {
+      if (val !== (this._object as DirectionalLight).target.position) {
+        (this._object as DirectionalLight).target.position.copy(val);
+      }
+    }
+
+    get target(): Vector3 {
+      return (this._object as DirectionalLight).target.position;
+    }
+  }
+
+  /**
+   * Neu3D Spotlight
+   */
+  export interface INeu3DSpotLight extends INeu3DBaseLight {
+    track: boolean;
+  }
+  export interface INeu3DSpotLightOptions extends IBaseOptions {
+    angle: number;
+    decay: number;
+    distanceFactor: number;
+    posAngle1: number;
+    posAngle2: number;
+    track: boolean;
+  }
+  export class Neu3DSpotLight extends Neu3DBaseLight implements INeu3DSpotLight {
+    _distanceFactor: number;
+    _posAngle1: number;
+    _posAngle2: number;
+    track: boolean;
+    _object: SpotLight;
+    _updateSpotLight = new Signal<this, this>(this);
+    
+    constructor(
+      args: INeu3DSpotLightOptions
+    ) {
+      super(args);
+      this.angle = args.angle;
+      this.decay = args.decay;
+      this._distanceFactor = args.distanceFactor;
+      this._posAngle1 = args.posAngle1;
+      this._posAngle2 = args.posAngle2;
+      this.track = args.track;
+    }
+
+    set decay(val: number) {
+      this._object.decay = val;
+    }
+    get decay(): number {
+      return this._object.decay;
+    }
+    set angle(val: number) {
+      this._object.angle = val;
+    }
+    get angle(): number {
+      return this._object.angle;
+    }
+    set posAngle1(val: number) {
+      if (val !== this._posAngle1) {
+        this._posAngle1 = val;
+        this._updateSpotLight.emit(this);
+      }
+    }
+    set posAngle2(val: number) {
+      if (val !== this._posAngle2) {
+        this._posAngle2 = val;
+        this._updateSpotLight.emit(this);
+      }
+    }
+    set distanceFactor(val: number) { 
+      if (val !== this._distanceFactor) {
+        this._distanceFactor = val;
+        this._updateSpotLight.emit(this);
+      }
+    }
+    get posAngle1(): number { return this._posAngle1; }
+    get posAngle2(): number { return this._posAngle2; }
+    get distanceFactor(): number { return this._distanceFactor; }
+    get updateSpotLight(): ISignal<this, this> { return this._updateSpotLight; }
   }
 }
-
-
-function directionalLightExporter(light){
-  return {
-    intensity: light.intensity,
-    enabled: light.enabled,
-    color: light.color,
-    position: Object.assign({}, light.position),
-    target: Object.assign({}, light.target),
-    type: "DirectionalLight"
-  }
-}
-
-
-
-function spotLightExporter(light){
-  return {
-    intensity: light.intensity,
-    enabled: light.enabled,
-    color: light.color,
-    angle: light.angle,
-    decay: light.decay,
-    distanceFactor: light.distanceFactor,
-    posAngle1: light.posAngle1,
-    posAngle2: light.posAngle2,
-    track: light.track,
-    type: "SpotLight"
-  }
-}
-
-
-
-
-
-
-
-
-

@@ -2,3 +2,5 @@ bundle.js
 node_modules/
 .DS_Store
 .ipynb_checkpoints
+lib/*
+dist/*

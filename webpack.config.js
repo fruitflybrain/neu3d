@@ -3,7 +3,7 @@ const webpack = require('webpack');
 
 module.exports = {
   mode: 'development',
-  entry: './index.js',
+  entry: './lib/index.js',
   target: 'web',
   output: {
     filename: 'neu3d.min.js',
@@ -11,7 +11,7 @@ module.exports = {
     libraryTarget: 'umd',
     umdNamedDefine: false,
     libraryExport: 'Neu3D',
-    path: path.resolve(__dirname, 'lib')
+    path: path.resolve(__dirname, 'dist')
   },
   module: {
 

@@ -1,0 +1,175 @@
+import { Neu3D } from './neu3d';
+import dat from '../etc/dat.gui';
+import { datGuiPresets } from './presets.js';
+
+export interface IDatGUIOptions {
+  autoPlace?: boolean;
+  resizable?: boolean;
+  scrollable?: boolean;
+  closeOnTop?: boolean;
+  createButtons?: boolean;
+  preset?: 'Low' | 'Medium' | 'High' | string;
+}
+
+/**
+* Initialize Control Panel dat.GUI
+* @param options 
+*/
+export class ControlPanel {
+  _controlPanelBtnIds: any[] = []; // TODO
+  options: IDatGUIOptions;
+  panel: dat.GUI;
+
+  constructor(
+    neu3d: Neu3D,
+    options: IDatGUIOptions = {}
+  ) {
+    this.options = {
+      autoPlace: options.autoPlace ?? false,
+      resizable: options.resizable ?? true,
+      scrollable: options.scrollable ?? true,
+      closeOnTop: options.closeOnTop ?? true,
+      createButtons: options.createButtons ?? true,
+      preset: options.preset ?? "Low",
+    };
+    let controlPanel = this.panel = new dat.GUI({
+      load: datGuiPresets,
+      ...this.options
+    });
+    controlPanel.remember(neu3d.meshDict.settings);
+    controlPanel.remember(neu3d.renderSettings.toneMappingPass);
+    controlPanel.remember(neu3d.renderSettings.bloomPass);
+    controlPanel.remember(neu3d.renderSettings.effectFXAA);
+    controlPanel.remember(neu3d.renderSettings.backrenderSSAO);
+    controlPanel.__closeButton.style.visibility = 'hidden';
+    
+    let neuronNum = controlPanel.add(neu3d.uiVars, 'frontNum').name('# Neurons: ');
+    neuronNum.domElement.style["pointerEvents"] = "None";
+    neuronNum.domElement.parentNode.parentNode.classList.add('noneurons');
+    if (this.options.createButtons) {
+      function _createBtn(name: string, icon: string, iconAttrs: any, tooltip: string, func: Function) {
+        let newButton: object = function () {
+          this[name] = func;
+        };
+        let btn = new newButton();
+        let button = controlPanel.add(btn, name).title(tooltip).icon(icon, "strip", iconAttrs);
+        return button;
+      }
+    
+      let btnId = ''
+      btnId = _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { neu3d.fileUploadInput.click(); });
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { neu3d.resetView() });
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("resetVisibleView", "fa fa-align-justify", {}, "Center and zoom into visible Neurons/Synapses", () => { neu3d.resetVisibleView() });
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("hideAll", "fa fa-eye-slash", {}, "Hide All", () => { neu3d.meshDict.hideAll() });
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("showAll", "fa fa-eye", {}, "Show All", () => { neu3d.meshDict.showAll() });
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("takeScreenshot", "fa fa-camera", {}, "Download Screenshot", () => { neu3d.screenshot(); });
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("removeUnpin", "fa fa-trash", {}, "Remove Unpinned Neurons", () => { neu3d.meshDict.removeUnpinned(); })
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("removeUnpin", "fa fa-map-upin", {}, "Unpin All", () => { neu3d.meshDict.unpinAll(); })
+      this._controlPanelBtnIds.push(btnId);
+      btnId = _createBtn("showSettings", "fa fa-cogs", {}, "Display Settings", () => { controlPanel.__closeButton.click(); })
+      this._controlPanelBtnIds.push(btnId);
+    }
+    // add settings
+    let f_vis = controlPanel.addFolder('Settings');
+    let f0 = f_vis.addFolder('Display Mode');
+    f0.add(neu3d.meshDict.settings, 'neuron3d').name("Enable 3D Mode");
+    f0.add(neu3d.meshDict.settings, 'neuron3dMode', [1, 2, 3]);
+    f0.add(neu3d.meshDict.settings, 'synapseMode');
+  
+    let f1 = f_vis.addFolder('Visualization');
+    f1.add(neu3d.meshDict.settings, 'meshWireframe').name("Show Wireframe");
+    f1.addColor(neu3d.meshDict.settings, 'backgroundColor').name("Background");
+    let f1_1 = f1.addFolder('Opacity');
+  
+    f1_1.add(neu3d.meshDict.settings, 'defaultOpacity', 0.0, 1.0).listen();
+    f1_1.add(neu3d.meshDict.settings, 'synapseOpacity', 0.0, 1.0).listen();
+    f1_1.add(neu3d.meshDict.settings, 'nonHighlightableOpacity', 0.0, 1.0).listen();
+    f1_1.add(neu3d.meshDict.settings, 'lowOpacity', 0.0, 1.0).listen();
+    f1_1.add(neu3d.meshDict.settings, 'pinOpacity', 0.0, 1.0).listen();
+    f1_1.add(neu3d.meshDict.settings, 'pinLowOpacity', 0.0, 1.0).listen();
+    f1_1.add(neu3d.meshDict.settings, 'highlightedObjectOpacity', 0.0, 1.0).listen();
+    f1_1.add(neu3d.meshDict.settings, 'backgroundOpacity', 0.0, 1.0).listen();
+    f1_1.add(neu3d.meshDict.settings, 'backgroundWireframeOpacity', 0.0, 1.0).listen();
+  
+    let f1_2 = f1.addFolder('Advanced');
+  
+    f1_2.add(neu3d.renderSettings.toneMappingPass, 'brightness').name("ToneMap Brightness");
+    f1_2.add(neu3d.renderSettings.bloomPass, 'radius', 0.0, 10.0).name("BloomRadius");;
+    f1_2.add(neu3d.renderSettings.bloomPass, 'strength', 0.0, 1.0).name("BloomStrength");;
+    f1_2.add(neu3d.renderSettings.bloomPass, 'threshold', 0.0, 2.0).name("BloomThreshold");;
+    f1_2.add(neu3d.renderSettings.effectFXAA, 'enabled').name("FXAA").listen();
+    f1_2.add(neu3d.renderSettings.backrenderSSAO, 'enabled').name("SSAO").listen();
+  
+    let f2 = f_vis.addFolder('Size');
+    f2.add(neu3d.meshDict.settings, 'defaultRadius', neu3d.meshDict.settings.minRadius, neu3d.meshDict.settings.maxRadius).listen();
+    f2.add(neu3d.meshDict.settings, 'defaultSomaRadius', neu3d.meshDict.settings.minSomaRadius, neu3d.meshDict.settings.maxSomaRadius).listen();
+    f2.add(neu3d.meshDict.settings, 'defaultSynapseRadius', neu3d.meshDict.settings.minSynapseRadius, neu3d.meshDict.settings.maxSynapseRadius).listen();
+  
+    let ctl_minR = f2.add(neu3d.meshDict.settings, 'minRadius', 0).listen();
+    ctl_minR.onChange((value: number) => { value = Math.min(value, neu3d.meshDict.settings.maxRadius); })
+    let ctl_maxR = f2.add(neu3d.meshDict.settings, 'maxRadius', 0).listen();
+    ctl_maxR.onChange((value: number) => { value = Math.max(value, neu3d.meshDict.settings.minRadius); })
+    let ctl_minSomaR = f2.add(neu3d.meshDict.settings, 'minSomaRadius', 0).listen();
+    ctl_minSomaR.onChange((value: number) => { value = Math.min(value, neu3d.meshDict.settings.maxSomaRadius); })
+    let ctl_maxSomaR = f2.add(neu3d.meshDict.settings, 'maxSomaRadius', 0).listen();
+    ctl_maxSomaR.onChange((value: number) => { value = Math.max(value, neu3d.meshDict.settings.minSomaRadius); })
+    let ctl_minSynR = f2.add(neu3d.meshDict.settings, 'minSynapseRadius', 0).listen();
+    ctl_minSynR.onChange((value: number) => { value = Math.min(value, neu3d.meshDict.settings.maxSynapseRadius); })
+    let ctl_maxSynR = f2.add(neu3d.meshDict.settings, 'maxSynapseRadius', 0).listen();
+    ctl_maxSynR.onChange((value: number) => { value = Math.max(value, neu3d.meshDict.settings.minSynapseRadius); })
+  
+  
+    // this.settings.on("change", ((e) => {
+    //   controlPanel.updateDisplay();
+    // }), [
+    //   'neuron3d', 'neuron3dMode', 'synapseMode', 'meshWireframe', 'defaultOpacity',
+    //   'synapseOpacity', 'nonHighlightableOpacity', 'lowOpacity', 'pinOpacity', 'pinLowOpacity',
+    //   'highlightedObjectOpacity', 'backgroundOpacity', 'backgroundWireframeOpacity',
+    //   'defaultRadius', 'defaultSomaRadius', 'defaultSynapseRadius', 'minRadius', 'maxRadius',
+    //   'minSomaRadius', 'maxSomaRadius', 'minSynapseRadius', 'maxSynapseRadius', 'backgroundColor'
+    // ]);
+    // this.settings.toneMappingPass.on('change', ((e) => { controlPanel.updateDisplay(); }), ['brightness']);
+    // this.settings.bloomPass.on('change', ((e) => { controlPanel.updateDisplay(); }), ['radius', 'strength', 'threshold']);
+    // this.settings.effectFXAA.on('change', ((e) => { controlPanel.updateDisplay(); }), ['enabled']);
+    // this.settings.backrenderSSAO.on('change', ((e) => { controlPanel.updateDisplay(); }), ['enabled']);
+    // this.uiVars.on('change', ((e) => { controlPanel.updateDisplay(); }), ['frontNum']);
+  
+    // let f3 = f_vis.addFolder('Animation');
+    // f3.add(this.states, 'animate');
+    // f3.add(this.settings, 'meshOscAmp', 0.0, 1.0);
+  
+    controlPanel.open();
+    return controlPanel;
+  
+  }
+  
+  dispose() {
+    let folder = this.panel.__folders['Settings'].__folders['Display Mode'];
+    this.panel.__folders['Settings'].removeFolder(folder);
+    folder = this.panel.__folders['Settings'].__folders['Visualization'].__folders['Opacity']
+    this.panel.__folders['Settings'].__folders['Visualization'].removeFolder(folder);
+    folder = this.panel.__folders['Settings'].__folders['Visualization'].__folders['Advanced']
+    this.panel.__folders['Settings'].__folders['Visualization'].removeFolder(folder);
+    folder = this.panel.__folders['Settings'].__folders['Visualization'];
+    this.panel.__folders['Settings'].removeFolder(folder);
+    folder = this.panel.__folders['Settings'].__folders['Size'];
+    this.panel.__folders['Settings'].removeFolder(folder);
+    folder = this.panel.__folders['Settings'];
+    this.panel.removeFolder(folder);
+    for (let b of this._controlPanelBtnIds) {
+      this.panel.remove(b);
+    }
+    for (let c of this.panel.__controllers) {
+      this.panel.remove(c)
+    }
+    this.panel.updateDisplay();
+    this.panel.destroy();
+  }
+}

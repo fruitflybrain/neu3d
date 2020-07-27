@@ -2,15 +2,16 @@
   "name": "neu3d",
   "version": "1.0.12",
   "description": "A npm package for rendering SWC files.",
-  "main": "./lib/neu3d.min.js",
-  "types": "./typings/index.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "style": "style/index.css",
   "scripts": {
-    "build": "npx webpack --config webpack.config.js",
-    "watch": "npx webpack --config webpack.config.js --watch",
-    "test": "echo \"To see it in action, server HTML server in root after build\"",
-    "dev": "npx webpack --config webpack.config.js --watch",
-    "clean": "rimraf lib",
-    "clean:node_modules": "rimraf node_modules lib"
+    "build": "tsc ",
+    "build:webpack": "tsc && npx webpack --config webpack.config.js",
+    "watch": "tsc -w",
+    "watch:webpack": "nodemon -e ts --watch src --exec \"npm run build:webpack\"",
+    "clean": "rimraf lib tsconfig.tsbuildinfo",
+    "clean:node_modules": "rimraf node_modules lib tsconfig.tsbuildinfo"
   },
   "repository": {
     "type": "git",
@@ -24,21 +25,24 @@
   "homepage": "https://github.com/fruitflybrain/neu3d#readme",
   "dependencies": {
     "@fortawesome/fontawesome-free": "5.12.0",
+    "@lumino/coreutils": "^1.5.3",
+    "@lumino/signaling": "^1.4.3",
     "bootstrap": "^4.5.0",
     "dat.gui": "^0.7.7",
-    "dts-gen": "^0.6.0",
-    "exports-loader": "^0.7.0",
-    "imports-loader": "^0.8.0",
-    "jquery": "^3.5.1",
-    "lodash": "^4.17.15",
-    "popper.js": "^1.16.1",
     "stats.js": "^0.17.0",
-    "three": "^0.117.0"
+    "three": "^0.117.0",
+    "tweakpane": "^1.5.3"
   },
   "devDependencies": {
+    "@types/dat.gui": "^0.7.5",
+    "@types/node": "^14.0.26",
     "css-loader": "^2.1.1",
+    "exports-loader": "^0.7.0",
+    "imports-loader": "^0.8.0",
+    "nodemon": "^2.0.4",
     "rimraf": "^3.0.2",
     "style-loader": "^0.21.0",
+    "typescript": "^3.5.3",
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.11"
   }
