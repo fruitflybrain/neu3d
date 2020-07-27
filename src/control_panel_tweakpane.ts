@@ -1,4 +1,5 @@
-import { Neu3D } from "./neu3d";
+import { Neu3D } from "./neu3d"
+import { Lights } from "./lightshelper";
 const Tweakpane = require('tweakpane');
 
 export class ControlPanel {
@@ -15,34 +16,33 @@ export class ControlPanel {
     // neuronNum.domElement.parentNode.parentNode.classList.addInput('noneurons');
 
     // if (GUIOptions['createButtons']) {
-    //   function _createBtn(name, icon, iconAttrs, tooltip, func) {
-    //     let newButton = function () {
-    //       this[name] = func;
-    //     };
-    //     let btn = new newButton();
-    //     let buttonid = controlPanel.addInput(btn, name).title(tooltip).icon(icon, "strip", iconAttrs);
-    //     return buttonid;
-    //   }
+    function _createBtn(name:string, icon:string, iconAttrs:any, tooltip:string, func: Function) {
+      let btn = controlPanel.addButton({ title: name });
+      btn.on('click', func);
+      //.title(tooltip).icon(icon, "strip", iconAttrs);
+      return btn;
+    }
 
-    //   let btnId = ''
-    //   btnId = _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { neu3d.fileUploadInput.click(); });
-    //   this._controlPanelBtnIds.push(btnId);
-    //   btnId = _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { neu3d.resetView() });
-    //   this._controlPanelBtnIds.push(btnId);
-    //   btnId = _createBtn("resetVisibleView", "fa fa-align-justify", {}, "Center and zoom into visible Neurons/Synapses", () => { neu3d.resetVisibleView() });
-    //   this._controlPanelBtnIds.push(btnId);
-    //   btnId = _createBtn("hideAll", "fa fa-eye-slash", {}, "Hide All", () => { neu3d.hideAll() });
-    //   this._controlPanelBtnIds.push(btnId);
-    //   btnId = _createBtn("showAll", "fa fa-eye", {}, "Show All", () => { neu3d.showAll() });
-    //   this._controlPanelBtnIds.push(btnId);
-    //   btnId = _createBtn("takeScreenshot", "fa fa-camera", {}, "Download Screenshot", () => { neu3d._take_screenshot = true; });
-    //   this._controlPanelBtnIds.push(btnId);
-    //   btnId = _createBtn("removeUnpin", "fa fa-trash", {}, "Remove Unpinned Neurons", () => { neu3d.removeUnpinned(); })
-    //   this._controlPanelBtnIds.push(btnId);
-    //   btnId = _createBtn("removeUnpin", "fa fa-map-upin", {}, "Unpin All", () => { neu3d.unpinAll(); })
-    //   this._controlPanelBtnIds.push(btnId);
-    //   btnId = _createBtn("showSettings", "fa fa-cogs", {}, "Display Settings", () => { controlPanel.__closeButton.click(); })
-    //   this._controlPanelBtnIds.push(btnId);
+    
+    let btnId = ''
+    btnId = _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { neu3d.fileUploadInput.click(); });
+    this._controlPanelBtnIds.push(btnId);
+    btnId = _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { neu3d.resetView() });
+    this._controlPanelBtnIds.push(btnId);
+    btnId = _createBtn("resetVisibleView", "fa fa-align-justify", {}, "Center and zoom into visible Neurons/Synapses", () => { neu3d.resetVisibleView() });
+    this._controlPanelBtnIds.push(btnId);
+    btnId = _createBtn("hideAll", "fa fa-eye-slash", {}, "Hide All", () => { neu3d.meshDict.hideAll() });
+    this._controlPanelBtnIds.push(btnId);
+    btnId = _createBtn("showAll", "fa fa-eye", {}, "Show All", () => { neu3d.meshDict.showAll() });
+    this._controlPanelBtnIds.push(btnId);
+    btnId = _createBtn("takeScreenshot", "fa fa-camera", {}, "Download Screenshot", () => { neu3d.screenshot();});
+    this._controlPanelBtnIds.push(btnId);
+    btnId = _createBtn("removeUnpin", "fa fa-trash", {}, "Remove Unpinned Neurons", () => { neu3d.meshDict.removeUnpinned(); })
+    this._controlPanelBtnIds.push(btnId);
+    btnId = _createBtn("unPinAll", "fa fa-map-upin", {}, "Unpin All", () => { neu3d.meshDict.unpinAll(); })
+    this._controlPanelBtnIds.push(btnId);
+    btnId = _createBtn("showSettings", "fa fa-cogs", {}, "Display Settings", () => { controlPanel.__closeButton.click(); })
+    this._controlPanelBtnIds.push(btnId);
     // }
     // add settings
     let f_vis = controlPanel.addFolder('Settings');
@@ -73,7 +73,7 @@ export class ControlPanel {
     f1_1.addInput(neu3d.meshDict.settings, 'backgroundOpacity', { min: 0.0, max: 1.0 });//.listen();
     f1_1.addInput(neu3d.meshDict.settings, 'backgroundWireframeOpacity', { min: 0.0, max: 1.0 });//.listen();
 
-    let f1_2 = f1.addFolder({ title: 'Advanced', expanded: false });
+    let f1_2 = f1.addFolder({ title: 'Post Processing', expanded: false });
 
     f1_2.addInput(neu3d.postProcess.settings.toneMappingPass, 'brightness', { label: "ToneMap Brightness" });
     f1_2.addInput(neu3d.postProcess.settings.bloomPass, 'radius', { label: "BloomRadius", min: 0., max: 10. });
@@ -81,6 +81,34 @@ export class ControlPanel {
     f1_2.addInput(neu3d.postProcess.settings.bloomPass, 'threshold', { label: "BloomThreshold", min: 0., max: 2. });
     f1_2.addInput(neu3d.postProcess.settings.effectFXAA, 'enabled', { label: "FXAA" });
     f1_2.addInput(neu3d.postProcess.settings.backrenderSSAO, 'enabled', { label: "SSAO" });
+
+    let f1_3 = f1.addFolder({ title: 'Lights', expanded: false });
+    f1_3.addInput(neu3d.lightsHelper.lights['frontAmbient'] as Lights.INeu3DAmbientLight, 'intensity', { label: "Neuron Ambient Light", min: -90., max: 90. });
+    f1_3.addInput(neu3d.lightsHelper.lights['frontDirectional_1'] as Lights.INeu3DDirectionalLight, 'intensity', { label: "Neuron Directional Light", min: -90., max: 90. });
+    f1_3.addInput(neu3d.lightsHelper.lights['backAmbient'] as Lights.INeu3DAmbientLight, 'intensity', { label: "Neuropil Ambient Light", min: 0., max: 20. });
+    f1_3.addInput(neu3d.lightsHelper.lights['backDirectional_1'] as Lights.INeu3DDirectionalLight, 'intensity', { label: "Neuropil Directional Light", min: 0., max: 20. });
+
+
+    let f2_1 = f1_3.addFolder({ title: 'Spot Light 1 on Neuron', expanded: false });
+    let f2_2 = f1_3.addFolder({ title: 'Spot Light 2 on Neuron', expanded: false });
+    f2_1.addInput(neu3d.lightsHelper.lights['frontSpot_1'] as Lights.INeu3DSpotLight, 'posAngle1', { label: "Horizontal Angle", min: -90., max: 90. });
+    f2_1.addInput(neu3d.lightsHelper.lights['frontSpot_1'] as Lights.INeu3DSpotLight, 'posAngle2', { label: "Vertical Angle", min: -90., max: 90. });
+    f2_1.addInput(neu3d.lightsHelper.lights['frontSpot_1'] as Lights.INeu3DSpotLight, 'intensity', { label: "Intensity", min: 0., max: 20. });
+
+    f2_2.addInput(neu3d.lightsHelper.lights['frontSpot_2'] as Lights.INeu3DSpotLight, 'posAngle1', { label: "Horizontal Angle", min: -90., max: 90. });
+    f2_2.addInput(neu3d.lightsHelper.lights['frontSpot_2'] as Lights.INeu3DSpotLight, 'posAngle2', { label: "Vertical Angle", min: -90., max: 90. });
+    f2_2.addInput(neu3d.lightsHelper.lights['frontSpot_2'] as Lights.INeu3DSpotLight, 'intensity', { label: "Intensity", min: 0., max: 20. });
+    
+    
+    let f2_3 = f1_3.addFolder({ title: 'Spot Light 1 on Neuropil', expanded: false });
+    let f2_4 = f1_3.addFolder({ title: 'Spot Light 2 on Neuropil', expanded: false });
+    f2_3.addInput(neu3d.lightsHelper.lights['backSpot_1'] as Lights.INeu3DSpotLight, 'posAngle1', { label: "Horizontal Angle", min: -90., max: 90. });
+    f2_3.addInput(neu3d.lightsHelper.lights['backSpot_1'] as Lights.INeu3DSpotLight, 'posAngle2', { label: "Vertical Angle", min: -90., max: 90. });
+    f2_3.addInput(neu3d.lightsHelper.lights['backSpot_1'] as Lights.INeu3DSpotLight, 'intensity', { label: "Intensity", min: 0., max: 20. });
+
+    f2_4.addInput(neu3d.lightsHelper.lights['backSpot_2'] as Lights.INeu3DSpotLight, 'posAngle1', { label: "Horizontal Angle", min: -90., max: 90. });
+    f2_4.addInput(neu3d.lightsHelper.lights['backSpot_2'] as Lights.INeu3DSpotLight, 'posAngle2', { label: "Vertical Angle", min: -90., max: 90. });
+    f2_4.addInput(neu3d.lightsHelper.lights['backSpot_2'] as Lights.INeu3DSpotLight, 'intensity', { label: "Intensity", min: 0., max: 20. });
 
     // let f2 = f_vis.addFolder({ title: 'Size', expanded: false });
     // f2.addInput(neu3d.settings, 'defaultRadius', neu3d.settings.minRadius, neu3d.settings.maxRadius);//.listen();

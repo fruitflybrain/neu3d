@@ -51,8 +51,8 @@ const convertColor = function (color: Color | string | number | number[]): Color
 */
 export class MeshDict implements MeshDict.IMeshDict {
   state = { pin: false, highlight: false };
-  boundingBox: Box3;
-  visibleBoundingBox: Box3;
+  boundingBox = new Box3();
+  visibleBoundingBox = new Box3();
   _meshDict: { [key: string]: MeshItem } = {};
   _opacityChanged = new Signal<this, MeshDict.ISettings>(this);
   _labelToRid: { [label: string]: string } = {}; // map label to Rid
@@ -413,6 +413,7 @@ export class MeshDict implements MeshDict.IMeshDict {
 
   setColor(rid: string | string[], color: number | string | number[] | Color) {
     rid = asArray(rid);
+    color = convertColor(color);
     for (let id of rid) {
       if (!(id in this._meshDict)) {
         continue;
@@ -422,6 +423,7 @@ export class MeshDict implements MeshDict.IMeshDict {
   };
 
   setBackgroundColor(color: number | string | number[] | Color) {
+    color = convertColor(color);
     for (let [rid, mesh] of Object.entries(this._meshDict)) {
       if (mesh.background) {
         this._meshDict[rid].color = color;
@@ -479,11 +481,14 @@ export class MeshDict implements MeshDict.IMeshDict {
     for (let i = 0; i < Object.keys(json.ffbo_json).length; ++i) {
       let key = Object.keys(json.ffbo_json)[i];
       await this.addOneJson(key, json.ffbo_json[key], lut.getColor(id2float(i)), metadata);
+      if (this._meshDict[key].background) {
+        this.boundingBox.union(this._meshDict[key].boundingBox);
+      }
     }
     return Promise.resolve(void 0);
   }
 
-  async addOneJson(key:string, unit: any, color: Color, metadata: any): Promise<void> {
+  async addOneJson(key:string, unit: any, color: Color, metadata: any): Promise<MeshItem | void> {
     let objectLoaded = new PromiseDelegate(); // resolves when the fileloaded has finished downloading meshes
     if (key in this._meshDict) {
       console.log('mesh object already exists... skip rendering...');
@@ -494,12 +499,12 @@ export class MeshDict implements MeshDict.IMeshDict {
     switch (unit.type) {
       case 'morphology_json':
         unit.type = 'MorphJSON';
-        unit = new MeshItem('MorphJSON', key, unit, metadata.visibility, this.settings);
+        unit = new MeshItem('MorphJSON', key, unit, metadata.visibility, this.settings, this.loadingManager);
         objectLoaded.resolve(void 0);
         break;
       case 'obj':
         unit.type = 'Obj';
-        unit = new MeshItem('Obj', key, unit, metadata.visibility, this.settings);
+        unit = new MeshItem('Obj', key, unit, metadata.visibility, this.settings, this.loadingManager);
         objectLoaded.resolve(void 0);
         break;
       default:
@@ -533,12 +538,12 @@ export class MeshDict implements MeshDict.IMeshDict {
         } else if (unit.dataStr) {
           if (unit.filetype === 'json') {
             unit.type = 'Mesh';
-            unit = new MeshItem('Mesh', key, unit, metadata.visibility, this.settings);
+            unit = new MeshItem('Mesh', key, unit, metadata.visibility, this.settings, this.loadingManager, unit.dataStr);
             objectLoaded.resolve(void 0);
             break;
           } else if (unit.filetype === 'swc') {
             unit.type = 'SWC';
-            unit = new MeshItem('SWC', key, unit, metadata.visibility, this.settings);
+            unit = new MeshItem('SWC', key, unit, metadata.visibility, this.settings, this.loadingManager, unit.dataStr);
             objectLoaded.resolve(void 0);
             break;
           }
@@ -555,6 +560,7 @@ export class MeshDict implements MeshDict.IMeshDict {
         this.groups.front.add(unit.object as Object3D);
       }
       this._labelToRid[(unit as MeshItem).label] = (unit as MeshItem).rid;
+      return this._meshDict[key]
     });
   }
 
@@ -601,13 +607,13 @@ export class MeshItem implements MeshDict.IMesh {
   readonly settings: MeshDict.ISettings;
 
   background: boolean;
-  boundingBox: Box3;
+  boundingBox = new Box3();
   position = new Vector3();
 
   constructor(
     meshType: 'Mesh' | 'SWC' | 'MorphJSON' | 'Obj' | string,
     key: string, 
-    unit: Partial<MeshDict.IMeshOptions>,
+    unit: Partial<MeshDict.IMeshOptions> | any,
     visibility: boolean,
     settings: MeshDict.ISettings, // visualization settings
     loadingManager?: LoadingManager,
@@ -623,6 +629,17 @@ export class MeshItem implements MeshDict.IMesh {
     this.position = unit.position ?? new Vector3();
     this.loadingManager = loadingManager; // for loading OBJ files
     this.settings = settings;
+
+    this.transform = {
+      xShift: unit.xShift ?? 0.,
+      yShift: unit.yShift ?? 0.,
+      zShift: unit.zShift ?? 0.,
+      xScale: unit.xScale ?? 1.,
+      yScale: unit.yScale ?? 1.,
+      zScale: unit.zScale ?? 1.,
+      xyRot: unit.xyRot ?? 0.,
+      yzRot: unit.yzRot ?? 0.
+    }
 
     switch (meshType) {
       case 'Mesh':
@@ -646,7 +663,7 @@ export class MeshItem implements MeshDict.IMesh {
   /**
    * Propogate colorchanges to object's material
    */
-  set color(val: Color | string | number | number[]) {
+  set color(val: Color) {
     val = convertColor(val);
     if (val !== this._color) {
       this._color.set(val);
@@ -657,7 +674,7 @@ export class MeshItem implements MeshDict.IMesh {
     }
   }
 
-  get color() {
+  get color(): Color {
     return this._color;
   }
 
@@ -726,7 +743,7 @@ export class MeshItem implements MeshDict.IMesh {
         opacity = this.settings.highlightedObjectOpacity;
         depthTest = false;
       } else {
-        if (states.highlight) {
+        if (states?.highlight) {
           opacity = this.settings.lowOpacity
         } else {
           opacity = this.settings.nonHighlightableOpacity;
@@ -834,6 +851,10 @@ export class MeshItem implements MeshDict.IMesh {
   _onAfterAdd(key:string, unit: Partial<MeshDict.IMesh>, object: Object3D, settings: MeshDict.ISettings) {
     (object as any).rid = key; // needed rid for raycaster reference
     this.object = object;
+    for (let obj of this.object.children) {
+      (obj as Mesh).geometry.computeBoundingBox();
+      this.boundingBox.union((obj as Mesh).geometry.boundingBox);
+    }
     this.position = unit.position ??  new Vector3(
       0.5 * (unit.boundingBox.min.x + unit.boundingBox.max.x), 
       0.5 * (unit.boundingBox.min.y + unit.boundingBox.max.y), 
@@ -886,8 +907,8 @@ export class MeshItem implements MeshDict.IMesh {
     geometry.computeVertexNormals();
     geometry.computeBoundingBox();
     let materials: any[] = [
-      new MeshLambertMaterial({ color: unit.color, transparent: true, side: 2, flatShading: true }),
-      new MeshBasicMaterial({ color: unit.color, wireframe: true, transparent: true })
+      new MeshLambertMaterial({ color: this.color, transparent: true, side: 2, flatShading: true }),
+      new MeshBasicMaterial({ color: this.color, wireframe: true, transparent: true })
     ];
 
     let object = SceneUtils.createMultiMaterialObject(geometry, materials);
