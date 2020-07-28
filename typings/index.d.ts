@@ -21,7 +21,7 @@ declare class Neu3D {
     execCommand(json: any): void;
     createUIBtn(name: string, icon: string, tooltip: string, func?: any): void;
 
-    dispoe(): void; // dispose everything
+    dispose(): void; // dispose everything
     reset(resetBackground?: boolean): void;
     resetView(): void;
     resetVisibleView(): void;
