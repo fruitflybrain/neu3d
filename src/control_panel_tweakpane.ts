@@ -41,11 +41,11 @@ export class ControlPanel {
     this._controlPanelBtnIds.push(btnId);
     btnId = _createBtn("unPinAll", "fa fa-map-upin", {}, "Unpin All", () => { neu3d.meshDict.unpinAll(); })
     this._controlPanelBtnIds.push(btnId);
-    btnId = _createBtn("showSettings", "fa fa-cogs", {}, "Display Settings", () => { controlPanel.__closeButton.click(); })
-    this._controlPanelBtnIds.push(btnId);
     // }
     // add settings
     let f_vis = controlPanel.addFolder('Settings');
+    btnId = _createBtn("showSettings", "fa fa-cogs", {}, "Display Settings", () => { f_vis.expanded = !f_vis.expanded; })
+    this._controlPanelBtnIds.push(btnId);
     let f0 = f_vis.addFolder({ title: 'Display Mode', expanded: false });
     f0.addInput(neu3d.meshDict.settings, 'neuron3d', { label: "Enable 3D Mode" });
     f0.addInput(neu3d.meshDict.settings, 'neuron3dMode', {
