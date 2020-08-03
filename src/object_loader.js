@@ -422,24 +422,24 @@ Neu3D.prototype.loadMorphJSONCallBack = function (key, unit, visibility) {
         console.log('Loading synapse node');
         if (this.settings.synapseMode == true){
           if(mergedGeometry == undefined)
-            mergedGeometry = new THREE.Geometry()
+            mergedGeometry = new Geometry()
 
           if(c.radius)
-            sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
+            sphereGeometry = new SphereGeometry(c.radius, 8, 8 );
           else
             if(c.type == 7)
-               sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8 );
+               sphereGeometry = new SphereGeometry(this.settings.defaultSynapseRadius, 8, 8 );
             else
-               sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius/2, 8, 8 );
+               sphereGeometry = new SphereGeometry(this.settings.defaultSynapseRadius/2, 8, 8 );
           sphereGeometry.translate( c.x, c.y, c.z );
           //var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
           //object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
           mergedGeometry.merge(sphereGeometry);
-          unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
+          unit['position'] = new Vector3(c.x,c.y,c.z);
         } else {
           if(pointGeometry == undefined)
-            pointGeometry = new THREE.Geometry();
-          pointGeometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
+            pointGeometry = new Geometry();
+          pointGeometry.vertices.push(new Vector3(c.x, c.y, c.z));
         }
       }
       if (c.type == -1) {
