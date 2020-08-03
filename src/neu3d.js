@@ -1,9 +1,9 @@
 import { PropertyManager } from './propertymanager';
 import { FFBOLightsHelper } from './lightshelper';
-import { 
+import {
   Vector2, Raycaster,
   Group, WebGLRenderer,
-  Scene, Vector3, LoadingManager, 
+  Scene, Vector3, LoadingManager,
   PerspectiveCamera, Color, FileLoader, GammaEncoding, LessEqualStencilFunc
 } from 'three';
 
@@ -30,18 +30,18 @@ var _saveImage;
 
 // return next power of 2 of given number
 function nextPow2(x) {
-  return Math.pow(2, Math.round(Math.max(x,0)).toString(2).length);
+  return Math.pow(2, Math.round(Math.max(x, 0)).toString(2).length);
 }
 
 // used for generating unique file upload div id
 function generateGuid() {
   var result, i, j;
   result = '';
-  for(j=0; j<32; j++) {
-    if( j == 8 || j == 12 || j == 16 || j == 20) {
+  for (j = 0; j < 32; j++) {
+    if (j == 8 || j == 12 || j == 16 || j == 20) {
       result = result + '-';
     }
-    i = Math.floor(Math.random()*16).toString(16).toUpperCase();
+    i = Math.floor(Math.random() * 16).toString(16).toUpperCase();
     result = result + i;
   }
   return result;
@@ -49,24 +49,24 @@ function generateGuid() {
 
 function checkOnMobile() {
 
-  if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
+  if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
     return true;
   }
-  else{
+  else {
     return false;
   }
-    
+
 }
 
 function getAttr(obj, key, val) {
-  if (key in obj){
+  if (key in obj) {
     val = obj[key];
   }
   return val;
 }
 
 function setAttrIfNotDefined(obj, key, val) {
-  if (!(key in obj)){
+  if (!(key in obj)) {
     obj[key] = val;
   }
 }
@@ -97,7 +97,7 @@ export class Neu3D {
     if (options['powerSaving']) {
       this.powerSaving = true;
     }
-    
+
     this._animationId = null; // animation frame id, useful for stopping animation
     this._containerEventListener = {}; // function references to event listeners on container div
     this._addedDOMElements = [];
@@ -296,13 +296,13 @@ export class Neu3D {
         window.URL.revokeObjectURL(url);
       };
     }());
-    
+
     // start animation loop
     this.animate();
     this._defaultSettings = this.export_settings();
   } // ENDOF Constructor
 
-  addDivs(){ 
+  addDivs() {
     // add file input
     let ffbomesh = this;
     let fileUploadInput = document.createElement('input');
@@ -312,7 +312,7 @@ export class Neu3D {
     fileUploadInput.style.visibility = 'hidden';
     fileUploadInput.style.display = 'none';
     fileUploadInput.onchange = (evt) => {
-      for (let i=0; i<evt.target.files.length; i++) {
+      for (let i = 0; i < evt.target.files.length; i++) {
         const file = evt.target.files.item(i);
         const name = file.name.split('.')[0];
         let isSWC = false;
@@ -327,7 +327,7 @@ export class Neu3D {
             dataStr: event.target.result,
             filetype: 'swc'
           };
-          if (isSWC === true){
+          if (isSWC === true) {
             ffbomesh.addJson({ ffbo_json: json });
           } else {
             ffbomesh.addJson({ ffbo_json: json, type: 'obj' });
@@ -354,7 +354,7 @@ export class Neu3D {
   }
 
   removeDivs() {
-    for (let el of this._addedDOMElements){
+    for (let el of this._addedDOMElements) {
       el.remove();
     }
   }
@@ -711,7 +711,7 @@ export class Neu3D {
       }
       --this.uiVars.meshNum;
       if (this.meshDict[key].background) {
-        this.groups.back.remove(meshobj);  
+        this.groups.back.remove(meshobj);
       } else {
         this.groups.front.remove(meshobj);
       }
@@ -726,7 +726,7 @@ export class Neu3D {
     }
   }
 
-  addContainerEventListener(){
+  addContainerEventListener() {
     let func_0 = this.onDocumentMouseClick.bind(this);
     this.container.addEventListener('click', func_0, false);
     this._containerEventListener['click'] = func_0;
@@ -764,8 +764,8 @@ export class Neu3D {
     this._containerEventListener['resize'] = func_10;
   }
 
-  removeContainerEventListener(){
-    for (let [evtName, func] of Object.entries(this._containerEventListener)){
+  removeContainerEventListener() {
+    for (let [evtName, func] of Object.entries(this._containerEventListener)) {
       this.container.removeEventListener(evtName, func, false);
     }
     document.body.removeEventListener('contextmenu', this.blockContextMenu);
@@ -945,6 +945,14 @@ export class Neu3D {
 
       for (let i = 0; i < keyList.length; ++i) {
         let key = keyList[i];
+        if (key == 'set') {
+          console.log('New setting configuration found.');
+          let _this = this;
+          Object.keys(json.ffbo_json[key]).forEach(function (setkey) {
+            _this.settings[setkey] = json.ffbo_json[key][setkey];
+          });
+          continue;
+        }
         if (key in this.meshDict) {
           console.log('mesh object already exists... skip rendering...');
           continue;
@@ -965,7 +973,7 @@ export class Neu3D {
         setAttrIfNotDefined(unit, 'visibility', true);
         setAttrIfNotDefined(unit, 'background', false);
         setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
-        setAttrIfNotDefined(unit, 'label', 
+        setAttrIfNotDefined(unit, 'label',
           getAttr(unit, 'uname', key)
         );
         setAttrIfNotDefined(unit, 'radius_scale', 1.);
@@ -993,7 +1001,7 @@ export class Neu3D {
         } else if ('filename' in unit) {
           unit['filetype'] = unit.filename.split('.').pop();
           let loader = new FileLoader(this.loadingManager);
-          if (unit['filetype'] == "json"){
+          if (unit['filetype'] == "json") {
             loader.load(unit.filename, this.loadMeshCallBack(key, unit, metadata.visibility).bind(this));
           } else if (unit['filetype'] == "swc") {
             loader.load(unit.filename, this.loadSWCCallBack(key, unit, metadata.visibility).bind(this));
@@ -1102,7 +1110,7 @@ export class Neu3D {
 
       }
     }
-    if ((this.activeRender && this.powerSaving)||(!(this.powerSaving))){
+    if ((this.activeRender && this.powerSaving) || (!(this.powerSaving))) {
       this.render();
     }
     if (this.stats) {
@@ -1121,7 +1129,7 @@ export class Neu3D {
     event.preventDefault();
 
     let ffbomesh = this;
-    for (let i=0; i<event.dataTransfer.files.length; i++) {
+    for (let i = 0; i < event.dataTransfer.files.length; i++) {
       const file = event.dataTransfer.files.item(i);
       const name = file.name.split('.')[0];
       let isSWC = false;
@@ -1136,7 +1144,7 @@ export class Neu3D {
           dataStr: evt.target.result,
           filetype: 'swc'
         };
-        if (isSWC === true){
+        if (isSWC === true) {
           ffbomesh.addJson({ ffbo_json: json });
         } else {
           ffbomesh.addJson({ ffbo_json: json, type: 'obj' });
@@ -1162,7 +1170,7 @@ export class Neu3D {
   }
 
   blockDragEvents(event) {
-    event.preventDefault(); 
+    event.preventDefault();
     event.stopPropagation()
   }
 
@@ -1296,8 +1304,8 @@ export class Neu3D {
                 obj[0].material.opacity = this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005));
                 obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
               }
-  
-  
+
+
               obj[0].material.opacity = this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005));
               obj[1].material.opacity = this.settings.backgroundWireframeOpacity;
             } else {
@@ -1774,7 +1782,7 @@ export class Neu3D {
         //   meshobj.children[j].geometry.colors[k].set(color);
         // }
       }
-      this.meshDict[id[i]].color = new Color( (color));
+      this.meshDict[id[i]].color = new Color((color));
     }
   }
 

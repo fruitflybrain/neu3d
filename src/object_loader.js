@@ -1,20 +1,20 @@
 import { Neu3D } from './neu3d';
-import { 
+import {
   Vector3, Face3, Object3D, Matrix4, Mesh,
-  MeshLambertMaterial, MeshBasicMaterial, PointsMaterial, LineBasicMaterial, 
-  Geometry, CylinderGeometry,  SphereGeometry, TubeGeometry, 
-  QuadraticBezierCurve3,  VertexColors, LineSegments, 
+  MeshLambertMaterial, MeshBasicMaterial, PointsMaterial, LineBasicMaterial,
+  Geometry, CylinderGeometry, SphereGeometry, TubeGeometry,
+  QuadraticBezierCurve3, VertexColors, LineSegments,
   XHRLoader
 } from 'three';
-import { 
+import {
   SceneUtils
 } from 'three/examples/jsm/utils/SceneUtils';
 
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
 
 /** Clip value in between min/max */
-Math.clip = function(number, min, max) {
-  if (max < min){
+Math.clip = function (number, min, max) {
+  if (max < min) {
     return number
   }
   return Math.max(min, Math.min(number, max));
@@ -26,7 +26,7 @@ Math.clip = function(number, min, max) {
 * @param {*} unit 
 * @param {*} object 
 */
-Neu3D.prototype._registerObject = function(key, unit, object) {
+Neu3D.prototype._registerObject = function (key, unit, object) {
   object.rid = key; // needed rid for raycaster reference
   unit['rid'] = key;
   unit['object'] = object;
@@ -41,16 +41,16 @@ Neu3D.prototype._registerObject = function(key, unit, object) {
       unit['object'].children[0].material.opacity = this.settings.backgroundOpacity;
       unit['object'].children[1].material.opacity = this.settings.backgroundWireframeOpacity;
     } else {
-      if (this.settings.defaultOpacity !== 1){
-        for (let i = 0; i < unit['object'].children.length; i++){
+      if (this.settings.defaultOpacity !== 1) {
+        for (let i = 0; i < unit['object'].children.length; i++) {
           unit['object'].children[i].material.opacity = this.settings.defaultOpacity;
         }
       }
     }
-    
+
   } else {
-    if (this.settings.synapseOpacity !== 1){
-      for (let i = 0; i < unit['object'].children.length; i++){
+    if (this.settings.synapseOpacity !== 1) {
+      for (let i = 0; i < unit['object'].children.length; i++) {
         unit['object'].children[i].material.opacity = this.settings.synapseOpacity;
       }
     }
@@ -63,7 +63,7 @@ Neu3D.prototype._registerObject = function(key, unit, object) {
  * @param {*} unit 
  * @param {*} visibility 
  */
-Neu3D.prototype.loadMeshCallBack = function(key, unit, visibility) {
+Neu3D.prototype.loadMeshCallBack = function (key, unit, visibility) {
   return (jsonString) => {
     let json = JSON.parse(jsonString);
     let color = unit['color'];
@@ -91,7 +91,7 @@ Neu3D.prototype.loadMeshCallBack = function(key, unit, visibility) {
     ];
 
     let object = SceneUtils.createMultiMaterialObject(geometry, materials);
-    if (!this.settings.meshWireframe){
+    if (!this.settings.meshWireframe) {
       object.children[1].visible = false;
     }
     object.visible = visibility;
@@ -156,7 +156,7 @@ Neu3D.prototype.loadMeshCallBack = function(key, unit, visibility) {
 * @param {*} unit 
 * @param {*} visibility 
 */
-Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
+Neu3D.prototype.loadSWCCallBack = function (key, unit, visibility) {
   return (swcString) => {
     /** process string */
     swcString = swcString.replace(/\r\n/g, "\n");
@@ -164,22 +164,22 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
     let len = swcLine.length;
     let swcObj = {};
     let radius_scale = unit['radius_scale'];
-    swcLine.forEach((e)=> {
+    swcLine.forEach((e) => {
       let seg = e.split(' ');
       if (seg.length == 7) {
-        var x_put = parseFloat(seg[2])*unit['x_scale'];
-        var y_put = parseFloat(seg[3])*unit['y_scale'];
-        var z_put = parseFloat(seg[4])*unit['z_scale'];
-        var x_i = Math.cos(unit['xy_rot'])*x_put + Math.sin(unit['xy_rot'])*y_put;
-        var y_i = Math.sin(unit['xy_rot'])*x_put + Math.cos(unit['xy_rot'])*y_put;
+        var x_put = parseFloat(seg[2]) * unit['x_scale'];
+        var y_put = parseFloat(seg[3]) * unit['y_scale'];
+        var z_put = parseFloat(seg[4]) * unit['z_scale'];
+        var x_i = Math.cos(unit['xy_rot']) * x_put + Math.sin(unit['xy_rot']) * y_put;
+        var y_i = Math.sin(unit['xy_rot']) * x_put + Math.cos(unit['xy_rot']) * y_put;
         var z_i = z_put;
-        var y_f = Math.cos(unit['yz_rot'])*y_i + Math.sin(unit['yz_rot'])*z_i;
-        var z_f = Math.sin(unit['yz_rot'])*y_i + Math.cos(unit['yz_rot'])*z_i;
+        var y_f = Math.cos(unit['yz_rot']) * y_i + Math.sin(unit['yz_rot']) * z_i;
+        var z_f = Math.sin(unit['yz_rot']) * y_i + Math.cos(unit['yz_rot']) * z_i;
         var x_f = x_i;
         x_f = x_f + unit['x_shift'];
         y_f = y_f + unit['y_shift'];
         z_f = z_f + unit['z_shift'];
-        
+
         swcObj[parseInt(seg[0])] = {
           'type': parseInt(seg[1]),
           'x': x_f,
@@ -190,7 +190,7 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
         };
       }
     });
-    
+
     let color = unit['color'];
     let object = new Object3D();
     let pointGeometry = undefined;
@@ -200,7 +200,7 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
 
     for (let idx in swcObj) {
       let c = swcObj[idx];
-      if (idx == Math.round(len / 2) && unit.position == undefined){
+      if (idx == Math.round(len / 2) && unit.position == undefined) {
         unit.position = new Vector3(c.x, c.y, c.z);
       }
       this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
@@ -216,15 +216,15 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
             let d = new Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
 
             // set radius of the parent and current radius
-            if (!p.radius){
+            if (!p.radius) {
               p.radius = this.settings.defaultRadius;
-            } 
+            }
             if (!c.radius) {
               c.radius = this.settings.defaultRadius;
             }
             p.radius = Math.clip(p.radius, this.settings.minRadius, this.settings.maxRadius);
             c.radius = Math.clip(c.radius, this.settings.minRadius, this.settings.maxRadius);
-            geometry = new CylinderGeometry( p.radius, c.radius, d.length(), 4, 1, 0);
+            geometry = new CylinderGeometry(p.radius, c.radius, d.length(), 4, 1, 0);
             geometry.translate(0, 0.5 * d.length(), 0);
             geometry.applyMatrix4(new Matrix4().makeRotationX(Math.PI / 2));
             geometry.lookAt(d.clone());
@@ -239,7 +239,7 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
               geometry.translate((c.x + c.x) / 2, (c.y + c.y) / 2, (c.z + c.z) / 2);
               mergedGeometry.merge(geometry);
               geometry = null;
-            }else if (this.settings.neuron3dMode == 3) {
+            } else if (this.settings.neuron3dMode == 3) {
               if (p.parent != -1) { // makesure the parent is not direct descendant of the soma
                 let p2 = swcObj[p.parent];
                 let a = new Vector3(0.9 * p.x + 0.1 * p2.x, 0.9 * p.y + 0.1 * p2.y, 0.9 * p.z + 0.1 * p2.z);
@@ -251,7 +251,7 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
               }
             }
           } else { // if soma
-            if (geometry == undefined){
+            if (geometry == undefined) {
               geometry = new Geometry();
             }
             if (p != undefined) {
@@ -264,7 +264,7 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
         }
       }
       if (c.type == 1) {
-        if (!c.radius){
+        if (!c.radius) {
           c.radius = this.settings.defaultSomaRadius;
         }
         sphereGeometry = new SphereGeometry(
@@ -276,10 +276,10 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
       }
       if (c.type == -1) {
         if (this.settings.synapseMode == true) {
-          if (mergedGeometry == undefined){
+          if (mergedGeometry == undefined) {
             mergedGeometry = new Geometry();
           }
-          if (!c.radius){
+          if (!c.radius) {
             c.radius = this.settings.defaultSynapseRadius;
           }
           sphereGeometry = new SphereGeometry(
@@ -290,7 +290,7 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
           mergedGeometry.merge(sphereGeometry);
           unit['position'] = new Vector3(c.x, c.y, c.z);
         } else {
-          if (pointGeometry == undefined){
+          if (pointGeometry == undefined) {
             pointGeometry = new Geometry();
           }
           pointGeometry.vertices.push(new Vector3(c.x, c.y, c.z));
@@ -325,7 +325,7 @@ Neu3D.prototype.loadSWCCallBack = function(key, unit, visibility) {
 * @param {*} unit 
 * @param {*} visibility 
 */
-Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
+Neu3D.prototype.loadMorphJSONCallBack = function (key, unit, visibility) {
   return () => {
     /*
     * process string
@@ -350,7 +350,7 @@ Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
     let sphereGeometry = undefined;
     for (let idx in swcObj) {
       let c = swcObj[idx];
-      if (idx == Math.round(len / 2) && unit.position == undefined){
+      if (idx == Math.round(len / 2) && unit.position == undefined) {
         unit.position = new Vector3(c.x, c.y, c.z);
       }
       this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
@@ -358,19 +358,19 @@ Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
       if (c.parent != -1) {
         let p = swcObj[c.parent];
         if (this.settings.neuron3d) {
-          if (mergedGeometry == undefined){
+          if (mergedGeometry == undefined) {
             mergedGeometry = new Geometry();
           }
           let d = new Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
-          if (!p.radius){
+          if (!p.radius) {
             p.radius = this.settings.defaultRadius;
-          } 
+          }
           if (!c.radius) {
             c.radius = this.settings.defaultRadius;
           }
           p.radius = Math.clip(p.radius, this.settings.minRadius, this.settings.maxRadius);
           c.radius = Math.clip(c.radius, this.settings.minRadius, this.settings.maxRadius),
-          geometry = new CylinderGeometry(p.radius, c.radius, d.length(), 4, 1, 0);
+            geometry = new CylinderGeometry(p.radius, c.radius, d.length(), 4, 1, 0);
           geometry.translate(0, 0.5 * d.length(), 0);
           geometry.applyMatrix4(new Matrix4().makeRotationX(Math.PI / 2));
           geometry.lookAt(d.clone());
@@ -396,20 +396,19 @@ Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
             }
           }
         } else {
-          if (geometry == undefined){
+          if (geometry == undefined) {
             geometry = new Geometry();
           }
-          if (p != undefined)
-          {
+          if (p != undefined) {
             geometry.vertices.push(new Vector3(c.x, c.y, c.z));
             geometry.vertices.push(new Vector3(p.x, p.y, p.z));
             geometry.colors.push(color);
             geometry.colors.push(color);
-        }
+          }
         }
       }
       if (c.type == 1) {
-        if (!c.radius){
+        if (!c.radius) {
           c.radius = this.settings.defaultSomaRadius;
         }
         sphereGeometry = new SphereGeometry(
@@ -419,12 +418,35 @@ Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
         object.add(new Mesh(sphereGeometry, sphereMaterial));
         unit['position'] = new Vector3(c.x, c.y, c.z);
       }
+      if (c.type == 7 || c.type == 8) {
+        if (this.settings.synapseMode == true){
+          if(mergedGeometry == undefined)
+            mergedGeometry = new THREE.Geometry()
+
+          if(c.radius)
+            sphereGeometry = new THREE.SphereGeometry(c.radius, 8, 8 );
+          else
+            if(c.type == 7)
+               sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius, 8, 8 );
+            else
+               sphereGeometry = new THREE.SphereGeometry(this.settings.defaultSynapseRadius/2, 8, 8 );
+          sphereGeometry.translate( c.x, c.y, c.z );
+          //var sphereMaterial = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
+          //object.add(new THREE.Mesh( sphereGeometry, sphereMaterial));
+          mergedGeometry.merge(sphereGeometry);
+          unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
+        } else {
+          if(pointGeometry == undefined)
+            pointGeometry = new THREE.Geometry();
+          pointGeometry.vertices.push(new THREE.Vector3(c.x, c.y, c.z));
+        }
+      }
       if (c.type == -1) {
         if (this.settings.synapseMode == true) {
-          if (mergedGeometry == undefined){
+          if (mergedGeometry == undefined) {
             mergedGeometry = new Geometry();
           }
-          if (!c.radius){
+          if (!c.radius) {
             c.radius = this.settings.defaultSynapseRadius
           }
           sphereGeometry = new SphereGeometry(
@@ -436,7 +458,7 @@ Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
           mergedGeometry.merge(sphereGeometry);
           unit['position'] = new Vector3(c.x, c.y, c.z);
         } else {
-          if (pointGeometry == undefined){
+          if (pointGeometry == undefined) {
             pointGeometry = new Geometry();
           }
           pointGeometry.vertices.push(new Vector3(c.x, c.y, c.z));
