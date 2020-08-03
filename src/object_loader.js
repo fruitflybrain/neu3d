@@ -355,7 +355,7 @@ Neu3D.prototype.loadMorphJSONCallBack = function (key, unit, visibility) {
       }
       this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
       this.updateBoundingBox(c.x, c.y, c.z);
-      if (c.parent != -1) {
+      if ((c.parent != -1) && !(c.type == 7 || c.type == 8)) {
         let p = swcObj[c.parent];
         if (this.settings.neuron3d) {
           if (mergedGeometry == undefined) {
@@ -419,6 +419,7 @@ Neu3D.prototype.loadMorphJSONCallBack = function (key, unit, visibility) {
         unit['position'] = new Vector3(c.x, c.y, c.z);
       }
       if (c.type == 7 || c.type == 8) {
+        console.log('Loading synapse node');
         if (this.settings.synapseMode == true){
           if(mergedGeometry == undefined)
             mergedGeometry = new THREE.Geometry()
