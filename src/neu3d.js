@@ -133,7 +133,7 @@ export class Neu3D {
       defaultSynapseRadius: 0.2,
       minRadius: 0.1,
       minSomaRadius: 1.0,
-      minSynapseRadius: 0.1,
+      minSynapseRadius: 0.01,
       maxRadius: 1.0,
       maxSomaRadius: 10.0,
       maxSynapseRadius: 1.,
