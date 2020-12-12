@@ -16,110 +16,6 @@ import '../style/index.css';
 import { ControlPanel } from './control_panel_tweakpane';
 import { PostProcessor } from './post_process';
 
-var isOnMobile = checkOnMobile();
-var _saveImage: any;
-
-
-/**used for generating unique file upload div id */
-function generateGuid(): string {
-  var result, i, j;
-  result = '';
-  for(j=0; j<32; j++) {
-    if( j == 8 || j == 12 || j == 16 || j == 20) {
-      result = result + '-';
-    }
-    i = Math.floor(Math.random()*16).toString(16).toUpperCase();
-    result = result + i;
-  }
-  return result;
-}
-
-/** Check if we are on mobile */
-function checkOnMobile(): boolean {
-  if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
-    return true;
-  }
-  else{
-    return false;
-  }
-    
-}
-
-/**
- * return anything as array of itself
- */
-const asArray = function (value: any): Array<any> {
-  if (Array.isArray(value)) {
-    return value
-  } else {
-    return [value];
-  }
-}
-
-// /** Get random integer between bound including bound */
-// function getRandomIntInclusive(min: number, max: number): number {
-//   min = Math.ceil(min);
-//   max = Math.floor(max);
-//   return Math.floor(Math.random() * (max - min + 1)) + min;
-// }
-// if (!Detector.webgl) Detector.addGetWebGLMessage();
-
-interface IMetaData {
-  colormap: string;
-  maxColorNum: number;
-  allowPin: boolean;
-  allowHighlight: boolean;
-  enablePositionReset: boolean;
-  resetPosition: Vector3;
-  upVector: Vector3;
-  cameraTarget: Vector3;
-  upSign: number;
-}
-
-interface IStates {
-  mouseOver: boolean;
-  pinned: boolean;
-  highlight: boolean;
-}
-
-interface IAnimation {
-  activityData: object;
-  it1: NodeJS.Timeout;
-  it2: NodeJS.Timeout;
-  meshOscAmp: number;
-}
-
-interface IActiveRender {
-  resINeed: number;
-  activeRender: boolean; // Whether the animate function should render the contents of this container in every frame
-  powerSaving: boolean;
-}
-
-interface IUIVars {
-  pinnedObjects: Set<any>; // TODO
-  toolTipPosition: Vector2;
-  highlightedObjects: any; // TODO
-  currentIntersected: any; // TODO
-  cursorPosition: Vector2;
-  meshNum: number;
-  frontNum: number;
-  backNum: number;
-  tooltip: any; // TODO
-  selected: any; // TODO
-}
-
-interface IOptions {
-  stats?: boolean;
-}
-
-interface IRenderSettings {
-  toneMappingPass: { brightness: number };
-  bloomPass: { radius: number, strength: number, threshold: number };
-  effectFXAA: { enabled: boolean };
-  backrenderSSAO: { enabled: boolean };
-}
-
-
 /**
  * Neu3D 
  */
@@ -139,13 +35,13 @@ export class Neu3D {
   private _prevhfov: number;
 
   postProcess: PostProcessor;
-  _metadata: IMetaData;
-  states: IStates;
-  animation: IAnimation;
-  activeRender: IActiveRender;
+  _metadata: Neu3D.IMetaData;
+  states: Neu3D.IStates;
+  animation: Neu3D.IAnimation;
+  activeRender: Neu3D.IActiveRender;
   raycaster: Raycaster;
-  uiVars: IUIVars;
-  renderSettings: IRenderSettings;
+  uiVars: Neu3D.IUIVars;
+  renderSettings: Neu3D.IRenderSettings;
   lightsHelper: FFBOLightsHelper;
   stats: any; // TODO: add typing stats panel
   controlPanel: ControlPanel;
@@ -160,7 +56,7 @@ export class Neu3D {
     container: HTMLDivElement,
     data: object | any,
     metadata: object | any,
-    options: IOptions = {}
+    options: Neu3D.IOptions = {}
   ) {
     this.container = container;
     this.activeRender = {
@@ -196,7 +92,7 @@ export class Neu3D {
       upSign: metadata?.upSign ??  1. // TODO: Deprecated
     };
 
-    // TODO: Proxy
+    //
     this.renderSettings = {
       toneMappingPass: { brightness: 0.95 },
       bloomPass: { radius: 0.2, strength: 0.2, threshold: 0.3 },
@@ -234,7 +130,6 @@ export class Neu3D {
     this.scenes = this.initScenes();
     this.controls = this.initControls();
     this.lightsHelper = this.initLights();
-
     
     this.loadingManager = this.initLoadingManager();
     this.addContainerEventListener();
@@ -287,19 +182,6 @@ export class Neu3D {
 
     this.addDivs();
     window.onresize = this.onWindowResize.bind(this);
-    _saveImage = (function () {
-      let a = document.createElement("a");
-      document.body.appendChild(a);
-      a.style.display = "none";
-      return function (blob: Blob, fileName: string) {
-        let url = window.URL.createObjectURL(blob);
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        window.URL.revokeObjectURL(url);
-      };
-    }());
-
 
     let controlPanelDiv = document.createElement('div');
     controlPanelDiv.className = 'vis-3d-settings';
@@ -314,6 +196,23 @@ export class Neu3D {
     this.animate();
   } // ENDOF Constructor
 
+
+  // /**
+  //  * Save Screen Shot
+  //  */
+  // private _saveImage() {
+  //   let a = document.createElement("a");
+  //   document.body.appendChild(a);
+  //   a.style.display = "none";
+  //   return function (blob: Blob, fileName: string) {
+  //     let url = window.URL.createObjectURL(blob);
+  //     a.href = url;
+  //     a.download = fileName;
+  //     a.click();
+  //     window.URL.revokeObjectURL(url);
+  //   };
+  // };
+
   /**
    * Add Divs that accompany Neu3D
    * 1. fileUpload
@@ -324,7 +223,7 @@ export class Neu3D {
     let ffbomesh = this.meshDict;
     let fileUploadInput = document.createElement('input');
     fileUploadInput.multiple = true;
-    fileUploadInput.id = `neu3d-file-upload-${generateGuid()}`;
+    fileUploadInput.id = `neu3d-file-upload-${Neu3D.generateGuid()}`;
     fileUploadInput.setAttribute("type", "file");
     fileUploadInput.style.visibility = 'hidden';
     fileUploadInput.style.display = 'none';
@@ -805,7 +704,7 @@ export class Neu3D {
     this.container.addEventListener('dblclick', func_1, false);
     this._containerEventListener['dblclick'] = func_1;
 
-    if (isOnMobile) {
+    if (Neu3D.isOnMobile) {
       let func_2 = this.onDocumentMouseDBLClickMobile.bind(this);
       // this.container.addEventListener('taphold', func_2);
       document.body.addEventListener('contextmenu', this.blockContextMenu);
@@ -923,8 +822,8 @@ export class Neu3D {
     let commandList = json['commands'] || [];
     let args = json['args'] || undefined;
 
-    neuList = asArray(neuList);
-    commandList = asArray(commandList);
+    neuList = Neu3D.asArray(neuList);
+    commandList = Neu3D.asArray(commandList);
     for (let i = 0; i < commandList.length; ++i) {
       let c = commandList[i].toLowerCase();
       this.commandDispatcher[c].call(this, neuList, args);
@@ -1294,12 +1193,12 @@ export class Neu3D {
       }
     }
     this.postProcess.composer.render();
-    if (this._take_screenshot) {
-      this.renderer.domElement.toBlob(function (b) {
-        _saveImage(b, "ffbo_screenshot.png")
-      })
-      this._take_screenshot = false;
-    }
+    // if (this._take_screenshot) {
+    //   this.renderer.domElement.toBlob( (b)=> {
+    //     this._saveImage(b, "ffbo_screenshot.png");
+    //   })
+    //   this._take_screenshot = false;
+    // }
   }
 
   screenshot() {
@@ -1585,3 +1484,107 @@ export class Neu3D {
     this.camera.lookAt(neu3d.controls.target);
   }
 };
+
+
+export namespace Neu3D {
+  export const isOnMobile = checkOnMobile();
+
+  /**used for generating unique file upload div id */
+  export function generateGuid(): string {
+    var result, i, j;
+    result = '';
+    for(j=0; j<32; j++) {
+      if( j == 8 || j == 12 || j == 16 || j == 20) {
+        result = result + '-';
+      }
+      i = Math.floor(Math.random()*16).toString(16).toUpperCase();
+      result = result + i;
+    }
+    return result;
+  }
+
+  /** Check if we are on mobile */
+  export function checkOnMobile(): boolean {
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
+      return true;
+    }
+    else{
+      return false;
+    }
+      
+  }
+
+  /**
+   * return anything as array of itself
+   */
+  export const asArray = function (value: any): Array<any> {
+    if (Array.isArray(value)) {
+      return value
+    } else {
+      return [value];
+    }
+  }
+
+  // /** Get random integer between bound including bound */
+  // function getRandomIntInclusive(min: number, max: number): number {
+  //   min = Math.ceil(min);
+  //   max = Math.floor(max);
+  //   return Math.floor(Math.random() * (max - min + 1)) + min;
+  // }
+  // if (!Detector.webgl) Detector.addGetWebGLMessage();
+
+  export interface IMetaData {
+    colormap: string;
+    maxColorNum: number;
+    allowPin: boolean;
+    allowHighlight: boolean;
+    enablePositionReset: boolean;
+    resetPosition: Vector3;
+    upVector: Vector3;
+    cameraTarget: Vector3;
+    upSign: number;
+  }
+
+  export interface IStates {
+    mouseOver: boolean;
+    pinned: boolean;
+    highlight: boolean;
+  }
+
+  export interface IAnimation {
+    activityData: object;
+    it1: NodeJS.Timeout;
+    it2: NodeJS.Timeout;
+    meshOscAmp: number;
+  }
+
+  export interface IActiveRender {
+    resINeed: number;
+    activeRender: boolean; // Whether the animate function should render the contents of this container in every frame
+    powerSaving: boolean;
+  }
+
+  export interface IUIVars {
+    pinnedObjects: Set<any>; // TODO
+    toolTipPosition: Vector2;
+    highlightedObjects: any; // TODO
+    currentIntersected: any; // TODO
+    cursorPosition: Vector2;
+    meshNum: number;
+    frontNum: number;
+    backNum: number;
+    tooltip: any; // TODO
+    selected: any; // TODO
+  }
+
+  export interface IOptions {
+    stats?: boolean;
+  }
+
+  export interface IRenderSettings {
+    toneMappingPass: { brightness: number };
+    bloomPass: { radius: number, strength: number, threshold: number };
+    effectFXAA: { enabled: boolean };
+    backrenderSSAO: { enabled: boolean };
+  }
+}

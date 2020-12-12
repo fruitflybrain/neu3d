@@ -143,13 +143,17 @@ export class MeshDict implements MeshDict.IMeshDict {
     return lut;
   }
 
+  /**
+   * Empty MeshDict
+   * @param resetBackground - if `true`, remove background meshes as well
+   */
   reset(resetBackground: boolean = false) {
     for (let key of Object.keys(this._meshDict)) {
       if (!resetBackground && this._meshDict[key].background) {
         continue;
       }
-      if (this._meshDict[key]['pinned']) {
-        this._meshDict[key]['pinned'] = false;
+      if (this._meshDict[key]?.pinned) {
+        this._meshDict[key].pinned = false;
       }
       this.disposeMeshes();
       // --this.uiVars.meshNum;

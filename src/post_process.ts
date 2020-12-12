@@ -7,19 +7,11 @@ import { GammaEncoding, WebGLRenderer, Scene, PerspectiveCamera, Vector2 } from 
 import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
 
-/** return next power of 2 of given number */
-function nextPow2(x: number): number {
-  return Math.pow(2, Math.round(Math.max(x, 0)).toString(2).length);
-}
-
-interface ISettings {
-  toneMappingPass: ToneMapSetting;
-  bloomPass: BloomPassSettings;
-  effectFXAA: EnablableSettings;
-  backrenderSSAO: EnablableSettings;
-}
-
+/**
+ * PostProcessor of Neu3D
+ */
 export class PostProcessor {
+
   composer: EffectComposer;
   renderScene: RenderPass;
   backrenderScene: RenderPass;
@@ -27,7 +19,8 @@ export class PostProcessor {
   effectFXAA: ShaderPass;
   toneMappingPass: AdaptiveToneMappingPass;
   bloomPass: UnrealBloomPass;
-  settings: ISettings;
+  settings: PostProcessor.ISettings;
+
   constructor(
     camera: PerspectiveCamera,
     scenes: { front: Scene, back: Scene },
@@ -52,7 +45,7 @@ export class PostProcessor {
     let bloomPass = this.bloomPass = new UnrealBloomPass(new Vector2(width, height), 0.2, 0.2, 0.3 );
     bloomPass.renderToScreen = true;
 
-    let toneMappingPass = this.toneMappingPass = new AdaptiveToneMappingPass(true, nextPow2(width));
+    let toneMappingPass = this.toneMappingPass = new AdaptiveToneMappingPass(true, PostProcessor.nextPow2(width));
     toneMappingPass.setMinLuminance(1. - 0.95);
 
     renderer.outputEncoding = GammaEncoding;
@@ -70,13 +63,16 @@ export class PostProcessor {
     );
 
     this.settings = {
-      toneMappingPass: new ToneMapSetting(toneMappingPass, 0.95),
-      bloomPass: new BloomPassSettings(bloomPass, 0.2, 0.2, 0.3),
-      effectFXAA: new EnablableSettings(effectFXAA, false),
-      backrenderSSAO: new EnablableSettings(backrenderSSAO, false)
+      toneMappingPass: new PostProcessor.ToneMapSetting(toneMappingPass, 0.95),
+      bloomPass: new PostProcessor.BloomPassSettings(bloomPass, 0.2, 0.2, 0.3),
+      effectFXAA: new PostProcessor.EnablableSettings(effectFXAA, false),
+      backrenderSSAO: new PostProcessor.EnablableSettings(backrenderSSAO, false)
     }
   } 
 
+  /**
+   * Dispose Post-Processor
+   */
   dispose() {
     delete this.backrenderScene;
     this.backrenderSSAO.dispose();
@@ -89,79 +85,97 @@ export class PostProcessor {
 }
 
 
-class ToneMapSetting {
-  toneMap: AdaptiveToneMappingPass;
-  _brightness: number;
-  constructor(
-    toneMap: AdaptiveToneMappingPass,
-    brightness: number = 0.95
-  ) {
-    this.toneMap = toneMap;
-    this._brightness = brightness
-  }
-  set brightness(val: number) {
-    this.toneMap.setMinLuminance(1 - val);
-    this._brightness = val;
+export namespace PostProcessor {
+  /** return next power of 2 of given number */
+  export function nextPow2(x: number): number {
+    return Math.pow(2, Math.round(Math.max(x, 0)).toString(2).length);
   }
 
-  get brightness(): number{
-    return this._brightness;
-  }
-}
-
-class EnablableSettings {
-  pass: ShaderPass | SSAOPass;
-  _enabled: boolean;
-  constructor(
-    pass: ShaderPass | SSAOPass,
-    enabled: boolean = false
-  ) {
-    this.pass = pass;
-    this._enabled = enabled;
-  }
-  set enabled(val: boolean) {
-    this.pass.enabled = val;
-    this._enabled = val;
+  /**
+   * PostProcessing Settings of Neu3D
+   */
+  export interface ISettings {
+    toneMappingPass: ToneMapSetting;
+    bloomPass: BloomPassSettings;
+    effectFXAA: EnablableSettings;
+    backrenderSSAO: EnablableSettings;
   }
 
-  get enabled(): boolean {
-    return this._enabled;
-  }
-}
 
-class BloomPassSettings{
-  _radius: number;
-  _strength: number;
-  _threshold: number;
-  pass: UnrealBloomPass;
-  constructor(
-    pass: UnrealBloomPass,
-    radius: number = 0.2,
-    strength: number = 0.2,
-    threshold: number = 0.3
-  ) {
-    this.pass = pass;
-    this._radius = radius;
-    this._strength = strength;
-    this._threshold = threshold;
-  }
+  export class ToneMapSetting {
+    toneMap: AdaptiveToneMappingPass;
+    _brightness: number;
+    constructor(
+      toneMap: AdaptiveToneMappingPass,
+      brightness: number = 0.95
+    ) {
+      this.toneMap = toneMap;
+      this._brightness = brightness
+    }
+    set brightness(val: number) {
+      this.toneMap.setMinLuminance(1 - val);
+      this._brightness = val;
+    }
 
-  set strength(val:number) {
-    this._strength = val
-    this.pass.strength = val;
+    get brightness(): number{
+      return this._brightness;
+    }
   }
 
-  set radius(val: number) {
-    this._radius = val
-    this.pass.radius = val;
+  export class EnablableSettings {
+    pass: ShaderPass | SSAOPass;
+    _enabled: boolean;
+    constructor(
+      pass: ShaderPass | SSAOPass,
+      enabled: boolean = false
+    ) {
+      this.pass = pass;
+      this._enabled = enabled;
+    }
+    set enabled(val: boolean) {
+      this.pass.enabled = val;
+      this._enabled = val;
+    }
+
+    get enabled(): boolean {
+      return this._enabled;
+    }
   }
 
-  set threshold(val: number) {
-    this._threshold = val
-    this.pass.threshold = val;
-  }
+  export class BloomPassSettings{
+    _radius: number;
+    _strength: number;
+    _threshold: number;
+    pass: UnrealBloomPass;
+    constructor(
+      pass: UnrealBloomPass,
+      radius: number = 0.2,
+      strength: number = 0.2,
+      threshold: number = 0.3
+    ) {
+      this.pass = pass;
+      this._radius = radius;
+      this._strength = strength;
+      this._threshold = threshold;
+    }
 
-  get strength(): number { return this._strength;}
-  get radius(): number { return this._radius;}
-  get threshold(): number { return this._threshold;}
+    set strength(val:number) {
+      this._strength = val
+      this.pass.strength = val;
+    }
+
+    set radius(val: number) {
+      this._radius = val
+      this.pass.radius = val;
+    }
+
+    set threshold(val: number) {
+      this._threshold = val
+      this.pass.threshold = val;
+    }
+
+    get strength(): number { return this._strength;}
+    get radius(): number { return this._radius;}
+    get threshold(): number { return this._threshold;}
+  }
 }
