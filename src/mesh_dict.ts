@@ -12,40 +12,6 @@ import { SceneUtils } from 'three/examples/jsm/utils/SceneUtils';
 import { Signal, ISignal } from '@lumino/signaling';
 // import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
 
-
-/** Clip value in between min/max */
-const clipNumber = function(number:number, min:number, max:number) {
-  if (max < min){
-    return number
-  }
-  return Math.max(min, Math.min(number, max));
-}
-
-/**
- * return anything as array of itself
- */
-const asArray = function (value: any): Array<any> {
-  if (Array.isArray(value)) {
-    return value
-  } else {
-    return [value];
-  }
-}
-
-/**
- * Convert any color type to Color instance
- * @param color 
- */
-const convertColor = function (color: Color | string | number | number[]): Color {
-  if (Array.isArray(color)) {
-    return new Color().fromArray(color)
-  } else if (color instanceof Color) {
-    return color;
-  } else {
-    return new Color(color);
-  }
-}
-
 /**
 * Mesh Dictionary Model
 */
@@ -53,16 +19,16 @@ export class MeshDict implements MeshDict.IMeshDict {
   state = { pin: false, highlight: false };
   boundingBox = new Box3();
   visibleBoundingBox = new Box3();
-  _meshDict: { [key: string]: MeshItem } = {};
-  _opacityChanged = new Signal<this, MeshDict.ISettings>(this);
-  _labelToRid: { [label: string]: string } = {}; // map label to Rid
+  meshDict: { [rid: string]: MeshItem } = {};
+  private _opacityChanged = new Signal<this, MeshDict.ISettings>(this);
+  labelToRid: { [label: string]: string } = {}; // map label to Rid
   loadingManager = new LoadingManager();
   settings: MeshDict.ISettings;
   lut: Lut;
   colormap: string;
   maxColorNum: number = 1747591;
   groups = { front: new Group(), back: new Group() };
-
+    
   constructor(
     colormap: string = "rainbow",
     settings: Partial<MeshDict.ISettings>
@@ -114,12 +80,19 @@ export class MeshDict implements MeshDict.IMeshDict {
     }, settingsChangeHandler);
   }
 
-  /**
-   * Compute the bounding box of visible objects
-   */
+  setOpacity(rid: string | string[], value: number): void {
+    rid = MeshDict.asArray(rid);
+    for (let id of rid) {
+      if (!(id in this.meshDict)) {
+        continue;
+      }
+      this.meshDict[id].opacity = value; 
+    }
+  }
+
   computeVisibleBoundingBox(includeBackground = false): Box3 {
     let box = new Box3();
-    for (let mesh of Object.values(this._meshDict)) {
+    for (let mesh of Object.values(this.meshDict)) {
       if (mesh.background && !includeBackground) {
         continue;
       }
@@ -135,25 +108,23 @@ export class MeshDict implements MeshDict.IMeshDict {
     return this._opacityChanged;
   }
 
-  /** Initialize Look Up Table(Lut) for Color */
-  initLut(colormap: string, maxColorNum:number) {
+  /** 
+   * Initialize Look Up Table(Lut) for Color 
+   */
+  private initLut(colormap: string, maxColorNum:number) {
     let lut = new Lut(colormap, maxColorNum);
     lut.setMin(0);
     lut.setMax(1);
     return lut;
   }
 
-  /**
-   * Empty MeshDict
-   * @param resetBackground - if `true`, remove background meshes as well
-   */
   reset(resetBackground: boolean = false) {
-    for (let key of Object.keys(this._meshDict)) {
-      if (!resetBackground && this._meshDict[key].background) {
+    for (let rid of Object.keys(this.meshDict)) {
+      if (!resetBackground && this.meshDict[rid].background) {
         continue;
       }
-      if (this._meshDict[key]?.pinned) {
-        this._meshDict[key].pinned = false;
+      if (this.meshDict[rid]?.pinned) {
+        this.meshDict[rid].pinned = false;
       }
       this.disposeMeshes();
       // --this.uiVars.meshNum;
@@ -166,30 +137,27 @@ export class MeshDict implements MeshDict.IMeshDict {
     // this.states.highlight = false;
   }
 
-  /**
-   * Reset opacity to default of all objects in workspace
-   */
   resetOpacity() {
-    for (let [rid, mesh] of Object.entries(this._meshDict)) {
+    for (let [rid, mesh] of Object.entries(this.meshDict)) {
       if (!mesh.background) {
         if (mesh.morphType !== 'Synapse SWC') {
           if (mesh.opacity >= 0.) {
-            this._meshDict[rid].opacity = this._meshDict[rid].opacity * this.settings.defaultOpacity;
+            this.meshDict[rid].opacity = this.meshDict[rid].opacity * this.settings.defaultOpacity;
           } else {
-            this._meshDict[rid].opacity = this.settings.defaultOpacity;
+            this.meshDict[rid].opacity = this.settings.defaultOpacity;
           }
         } else {
           if (mesh.opacity >= 0.) {
-            this._meshDict[rid].opacity = this._meshDict[rid].opacity * this.settings.synapseOpacity;
+            this.meshDict[rid].opacity = this.meshDict[rid].opacity * this.settings.synapseOpacity;
           } else {
-            this._meshDict[rid].opacity = this.settings.synapseOpacity;
+            this.meshDict[rid].opacity = this.settings.synapseOpacity;
           }
         }
       } else {
         if (mesh.opacity >= 0.) {
-          this._meshDict[rid].opacity = this._meshDict[rid].opacity * this.settings.backgroundOpacity;
+          this.meshDict[rid].opacity = this.meshDict[rid].opacity * this.settings.backgroundOpacity;
         } else {
-          this._meshDict[rid].opacity = this.settings.backgroundOpacity;
+          this.meshDict[rid].opacity = this.settings.backgroundOpacity;
         }
       }
     }
@@ -197,15 +165,17 @@ export class MeshDict implements MeshDict.IMeshDict {
 
   /**
    * Update all neurons' opacity based on states
+   * 
+   * TODO: fix
    */
-  updateOpacity() {
-    for (let mesh of Object.values(this._meshDict)) {
+  updateOpacity(e?:any) {
+    for (let mesh of Object.values(this.meshDict)) {
       mesh.updateOpacity(this.state);
     }
     // if (e.prop == 'highlight' && this.states.highlight) {
     //   let list = ((e !== undefined) && e.old_value) ? [e.old_value] : Object.keys(this.meshDict);
-    //   for (const key of list) {
-    //     let val = this.meshDict[key];
+    //   for (const rid of list) {
+    //     let val = this.meshDict[rid];
     //     let opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
     //     let depthTest = true;
     //     if (val['pinned']) {
@@ -228,11 +198,11 @@ export class MeshDict implements MeshDict.IMeshDict {
     // } else if ((e.prop == 'highlight' && this.states.pinned) ||
     //   (e.prop == 'pinned' && e.value && this.uiVars.pinnedObjects.size == 1) ||
     //   (e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')) {
-    //   for (const key of Object.keys(this.meshDict)) {
-    //     var val = this.meshDict[key];
+    //   for (const rid of Object.keys(this.meshDict)) {
+    //     var val = this.meshDict[rid];
     //     if (!val['background']) {
-    //       var opacity = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
-    //       var depthTest = !this.meshDict[key]['pinned'];
+    //       var opacity = this.meshDict[rid]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+    //       var depthTest = !this.meshDict[rid]['pinned'];
     //       for (var i in val.object.children) {
     //         val.object.children[i].material.opacity = opacity;
     //         val.object.children[i].material.depthTest = depthTest;
@@ -252,24 +222,25 @@ export class MeshDict implements MeshDict.IMeshDict {
     // }
   }
   
+  
   show(rid: string | string[]) {
-    rid = asArray(rid);
+    rid = MeshDict.asArray(rid);
     for (let id of rid) {
-      if (!(id in this._meshDict)) {
+      if (!(id in this.meshDict)) {
         continue;
       }
-      this._meshDict[id].show();
+      this.meshDict[id].show();
     }
   };
 
   hide(rid: string | string[]) {
-    rid = asArray(rid);
+    rid = MeshDict.asArray(rid);
     for (let id of rid) {
-      if (!(id in this._meshDict)) {
+      if (!(id in this.meshDict)) {
         continue;
       }
-      if (!this._meshDict[id].pinned) { // do not hide pinned objects
-        this._meshDict[id].hide();  
+      if (!this.meshDict[id].pinned) { // do not hide pinned objects
+        this.meshDict[id].hide();  
       }
     }
   };
@@ -283,11 +254,12 @@ export class MeshDict implements MeshDict.IMeshDict {
         this.show(this.back);
         break;
       default:
-        this.show(Object.keys(this._meshDict));
+        this.show(Object.keys(this.meshDict));
         break;
     }
   };
 
+  
   hideAll(group?: 'front' | 'back') {
     switch (group) {
       case 'front':
@@ -297,17 +269,14 @@ export class MeshDict implements MeshDict.IMeshDict {
         this.hide(this.back);
         break;
       default:
-        this.hide(Object.keys(this._meshDict));
+        this.hide(Object.keys(this.meshDict));
         break;
     }
   };
 
-  /**
-   * return Rids of all elements in the front
-   */
   get front(): string[] {
     let rids: string[] = [];
-    for (let [rid, mesh] of Object.entries(this._meshDict)) {
+    for (let [rid, mesh] of Object.entries(this.meshDict)) {
       if (!mesh.background) {
         rids.push(rid);
       }
@@ -315,12 +284,9 @@ export class MeshDict implements MeshDict.IMeshDict {
     return rids;
   }
 
-  /**
-   * return Rids of all elements in the front
-   */
   get back(): string[] {
     let rids: string[] = [];
-    for (let [rid, mesh] of Object.entries(this._meshDict)) {
+    for (let [rid, mesh] of Object.entries(this.meshDict)) {
       if (mesh.background === true) {
         rids.push(rid);
       }
@@ -328,25 +294,20 @@ export class MeshDict implements MeshDict.IMeshDict {
     return rids;
   }
 
-  /**
-   * Return rid of unpinned items
-   */
   get unpinned(): string[] {
     let list: string[] = [];
-    for (let [key, mesh] of Object.entries(this._meshDict)) {
+    for (let [rid, mesh] of Object.entries(this.meshDict)) {
       if (!mesh.background && !mesh.pinned) {
-        list.push(key);
+        list.push(rid);
       }
     }
     return list;
   }
 
-  /**
-   * Return Rids of all pinned elements
-   */
+  
   get pinned(): string[] {
     let rids: string[] = [];
-    for (let [rid, mesh] of Object.entries(this._meshDict)) {
+    for (let [rid, mesh] of Object.entries(this.meshDict)) {
       if (!mesh.background && mesh.pinned) {
         rids.push(rid);
       }
@@ -354,38 +315,38 @@ export class MeshDict implements MeshDict.IMeshDict {
     return rids;
   }
   
-  /**
-   * Highlight objects given rid(s)
-   * @param rid 
-   */
-  highlight(rid: string): void {
-    if (!(rid in this._meshDict)) {
-      return;
-    }
-    
-    this._meshDict[rid].highlight = true;
-    this._meshDict[rid].show();
-    this.state.highlight = true;
-  }
-
-  pin(rid: string | string[]) {
-    rid = asArray(rid);
+  
+  highlight(rid: string | string[]): void {
+    rid = MeshDict.asArray(rid);
     for (let id of rid) {
-      if (!(id in this._meshDict)) {
+      if (!(id in this.meshDict)) {
         continue;
       }
-      this._meshDict[id].pin();
+      this.meshDict[id].highlight = true;
+      this.meshDict[id].show();
+      this.state.highlight = true;
+    }
+  }
+
+
+  pin(rid: string | string[]) {
+    rid = MeshDict.asArray(rid);
+    for (let id of rid) {
+      if (!(id in this.meshDict)) {
+        continue;
+      }
+      this.meshDict[id].pin();
       this.state.pin = true;
     }
   };
 
   unpin(rid: string | string[]) {
-    rid = asArray(rid);
+    rid = MeshDict.asArray(rid);
     for (let id of rid) {
-      if (!(id in this._meshDict)) {
+      if (!(id in this.meshDict)) {
         continue;
       }
-      this._meshDict[id].unpin();
+      this.meshDict[id].unpin();
     }
     if (this.pinned.length == 0) {
       this.state.pin = false;
@@ -393,22 +354,22 @@ export class MeshDict implements MeshDict.IMeshDict {
   };
   
   unpinAll() {
-    this.unpin(Object.keys(this._meshDict));
+    this.unpin(Object.keys(this.meshDict));
   };
 
   remove(rid: string | string[]) {
-    rid = asArray(rid);
+    rid = MeshDict.asArray(rid);
     for (let id of rid) {
-      if (!(id in this._meshDict)) {
+      if (!(id in this.meshDict)) {
         continue;
       }
-      this._meshDict[id].remove();
-      delete this._meshDict[id];
+      this.meshDict[id].remove();
+      delete this.meshDict[id];
     }
   };
 
   removeUnpinned() {
-    for (let [rid, mesh] of Object.entries(this._meshDict)) {
+    for (let [rid, mesh] of Object.entries(this.meshDict)) {
       if (!mesh.background && !mesh.pinned) {
         this.remove(rid);
       }
@@ -416,30 +377,27 @@ export class MeshDict implements MeshDict.IMeshDict {
   }
 
   setColor(rid: string | string[], color: number | string | number[] | Color) {
-    rid = asArray(rid);
-    color = convertColor(color);
+    rid = MeshDict.asArray(rid);
+    color = MeshDict.convertColor(color);
     for (let id of rid) {
-      if (!(id in this._meshDict)) {
+      if (!(id in this.meshDict)) {
         continue;
       }
-      this._meshDict[id].color = color;
+      this.meshDict[id].color = color;
     }
   };
 
   setBackgroundColor(color: number | string | number[] | Color) {
-    color = convertColor(color);
-    for (let [rid, mesh] of Object.entries(this._meshDict)) {
+    color = MeshDict.convertColor(color);
+    for (let [rid, mesh] of Object.entries(this.meshDict)) {
       if (mesh.background) {
-        this._meshDict[rid].color = color;
+        this.meshDict[rid].color = color;
       }
     }
   };
     
-  /**
-  * Add JSON object to meshdict
-  * @param {object} json 
-  */
-  async addJson(json: Partial<MeshDict.IInputJSON>): Promise<void> {
+  
+  async addJSON(json: Partial<MeshDict.IInputJSON>): Promise<void> {
     if ((json === undefined) || !("ffbo_json" in json)) {
       console.log('mesh json is undefined');
       return Promise.resolve(void 0);
@@ -483,18 +441,18 @@ export class MeshDict implements MeshDict.IMeshDict {
     }
 
     for (let i = 0; i < Object.keys(json.ffbo_json).length; ++i) {
-      let key = Object.keys(json.ffbo_json)[i];
-      await this.addOneJson(key, json.ffbo_json[key], lut.getColor(id2float(i)), metadata);
-      if (this._meshDict[key].background) {
-        this.boundingBox.union(this._meshDict[key].boundingBox);
+      let rid = Object.keys(json.ffbo_json)[i];
+      await this.addOneJson(rid, json.ffbo_json[rid], lut.getColor(id2float(i)), metadata);
+      if (this.meshDict[rid].background) {
+        this.boundingBox.union(this.meshDict[rid].boundingBox);
       }
     }
     return Promise.resolve(void 0);
   }
 
-  async addOneJson(key:string, unit: any, color: Color, metadata: any): Promise<MeshItem | void> {
+  async addOneJson(rid:string, unit: any, color: Color, metadata: any): Promise<MeshItem | void> {
     let objectLoaded = new PromiseDelegate(); // resolves when the fileloaded has finished downloading meshes
-    if (key in this._meshDict) {
+    if (rid in this.meshDict) {
       console.log('mesh object already exists... skip rendering...');
       return Promise.resolve(void 0);
     }
@@ -503,12 +461,12 @@ export class MeshDict implements MeshDict.IMeshDict {
     switch (unit.type) {
       case 'morphology_json':
         unit.type = 'MorphJSON';
-        unit = new MeshItem('MorphJSON', key, unit, metadata.visibility, this.settings, this.loadingManager);
+        unit = new MeshItem('MorphJSON', rid, unit, metadata.visibility, this.settings, this.loadingManager);
         objectLoaded.resolve(void 0);
         break;
       case 'obj':
         unit.type = 'Obj';
-        unit = new MeshItem('Obj', key, unit, metadata.visibility, this.settings, this.loadingManager);
+        unit = new MeshItem('Obj', rid, unit, metadata.visibility, this.settings, this.loadingManager);
         objectLoaded.resolve(void 0);
         break;
       default:
@@ -524,7 +482,7 @@ export class MeshDict implements MeshDict.IMeshDict {
             loader.load(
               unit.filename,
               (response: any) => {
-                unit = new MeshItem('Mesh', key, unit, metadata.visibility, this.settings, this.loadingManager, response);
+                unit = new MeshItem('Mesh', rid, unit, metadata.visibility, this.settings, this.loadingManager, response);
                 objectLoaded.resolve(void 0);
               }
             );
@@ -533,7 +491,7 @@ export class MeshDict implements MeshDict.IMeshDict {
             loader.load(
               unit.filename,
               (response: any) => {
-                unit = new MeshItem('SWC', key, unit, metadata.visibility, this.settings, this.loadingManager, response);
+                unit = new MeshItem('SWC', rid, unit, metadata.visibility, this.settings, this.loadingManager, response);
                 objectLoaded.resolve(void 0);
               }
             );
@@ -542,12 +500,12 @@ export class MeshDict implements MeshDict.IMeshDict {
         } else if (unit.dataStr) {
           if (unit.filetype === 'json') {
             unit.type = 'Mesh';
-            unit = new MeshItem('Mesh', key, unit, metadata.visibility, this.settings, this.loadingManager, unit.dataStr);
+            unit = new MeshItem('Mesh', rid, unit, metadata.visibility, this.settings, this.loadingManager, unit.dataStr);
             objectLoaded.resolve(void 0);
             break;
           } else if (unit.filetype === 'swc') {
             unit.type = 'SWC';
-            unit = new MeshItem('SWC', key, unit, metadata.visibility, this.settings, this.loadingManager, unit.dataStr);
+            unit = new MeshItem('SWC', rid, unit, metadata.visibility, this.settings, this.loadingManager, unit.dataStr);
             objectLoaded.resolve(void 0);
             break;
           }
@@ -557,36 +515,32 @@ export class MeshDict implements MeshDict.IMeshDict {
         }
     }
     return objectLoaded.promise.then(() => {
-      this._meshDict[key] = unit as MeshItem;
+      this.meshDict[rid] = unit as MeshItem;
       if ((unit as MeshItem).background) {
         this.groups.back.add(unit.object as Object3D);
       } else {
         this.groups.front.add(unit.object as Object3D);
       }
-      this._labelToRid[(unit as MeshItem).label] = (unit as MeshItem).rid;
-      return this._meshDict[key]
+      this.labelToRid[(unit as MeshItem).label] = (unit as MeshItem).rid;
+      return this.meshDict[rid];
     });
   }
 
-  /**
-   * Dispose all Meshes to free up GPU memory
-   */
   disposeMeshes() {
-    for (let [key, mesh] of Object.entries(this._meshDict)){
+    for (let [rid, mesh] of Object.entries(this.meshDict)){
       mesh.dispose();
       if (mesh.background) {
         this.groups.back.remove(mesh.object);
       } else {
         this.groups.front.remove(mesh.object);
       }
-      delete this._meshDict[key];
+      delete this.meshDict[rid];
     }
   }
 
-  /**
-   * Dispose everything
-   */
   dispose() {
+    this.disposeMeshes();
+    Signal.disconnectAll(this._opacityChanged);
     //TODO
   }
 }
@@ -595,7 +549,7 @@ export class MeshDict implements MeshDict.IMeshDict {
 /**
 * Mesh Model - corresponds to 1 object in the scene
 */
-export class MeshItem implements MeshDict.IMesh {
+export class MeshItem implements MeshDict.IMeshItem {
   meshType: 'Mesh' | 'SWC' | 'MorphJSON' | 'Obj' | string;
   morphType?: 'Synapse SWC' | string;
   loadingManager?: LoadingManager;
@@ -616,7 +570,7 @@ export class MeshItem implements MeshDict.IMesh {
 
   constructor(
     meshType: 'Mesh' | 'SWC' | 'MorphJSON' | 'Obj' | string,
-    key: string, 
+    rid: string, 
     unit: Partial<MeshDict.IMeshOptions> | any,
     visibility: boolean,
     settings: MeshDict.ISettings, // visualization settings
@@ -625,11 +579,11 @@ export class MeshItem implements MeshDict.IMesh {
   ) {
     this.meshType = meshType;
     this.morphType = unit.morphType ?? '';
-    this.rid = key;
+    this.rid = rid;
     this.pinned = unit.pinned ?? false;
     this.background = unit.background ?? false;
     this._visibility = visibility;
-    this._color = convertColor(unit.color);
+    this._color = MeshDict.convertColor(unit.color);
     this.position = unit.position ?? new Vector3();
     this.loadingManager = loadingManager; // for loading OBJ files
     this.settings = settings;
@@ -647,16 +601,16 @@ export class MeshItem implements MeshDict.IMesh {
 
     switch (meshType) {
       case 'Mesh':
-        this._addMesh(key, unit, settings, visibility, dataStr);
+        this._addMesh(rid, unit, settings, visibility, dataStr);
         break;
       case 'SWC':
-        this._addSWC(key, unit, settings, visibility, dataStr);
+        this._addSWC(rid, unit, settings, visibility, dataStr);
         break;
       // case 'MorphJSON':
-      //   this._addMorphJSON(key, unit, settings, visibility);
+      //   this._addMorphJSON(rid, unit, settings, visibility);
       //   break;
       // case 'Obj':
-      //   this._addObj(key, unit, settings, visibility, loadingManager);
+      //   this._addObj(rid, unit, settings, visibility, loadingManager);
       //   break;
       default:
         break;
@@ -668,7 +622,7 @@ export class MeshItem implements MeshDict.IMesh {
    * Propogate colorchanges to object's material
    */
   set color(val: Color) {
-    val = convertColor(val);
+    val = MeshDict.convertColor(val);
     if (val !== this._color) {
       this._color.set(val);
       for (let j = 0; j < this.object.children.length; ++j) {
@@ -723,10 +677,7 @@ export class MeshItem implements MeshDict.IMesh {
     return this._visibility;
   }
 
-  /**
-   * Refresh rendering opacity of the object based on its states
-   */
-  updateOpacity(states?: {pin: boolean, highlight: boolean}) {
+  updateOpacity(uiStates?: {pin: boolean, highlight: boolean}) {
     // background opacity always set to settings values
     if (this.background) {
       ((this.object.children[0] as Mesh).material as Material).opacity = this.settings.backgroundOpacity;
@@ -746,8 +697,8 @@ export class MeshItem implements MeshDict.IMesh {
         visibility = true;
         opacity = this.settings.highlightedObjectOpacity;
         depthTest = false;
-      } else {
-        if (states?.highlight) {
+      } else { // not a highlighted neuron
+        if (uiStates?.highlight) { // if there is highlighted mesh
           opacity = this.settings.lowOpacity
         } else {
           opacity = this.settings.nonHighlightableOpacity;
@@ -762,11 +713,6 @@ export class MeshItem implements MeshDict.IMesh {
     }
   }
 
-  /**
-   * scale/rotate/shift SWC object inplace
-   * @param swcObj object
-   * @param transform transformation
-   */
   transformSWC(swcObj: MeshDict.ISWC, transform: MeshDict.ISWCTransform): void {
     for (let sample of Object.keys(swcObj)){
       let { x, y, z } = swcObj[sample];
@@ -796,10 +742,6 @@ export class MeshItem implements MeshDict.IMesh {
     delete this.object;
   }
 
-  /**
-   * Convert Neuron Skeleton to SWC Format
-   * @param unit 
-   */
   toSWC(unit: MeshDict.IMorphJSON | string[] | string): MeshDict.ISWC {
     let swcObj: MeshDict.ISWC = {};
     // if a single string, assume is the entire dataStr of swc, split
@@ -852,8 +794,15 @@ export class MeshItem implements MeshDict.IMesh {
     return swcObj;
   }
 
-  _onAfterAdd(key:string, unit: Partial<MeshDict.IMesh>, object: Object3D, settings: MeshDict.ISettings) {
-    (object as any).rid = key; // needed rid for raycaster reference
+  /**
+   * Callback after mesh added
+   * @param rid 
+   * @param unit 
+   * @param object 
+   * @param settings 
+   */
+  private _onAfterAdd(rid:string, unit: Partial<MeshDict.IMeshItem>, object: Object3D, settings: MeshDict.ISettings) {
+    (object as any).rid = rid; // needed rid for raycaster reference
     this.object = object;
     for (let obj of this.object.children) {
       (obj as Mesh).geometry.computeBoundingBox();
@@ -887,12 +836,12 @@ export class MeshItem implements MeshDict.IMesh {
 
   /**
    * Create object from mesh
-   * @param key 
+   * @param rid 
    * @param unit 
    * @param settings 
    * @param visibility 
    */
-  _addMesh(key: string, unit: Partial<MeshDict.IMeshOptions>, settings: MeshDict.ISettings, visibility: boolean, jsonString: string) {
+  private _addMesh(rid: string, unit: Partial<MeshDict.IMeshOptions>, settings: MeshDict.ISettings, visibility: boolean, jsonString: string) {
     let json = JSON.parse(jsonString);
     let geometry = new Geometry();
     let vtx = json['vertices'];
@@ -921,10 +870,18 @@ export class MeshItem implements MeshDict.IMesh {
     }
     object.visible = visibility;
     unit.boundingBox = geometry.boundingBox;
-    this._onAfterAdd(key, unit, object, settings);
+    this._onAfterAdd(rid, unit, object, settings);
   }
 
-  _addSWC(key: string, unit: Partial<MeshDict.IMeshOptions>, settings: any, visibility: boolean, swcString: string) { 
+  /**
+   * Create object from SWC
+   * @param rid 
+   * @param unit 
+   * @param settings 
+   * @param visibility 
+   * @param swcString 
+   */
+  private _addSWC(rid: string, unit: Partial<MeshDict.IMeshOptions>, settings: any, visibility: boolean, swcString: string) { 
     /** process string */
     let swcObj = this.toSWC(swcString);
     this.transformSWC(swcObj, this.transform);
@@ -935,16 +892,16 @@ export class MeshItem implements MeshDict.IMesh {
     let neuronGeometry: Geometry = new Geometry();  // the neuron 3d geometry
     let neuronLineGeometry: Geometry = new Geometry();  // the neuron line geometry
     
-    for (let [idx, c] of Object.entries(swcObj)) {
+    for (let [idx, c] of Object.entries(swcObj)) { // for each row of the swc file
       if (parseInt(idx) == Math.round(Object.keys(swcObj).length / 2) && unit.position == undefined){
         unit.position = new Vector3(c.x, c.y, c.z);
       }
       // DEBUG: this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
       // DEBUG:this.updateBoundingBox(c.x, c.y, c.z);
       switch (c.type) {
-        case 1: // soma
+        case MeshDict.SWCTypes.SOMA:
           c.radius = c.radius ?? settings.defaultSomaRadius;
-          c.radius = clipNumber(c.radius, settings.minSomaRadius, settings.maxSomaRadius);
+          c.radius = MeshDict.clipNumber(c.radius, settings.minSomaRadius, settings.maxSomaRadius);
           let sphereGeometry = new SphereGeometry(c.radius, 8, 8);
           sphereGeometry.translate(c.x, c.y, c.z);
           let sphereMaterial = new MeshLambertMaterial({ 
@@ -954,10 +911,12 @@ export class MeshItem implements MeshDict.IMesh {
           object.add(new Mesh(sphereGeometry, sphereMaterial));
           unit.position = new Vector3(c.x, c.y, c.z);
           break;
-        case -1: // synapse
+        case MeshDict.SWCTypes.SYNAPSE | MeshDict.SWCTypes.PRESYNAPTIC | MeshDict.SWCTypes.POSTSYNAPTIC:
           if (settings.synapseMode) {
-            c.radius = c.radius ?? settings.defaultSynapseRadius;
-            c.radius = clipNumber(c.radius, settings.minSynapseRadius, settings.maxSynapseRadius);
+            c.radius = MeshDict.clipNumber(
+              c.radius ?? settings.defaultSynapseRadius,
+              settings.minSynapseRadius, settings.maxSynapseRadius
+            );
             let sphereGeometry = new SphereGeometry(c.radius, 8, 8);
             sphereGeometry.translate(c.x, c.y, c.z);
             synapseSphereGeometry.merge(sphereGeometry);
@@ -968,7 +927,7 @@ export class MeshItem implements MeshDict.IMesh {
             synapsePointsGeometry.vertices.push(new Vector3(c.x, c.y, c.z));
           }
           break;
-        default: // neurite
+        default:
           let p = swcObj[c.parent]; // parent object
           if (p == undefined) {
             break;
@@ -989,8 +948,8 @@ export class MeshItem implements MeshDict.IMesh {
             // set radius of the parent and current radius
             p.radius = p.radius ?? settings.defaultRadius;
             c.radius = c.radius ?? settings.defaultRadius;
-            p.radius = clipNumber(p.radius, settings.minRadius, settings.maxRadius);
-            c.radius = clipNumber(c.radius, settings.minRadius, settings.maxRadius);
+            p.radius = MeshDict.clipNumber(p.radius, settings.minRadius, settings.maxRadius);
+            c.radius = MeshDict.clipNumber(c.radius, settings.minRadius, settings.maxRadius);
 
             // create segment
             let geometry = new CylinderGeometry( p.radius, c.radius, d.length(), 4, 1, false);
@@ -1060,19 +1019,19 @@ export class MeshItem implements MeshDict.IMesh {
     }
 
     object.visible = visibility;
-    this._onAfterAdd(key, unit, object, settings);
-    //DEBUG: this._registerObject(key, unit, object);
+    this._onAfterAdd(rid, unit, object, settings);
+    //DEBUG: this._registerObject(rid, unit, object);
   }
 
   // TODO: fix this and reuse code from above
-  // _addMorphJSON(key:string, unit: Partial<MeshDict.IMeshOptions>, settings: any, visibility: boolean) {
+  // _addMorphJSON(rid:string, unit: Partial<MeshDict.IMeshOptions>, settings: any, visibility: boolean) {
   //   return () => {
   //     let swcObj = this.toSWC(unit);
   //   };
   // }
 
   // TODO: fix this
-  // _addObj(key:string, unit: Partial<MeshDict.IMeshOptions>, settings: any, visibility: boolean, loadingManager: LoadingManager){
+  // _addObj(rid:string, unit: Partial<MeshDict.IMeshOptions>, settings: any, visibility: boolean, loadingManager: LoadingManager){
   //   return () => {
   //     // instantiate a loader
   //     var loader = new OBJLoader(loadingManager);
@@ -1094,7 +1053,7 @@ export class MeshItem implements MeshDict.IMesh {
   //       '', unit['dataStr'],
   //       function (object) {
   //         object.visible = visibility;
-  //         _this._registerObject(key, unit, object);
+  //         _this._registerObject(rid, unit, object);
   //         delete unit['identifier'];
   //         delete unit['x'];
   //         delete unit['y'];
@@ -1120,14 +1079,54 @@ export class MeshItem implements MeshDict.IMesh {
  * MeshDict Namespace
  */
 export namespace MeshDict {
+  /** Clip value in between min/max */
+  export const clipNumber = function(number:number, min:number, max:number) {
+    if (max < min){
+      return number
+    }
+    return Math.max(min, Math.min(number, max));
+  }
+
+  /**
+   * return anything as array of itself
+   */
+  export const asArray = function (value: any): Array<any> {
+    if (Array.isArray(value)) {
+      return value
+    } else {
+      return [value];
+    }
+  }
+
+  /**
+   * Convert any color type to Color instance
+   * @param color 
+   */
+  export const convertColor = function (color: Color | string | number | number[]): Color {
+    if (Array.isArray(color)) {
+      return new Color().fromArray(color)
+    } else if (color instanceof Color) {
+      return color;
+    } else {
+      return new Color(color);
+    }
+  }
+
+  /** Permissable materials for Neu3D meshes */
   export type Neu3DMaterial = MeshBasicMaterial | MeshLambertMaterial | LineBasicMaterial | PointsMaterial;
 
+  /**
+   * Interface for mehsdict of Neu3D
+   */
   export interface IMeshDict {
     boundingBox: Box3;
-    // map label to Rid
-    // In case of non - unique labels, will hold the rid for the last object
-    // added with that label
-    _labelToRid: { [label: string]: string };
+
+    /**
+     * map label to Rid
+     * In case of non - unique labels, will hold the rid for the last object
+     * added with that label
+     */
+    labelToRid: { [label: string]: string };
     loadingManager: LoadingManager;
     settings: ISettings;
     lut: Lut;
@@ -1135,24 +1134,177 @@ export namespace MeshDict {
     maxColorNum: number;
     groups: { front: Group, back: Group };
 
-    // methods
+    /**
+     * A signal that is emited when the opacity of the mesh changes
+     */
+    opacityChanged: ISignal<IMeshDict, ISettings>;
+
+    /**
+     * return Rids of all elements in the front
+     */
+    front: string[];
+
+    /**
+     * return Rids of all elements in the back
+     */
+    back: string[];
+
+    /**
+     * Return rid of unpinned items
+     * 
+     * Note: only front meshes can be pinned 
+     */
+    unpinned: string[];
+
+
+    /**
+     * Return Rids of all pinned elements
+     * 
+     * Note: only front meshes can be pinned 
+     */
+    pinned: string[];
+
+    /**
+    * Add JSON object to meshdict
+    * @param {object} json 
+    */
+    addJSON(json: Partial<MeshDict.IInputJSON>): Promise<void>;
+
+
+    /**
+     * Add a single JSON object
+     * @param rid - 
+     * @param unit 
+     * @param color 
+     * @param metadata 
+     */
+    addOneJson(rid: string, unit: any, color: Color, metadata: any): Promise<MeshItem | void>;
+    
+    /**
+     * Empty MeshDict
+     * @param resetBackground - if `true`, remove background meshes as well
+     */
     reset(resetBackground?: boolean): void;
-    updateOpacity(e: any): void; // TODO
-    resetOpacity(): void;
+
+    /**
+     * Reset opacity to default of all objects in workspace
+     */
+    resetOpacity(): void; 
+
+    /**
+     * Set opacity of a given rid or list of rids
+     * @param rid 
+     * @param value 
+     */
+    setOpacity(rid: string | string[], value: number): void;
+
+    /**
+     * Update opacity of the all meshes
+     * 
+     * TODO: fix
+     * @param e 
+     */
+    updateOpacity(e?: any): void;
+
+    /**
+     * Show a given mesh or a list of meshes
+     * @param rid 
+     */
     show(rid: string | string[]): void;
+
+    /**
+     * Show a given mesh or a list of meshes
+     * @param rid 
+     */
     hide(rid: string | string[]): void;
+
+    /**
+     * Show all meshes
+     * @param group - if specified, show `front` or `back` meshes. default to show everything
+     */
     showAll(group?: 'front' | 'back'): void;
+
+    /**
+     * Hide all meshes
+     * @param group - if specified, hide `front` or `back` meshes. default to show everything
+     */
     hideAll(group?: 'front' | 'back'): void;
+
+    /**
+     * Highlight objects given rid(s)
+     * @param rid 
+     */
     highlight(rid: string): void;
+
+    /**
+     * Pin a given mesh or list of mesh
+     * @param rid 
+     */
     pin(rid: string | string[]): void;
+
+    /**
+     * Unpin a given mesh or list of mesh
+     * @param rid 
+     */
     unpin(rid: string | string[]): void;
+
+    /**
+     * Unpin everything
+     */
     unpinAll(): void;
+
+    /**
+     * Remove a mesh or list of meshes
+     * @param rid - rids of meshes to remove
+     */
     remove(rid: string | string[]): void;
+
+    /**
+     * Remove all unpinned meshes
+     * 
+     * Note: only front meshes can be pinned
+     */
     removeUnpinned(): void;
+
+    /**
+     * Set color of a mesh or meshes
+     * 
+     * @param rid
+     * @param color
+     */
     setColor(rid: string | string[], color: number | string | number[] | Color): void;
-    disposeMeshes(): void; // only dispose meshes
-    dispose(): void; // dispose everything
+
+    /**
+     * Set color of all background meshes
+     * @param color 
+     */
     setBackgroundColor(color: number | string | number[] | Color): void;
+
+    /**
+     * Dispose all Meshes to free up GPU memory
+     */
+    disposeMeshes(): void; // only dispose meshes
+
+    /**
+     * Dispose everything
+     */
+    dispose(): void; // dispose everything
+
+
+    /**
+     * Compute the bounding box of visible objects
+     * @param includeBackground - whether background is included in the bounding box computation, default is `false`
+     */
+    computeVisibleBoundingBox(includeBackground?: boolean): Box3;
+
+  }
+
+  export const SWCTypes = {
+    SOMA: 1,
+    SYNAPSE: -1,
+    PRESYNAPTIC: 7,
+    POSTSYNAPTIC: 8,
+    DEFAULT: 0
   }
 
   export interface ISWC {
@@ -1177,7 +1329,7 @@ export namespace MeshDict {
     yzRot: number; 
   }
 
-  export interface IMorphJSON extends IMesh {
+  export interface IMorphJSON extends IMeshItem {
     sample: string[];
     identifier: string[];
     x: string[];
@@ -1187,12 +1339,12 @@ export namespace MeshDict {
     parent: string[];
   }
 
-  export interface IObj extends IMesh {
+  export interface IObj extends IMeshItem {
     dataStr: string;
   }
   
   export interface IInputJSON {
-    ffbo_json: { [key: string]: any }; // TODO: data
+    ffbo_json: { [rid: string]: any }; // TODO: data
     filetype?: string;
     dataStr?: string;
     type: 'morphology_json' | 'obj' | string;
@@ -1219,28 +1371,58 @@ export namespace MeshDict {
     color: Color;
   }
 
-  export interface IMesh {
+  export interface IMeshItem {
     meshType: 'Mesh' | 'SWC' | 'MorphJSON' | 'Obj' | string;
     morphType?: 'Synapse SWC' | string;
+    color: Color;
+    opacity: number;
+    visibility: boolean;
     rid: string;
     label: string;
     pinned: boolean;
     highlight: boolean;
     background: boolean;
     object: Object3D;
-    visibility: boolean;
     boundingBox: Box3;
     position: Vector3;
-
-    // methods
+    /** Transformation applied to a given mesh */
+    transform: MeshDict.ISWCTransform;
+    
+    /** Show a given mesh */
     show(): void;
+    /** Show a given mesh */
     hide(): void;
+    /** Toggle pinned state a given mesh */
     togglePin(): void;
+    /** Toggle visibility of a given mesh */
     toggleVis(): void;
+    /** Oin a given mesh */
     pin(): void;
+    /** Unpin a given mesh */
     unpin(): void;
-    remove(): void;
+    /** Remove mesh. alias for `dispose`*/
+    remove(): void; 
+
+    /** Dispose meshitem and resoureces appropriately */
     dispose(): void;
+
+    /**
+     * Refresh rendering opacity of the object based on its states
+     */
+    updateOpacity(uiStates?: { pin: boolean, highlight: boolean }): void;
+    
+    /**
+     * scale/rotate/shift SWC object inplace
+     * @param swcObj object
+     * @param transform transformation
+     */
+    transformSWC(swcObj: MeshDict.ISWC, transform: MeshDict.ISWCTransform): void;
+
+    /**
+     * Convert Neuron Skeleton to SWC Format
+     * @param unit 
+     */
+    toSWC(unit: MeshDict.IMorphJSON | string[] | string): MeshDict.ISWC;
   }
 
   export interface ISettings {

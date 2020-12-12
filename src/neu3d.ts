@@ -24,7 +24,7 @@ export class Neu3D {
   renderer: WebGLRenderer;
   controls: TrackballControls;
   loadingManager: LoadingManager;
-  private _take_screenshot = false;
+  // private _take_screenshot = false;
   container: HTMLDivElement;
   meshDict: MeshDict;
   private _addingJsons = false;
@@ -130,10 +130,9 @@ export class Neu3D {
     this.scenes = this.initScenes();
     this.controls = this.initControls();
     this.lightsHelper = this.initLights();
-    
     this.loadingManager = this.initLoadingManager();
-    this.addContainerEventListener();
-    this.createToolTip();
+    this._addContainerEventListener();
+    this._createToolTip();
     this.postProcess = new PostProcessor(this.camera, this.scenes, this.renderer, this.container);
 
     // TODO: handle dispatcher
@@ -177,7 +176,7 @@ export class Neu3D {
 
     // add data if instantiated with data
     if (data !== undefined && Object.keys(data).length > 0) {
-      this.meshDict.addJson(data);
+      this.meshDict.addJSON(data);
     }
 
     this.addDivs();
@@ -244,9 +243,9 @@ export class Neu3D {
             filetype: 'swc'
           };
           if (isSWC === true){
-            ffbomesh.addJson({ ffbo_json: json });
+            ffbomesh.addJSON({ ffbo_json: json });
           } else {
-            ffbomesh.addJson({ ffbo_json: json, type: 'obj' });
+            ffbomesh.addJSON({ ffbo_json: json, type: 'obj' });
           }
         };
         reader.readAsText(file);
@@ -295,9 +294,9 @@ export class Neu3D {
   //   }
   // }
 
-  async addJson(json: any) {
+  async addJSON(json: any) {
     this._addingJsons = true;
-    await this.meshDict.addJson(json);
+    await this.meshDict.addJSON(json);
     this.meshDict.updateOpacity();
     this._addingJsons = false;
   }
@@ -330,7 +329,7 @@ export class Neu3D {
       if (t_next == t_max)
         t_next = 0;
       for (let key in activityData) {
-        ffbomesh.meshDict._meshDict[key].opacity = activityData[key][t_current] * (1 - interp) + activityData[key][t_next] * (interp);
+        ffbomesh.meshDict.meshDict[key].opacity = activityData[key][t_current] * (1 - interp) + activityData[key][t_next] * (interp);
       }
       ffbomesh.meshDict.resetOpacity();
     }
@@ -343,7 +342,7 @@ export class Neu3D {
   }
 
   /** Initialize WebGL Renderer */
-  initCamera() {
+  private initCamera() {
     let height = this.container.clientHeight;
     let width = this.container.clientWidth;
 
@@ -371,7 +370,7 @@ export class Neu3D {
   }
 
   /** Initialize WebGL Renderer */
-  initRenderer() {
+  private initRenderer() {
     let renderer = new WebGLRenderer({ 'logarithmicDepthBuffer': true });
     // TODO: add adaptive resolution
     // renderer.setPixelRatio(window.devicePixelRatio * this.settings.render_resolution);
@@ -426,7 +425,7 @@ export class Neu3D {
   // }
 
   /** Initialize Mouse Control */
-  initControls() {
+  private initControls() {
     let controls = new TrackballControls(this.camera, this.renderer.domElement);
     controls.rotateSpeed = 2.0;
     controls.zoomSpeed = 1.0;
@@ -450,7 +449,7 @@ export class Neu3D {
   }
 
   /** Initialize Scene */
-  initScenes() {
+  private initScenes() {
     let scenes = {
       front: new Scene(),
       back: new Scene()
@@ -469,7 +468,7 @@ export class Neu3D {
 
 
   /** Initialize FFBOLightsHelper */
-  initLights() {
+  private initLights() {
     let lightsHelper = new FFBOLightsHelper(this.camera, this.controls, this.scenes.front);
 
     lightsHelper.addAmbientLight({
@@ -545,7 +544,7 @@ export class Neu3D {
    * Initialize LoadingManager
    * https://threejs.org/docs/#api/en/loaders/managers/LoadingManager
   */
-  initLoadingManager() {
+ private initLoadingManager() {
     let loadingManager = new LoadingManager();
     loadingManager.onLoad = () => {
       this.controls.target0.x = 0.5 * (this.meshDict.boundingBox.min.x + this.meshDict.boundingBox.max.x);
@@ -556,6 +555,10 @@ export class Neu3D {
     return loadingManager;
   }
 
+  /**
+   * Import Visualization settings
+   * @param settings 
+   */
   import_settings(settings: any) {
     settings = Object.assign({}, settings);
     if ('lightsHelper' in settings) {
@@ -604,7 +607,7 @@ export class Neu3D {
   export_state(): any {
     let colors: {[rid: string]: number[]} = {}
     let visibilities: { [rid: string]: boolean } = {}
-    for (let [rid, mesh] of Object.entries(this.meshDict._meshDict)) {
+    for (let [rid, mesh] of Object.entries(this.meshDict.meshDict)) {
       colors[rid] = (mesh.color as Color).toArray();
       visibilities[rid] = mesh.visibility;
     }
@@ -651,19 +654,19 @@ export class Neu3D {
     this.camera.lookAt(this.controls.target);
     for (let i = 0; i < state_metadata['pinned'].length; ++i) {
       let key = state_metadata['pinned'][i];
-      if (this.meshDict._meshDict.hasOwnProperty(key)) {
-        this.meshDict._meshDict[key].pinned = true;
+      if (this.meshDict.meshDict.hasOwnProperty(key)) {
+        this.meshDict.meshDict[key].pinned = true;
       }
     }
     for (let key of Object.keys(state_metadata['visibility'])) {
       if (!this.meshDict.hasOwnProperty(key)) {
         continue;
       }
-      this.meshDict._meshDict[key].visibility = state_metadata['visibility'][key];
-      if (this.meshDict._meshDict[key].background) {
+      this.meshDict.meshDict[key].visibility = state_metadata['visibility'][key];
+      if (this.meshDict.meshDict[key].background) {
         continue;
       }
-      let meshobj = this.meshDict._meshDict[key].object;
+      let meshobj = this.meshDict.meshDict[key].object;
       let color = state_metadata['color'][key];
       for (let j = 0; j < meshobj.children.length; ++j) {
         ((meshobj.children[j] as Mesh).material as MeshDict.Neu3DMaterial).color.fromArray(color);
@@ -695,7 +698,10 @@ export class Neu3D {
     }
   }
 
-  addContainerEventListener(){
+  /**
+   * Setup event listener for the container
+   */
+  private _addContainerEventListener(){
     let func_0 = this.onDocumentMouseClick.bind(this);
     this.container.addEventListener('click', func_0, false);
     this._containerEventListener['click'] = func_0;
@@ -1015,9 +1021,9 @@ export class Neu3D {
           filetype: 'swc'
         };
         if (isSWC === true){
-          ffbomesh.addJson({ ffbo_json: json });
+          ffbomesh.addJSON({ ffbo_json: json });
         } else {
-          ffbomesh.addJson({ ffbo_json: json, type: 'obj' });
+          ffbomesh.addJSON({ ffbo_json: json, type: 'obj' });
         }
       };
       reader.readAsText(file);
@@ -1049,7 +1055,8 @@ export class Neu3D {
 
   /**
    * Double Click callback
-   * @param {*} event 
+   * Toggle pin
+   * @param event 
    */
   onDocumentMouseDBLClick(event: MouseEvent) {
     if (event !== undefined) {
@@ -1064,12 +1071,15 @@ export class Neu3D {
     }
   }
 
-
   /**
    * Double Click Mobile
-   * @param {*} event 
+   * Toggle Pin
+   * @param event 
    */
   onDocumentMouseDBLClickMobile(event: MouseEvent) {
+    if (!Neu3D.isOnMobile) { // do nothing if not on mobile
+      return;
+    }
     if (event !== undefined) {
       event.preventDefault();
     }
@@ -1082,9 +1092,10 @@ export class Neu3D {
     }
   }
 
-  /** TODO: Add Comment
-   * 
-   * @param {*} event 
+  /** 
+   * Overload mouse move event 
+   * Move tooltip to follow mouse 
+   * @param event 
    */
   onDocumentMouseMove(event: MouseEvent) {
     event.preventDefault();
@@ -1096,9 +1107,9 @@ export class Neu3D {
     this.uiVars.cursorPosition.y = -((event.clientY - rect.top) / this.container.clientHeight) * 2 + 1;
   }
 
-  /**TODO: Add comment
-   * 
-   * @param {*} event 
+  /**
+   * Set mouseover and active Render to true
+   * @param event 
    */
   onDocumentMouseEnter(event: MouseEvent) {
     event.preventDefault();
@@ -1106,20 +1117,21 @@ export class Neu3D {
     this.activeRender.activeRender = true;
   }
 
-  /**TODO: Add comment
-   * 
-   * @param {*} event 
+  /**
+   * On Mouse Leave to disable highlight
+   * @param event - mouse event whose default is overwritten
    */
   onDocumentMouseLeave(event: MouseEvent) {
     event.preventDefault();
-    this.states.mouseOver = false;
     this.highlight(false);
+    this.states.mouseOver = false;
     this.activeRender.activeRender = false;
   }
 
 
   /**
    * Response to window resize 
+   * Resizes the canvas and scale ThreeJS cameras accrodingly
    */
   onWindowResize() {
     let height = this.container.clientHeight;
@@ -1166,15 +1178,15 @@ export class Neu3D {
       // do nothing
     } else {
       if (this.animation.meshOscAmp && this.animation.meshOscAmp > 0) {
-        for (let [rid, mesh] of Object.entries(this.meshDict._meshDict)) {
+        for (let [rid, mesh] of Object.entries(this.meshDict.meshDict)) {
           if (mesh.object !== undefined) {
             let x = new Date().getTime();
             if (mesh.background) {
               let scale = (this.meshDict.settings.backgroundOpacity + 0.5 * this.animation.meshOscAmp * (1 + Math.sin(x * .0005)));
               if (mesh.opacity >= 0.00) {
-                this.meshDict._meshDict[rid].opacity = mesh.opacity * scale;
+                this.meshDict.setOpacity(rid, mesh.opacity * scale);
               } else {
-                this.meshDict._meshDict[rid].opacity = scale;
+                this.meshDict.setOpacity(rid, scale);
               }
             }
           }
@@ -1201,9 +1213,9 @@ export class Neu3D {
     // }
   }
 
-  screenshot() {
-    this._take_screenshot = true;
-  }
+  // screenshot() {
+  //   this._take_screenshot = true;
+  // }
 
   /**
    * Raycaster intersection groups
@@ -1218,7 +1230,7 @@ export class Neu3D {
       if (intersects.length > 0) {
         object = intersects[0].object.parent;
         if ((object as any).rid in this.meshDict) { // object rid set in meshDict addJSON callback
-          val = this.meshDict._meshDict[(object as any).rid as string];
+          val = this.meshDict.meshDict[(object as any).rid as string];
           break;
         }
       }
@@ -1226,7 +1238,9 @@ export class Neu3D {
     return val;
   }
 
-  /** export settings */
+  /**
+   * Export Visualization as Object
+   */
   export_settings() {
     let backgroundColor: string | number[] = [0.15, 0.01, 0.15];
     if (this.meshDict.groups.back.children.length) {
@@ -1312,7 +1326,7 @@ export class Neu3D {
       this.uiVars.toolTipPosition.x = pos.x;
       this.uiVars.toolTipPosition.y = pos.y;
     }
-    this.show3dToolTip(this.meshDict._meshDict[rid as string].label);
+    this.show3dToolTip(this.meshDict.meshDict[rid as string].label);
   }
 
   // /** TODO: Add Comment
@@ -1417,7 +1431,7 @@ export class Neu3D {
   /**
    * Create Tooltip
    */
-  createToolTip() {
+  private _createToolTip() {
     let toolTipDiv = document.createElement('div');
     toolTipDiv.style.cssText = 'position: fixed; text-align: center; width: auto; min-width: 100px; height: auto; padding: 2px; font: 12px arial; z-index: 999; background: #ccc; border: solid #212121 3px; border-radius: 8px; pointer-events: none; opacity: 0.0; color: #212121';
     toolTipDiv.style.transition = "opacity 0.5s";
@@ -1459,7 +1473,7 @@ export class Neu3D {
    * @param rid 
    */
   getNeuronScreenPosition(rid: string) {
-    let vector = this.meshDict._meshDict[rid].position.clone();
+    let vector = this.meshDict.meshDict[rid].position.clone();
     let canvasRect = this.renderer.domElement.getBoundingClientRect();
     // map to normalized device coordinate (NDC) space
     vector.project(this.camera);

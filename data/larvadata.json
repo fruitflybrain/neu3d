@@ -1,6 +1,6 @@
 {
     "AL": {
-      "filename": "https://data.flybrainlab.fruitflybrain.org/data/AL.json",
+      "filename": "https://data.flybrainlab.fruitflybrain.org/data/AL_um.json",
       "label": "AL",
       "highlight": false,
       "background": true,
@@ -11,7 +11,7 @@
       ]
     },
     "MB": {
-        "filename": "https://data.flybrainlab.fruitflybrain.org/data/MB.json",
+        "filename": "https://data.flybrainlab.fruitflybrain.org/data/MB_um.json",
         "label": "MB",
         "highlight": false,
         "background": true,
@@ -20,5 +20,16 @@
         0.01,
         0.15
         ]
-    }
+    },
+    "CNS": {
+      "filename": "https://data.flybrainlab.fruitflybrain.org/data/CNS_um.json",
+      "label": "CNS",
+      "highlight": false,
+      "background": true,
+      "color": [
+      0.15,
+      0.01,
+      0.15
+      ]
+  }
 }

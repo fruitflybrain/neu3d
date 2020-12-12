@@ -35,8 +35,8 @@ export class ControlPanel {
     this._controlPanelBtnIds.push(btnId);
     btnId = _createBtn("showAll", "fa fa-eye", {}, "Show All", () => { neu3d.meshDict.showAll() });
     this._controlPanelBtnIds.push(btnId);
-    btnId = _createBtn("takeScreenshot", "fa fa-camera", {}, "Download Screenshot", () => { neu3d.screenshot();});
-    this._controlPanelBtnIds.push(btnId);
+    // btnId = _createBtn("takeScreenshot", "fa fa-camera", {}, "Download Screenshot", () => { neu3d.screenshot();});
+    // this._controlPanelBtnIds.push(btnId);
     btnId = _createBtn("removeUnpin", "fa fa-trash", {}, "Remove Unpinned Neurons", () => { neu3d.meshDict.removeUnpinned(); })
     this._controlPanelBtnIds.push(btnId);
     btnId = _createBtn("unPinAll", "fa fa-map-upin", {}, "Unpin All", () => { neu3d.meshDict.unpinAll(); })
