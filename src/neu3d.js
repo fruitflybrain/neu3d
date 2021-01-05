@@ -1779,9 +1779,9 @@ export class Neu3D {
       for (let j = 0; j < meshobj.children.length; ++j) {
         meshobj.children[j].material.color.set(color);
         meshobj.children[j].geometry.colorsNeedUpdate = true;
-        // for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
-        //   meshobj.children[j].geometry.colors[k].set(color);
-        // }
+        for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
+          meshobj.children[j].geometry.colors[k].set(color);
+        }
       }
       this.meshDict[id[i]].color = color;
     }
@@ -1802,9 +1802,9 @@ export class Neu3D {
       for (let j = 0; j < meshobj.children.length; ++j) {
         meshobj.children[j].material.color.set(color);
         meshobj.children[j].geometry.colorsNeedUpdate = true;
-        // for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
-        //   meshobj.children[j].geometry.colors[k].set(color);
-        // }
+        for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
+          meshobj.children[j].geometry.colors[k].set(color);
+        }
       }
     }
   }
