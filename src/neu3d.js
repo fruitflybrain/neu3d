@@ -1770,6 +1770,7 @@ export class Neu3D {
    */
   setColor(id, color) {
     id = this.asarray(id);
+    color = new Color(color);
     for (let i = 0; i < id.length; ++i) {
       if (!(id[i] in this.meshDict)) {
         continue;
@@ -1782,7 +1783,7 @@ export class Neu3D {
         //   meshobj.children[j].geometry.colors[k].set(color);
         // }
       }
-      this.meshDict[id[i]].color = new Color((color));
+      this.meshDict[id[i]].color = color;
     }
   }
 
@@ -1793,6 +1794,8 @@ export class Neu3D {
   setBackgroundColor(color) {
     if (Array.isArray(color)) {
       color = new Color().fromArray(color);
+    } else {
+      color = new Color(color);
     }
     for (let i = 0; i < this.groups.back.children.length; ++i) {
       let meshobj = this.groups.back.children[i];

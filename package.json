@@ -26,7 +26,6 @@
     "@fortawesome/fontawesome-free": "5.12.0",
     "bootstrap": "^4.5.0",
     "dat.gui": "^0.7.7",
-    "dts-gen": "^0.6.0",
     "exports-loader": "^0.7.0",
     "imports-loader": "^0.8.0",
     "jquery": "^3.5.1",
