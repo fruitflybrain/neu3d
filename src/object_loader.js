@@ -20,6 +20,20 @@ Math.clip = function (number, min, max) {
   return Math.max(min, Math.min(number, max));
 }
 
+function verifySWC(swcObj) {
+  const isValid = (val)=> ('type' in val) && ('x' in val) && ('y' in val) && ('z' in val) && ('r' in val) && ('parent' in val);
+
+  for (const [sample, value] of Object.entries(swcObj)){
+    if (!isValid(value)) {
+      return false;
+    }
+
+    if (!(value.parent in swcObj) && (value.parent !== -1)){
+      return false
+    }
+  }
+}
+
 /**
 * Register Object to `meshDict`
 * @param {*} key 
@@ -64,8 +78,13 @@ Neu3D.prototype._registerObject = function (key, unit, object) {
  * @param {*} visibility 
  */
 Neu3D.prototype.loadMeshCallBack = function (key, unit, visibility) {
-  return (jsonString) => {
-    let json = JSON.parse(jsonString);
+  return (json_or_string) => {
+    let json;
+    if (typeof json_or_string === 'string' || json_or_string instanceof String){
+      json = JSON.parse(json_or_string);
+    } else {
+      json = json_or_string;
+    }
     let color = unit['color'];
     let geometry = new Geometry();
     let vtx = json['vertices'];
@@ -157,40 +176,53 @@ Neu3D.prototype.loadMeshCallBack = function (key, unit, visibility) {
 * @param {*} visibility 
 */
 Neu3D.prototype.loadSWCCallBack = function (key, unit, visibility) {
-  return (swcString) => {
-    /** process string */
-    swcString = swcString.replace(/\r\n/g, "\n");
-    let swcLine = swcString.split("\n");
-    let len = swcLine.length;
+  return (swc_or_string) => {
     let swcObj = {};
-    let radius_scale = unit['radius_scale'];
-    swcLine.forEach((e) => {
-      let seg = e.split(' ');
-      if (seg.length == 7) {
-        var x_put = parseFloat(seg[2]) * unit['x_scale'];
-        var y_put = parseFloat(seg[3]) * unit['y_scale'];
-        var z_put = parseFloat(seg[4]) * unit['z_scale'];
-        var x_i = Math.cos(unit['xy_rot']) * x_put + Math.sin(unit['xy_rot']) * y_put;
-        var y_i = Math.sin(unit['xy_rot']) * x_put + Math.cos(unit['xy_rot']) * y_put;
-        var z_i = z_put;
-        var y_f = Math.cos(unit['yz_rot']) * y_i + Math.sin(unit['yz_rot']) * z_i;
-        var z_f = Math.sin(unit['yz_rot']) * y_i + Math.cos(unit['yz_rot']) * z_i;
-        var x_f = x_i;
-        x_f = x_f + unit['x_shift'];
-        y_f = y_f + unit['y_shift'];
-        z_f = z_f + unit['z_shift'];
+    if (typeof swc_or_string === 'string' || swc_or_string instanceof String){
+      /** process string */
+      let swcString = swc_or_string.replace(/\r\n/g, "\n");
+      let swcLine = swcString.split("\n");
+      let radius_scale = unit['radius_scale'];
+      swcLine.forEach((e) => {
+        let seg = e.split(' ');
+        if (seg.length == 1) {
+          seg = e.split(',');
+        }
+        if (seg.length == 8) {
+          seg = seg.slice(1);
+        }
+        if (seg.length == 7) {
+          var x_put = parseFloat(seg[2]) * unit['x_scale'];
+          var y_put = parseFloat(seg[3]) * unit['y_scale'];
+          var z_put = parseFloat(seg[4]) * unit['z_scale'];
+          var x_i = Math.cos(unit['xy_rot']) * x_put + Math.sin(unit['xy_rot']) * y_put;
+          var y_i = Math.sin(unit['xy_rot']) * x_put + Math.cos(unit['xy_rot']) * y_put;
+          var z_i = z_put;
+          var y_f = Math.cos(unit['yz_rot']) * y_i + Math.sin(unit['yz_rot']) * z_i;
+          var z_f = Math.sin(unit['yz_rot']) * y_i + Math.cos(unit['yz_rot']) * z_i;
+          var x_f = x_i;
+          x_f = x_f + unit['x_shift'];
+          y_f = y_f + unit['y_shift'];
+          z_f = z_f + unit['z_shift'];
 
-        swcObj[parseInt(seg[0])] = {
-          'type': parseInt(seg[1]),
-          'x': x_f,
-          'y': y_f,
-          'z': z_f,
-          'radius': parseFloat(seg[5]) * radius_scale,
-          'parent': parseInt(seg[6]),
-        };
+          swcObj[parseInt(seg[0])] = {
+            'type': parseInt(seg[1]),
+            'x': x_f,
+            'y': y_f,
+            'z': z_f,
+            'radius': parseFloat(seg[5]) * radius_scale,
+            'parent': parseInt(seg[6]),
+          };
+        }
+      });
+    } else{
+      if (!verifySWC(swc_or_string)){
+        return;
       }
-    });
-
+      swcObj = swc_or_string;
+    }
+    
+    let len = Object.keys(swcObj).length;
     let color = unit['color'];
     let object = new Object3D();
     let pointGeometry = undefined;
@@ -419,7 +451,7 @@ Neu3D.prototype.loadMorphJSONCallBack = function (key, unit, visibility) {
         unit['position'] = new Vector3(c.x, c.y, c.z);
       }
       if (c.type == 7 || c.type == 8) {
-        console.log('Loading synapse node');
+        console.debug('[Neu3D] Loading synapse node');
         if (this.settings.synapseMode == true){
           if(mergedGeometry == undefined)
             mergedGeometry = new Geometry()
@@ -529,10 +561,10 @@ Neu3D.prototype.loadObjCallBack = function (key, unit, visibility) {
         delete unit['type'];
       },
       function (xhr) {
-        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        console.debug(`[Neu3D] loading Object: ${(xhr.loaded / xhr.total * 100)}% loaded`);
       },
       function (error) {
-        console.log('An error happened');
+        console.error(`[Neu3D] An error happened in loadObjCallBack, ${error}`);
       }
     );
 

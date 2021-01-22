@@ -366,7 +366,7 @@ export class Neu3D {
    */
   on(key, func) {
     if (typeof (func) !== "function") {
-      console.log("not a function");
+      console.error(`[Neu3D] setting callback for key ${key} with something that is not a function, ${func}`);
       return;
     }
 
@@ -374,7 +374,7 @@ export class Neu3D {
       let register = this.callbackRegistry[key];
       register(func);
     } else {
-      console.log("callback keyword '" + key + "' not recognized.");
+      console.error(`[Neu3D] Callback keyword ${key} not recognized.`);
     }
   }
 
@@ -478,7 +478,6 @@ export class Neu3D {
 
 
     if (this.settings.render_resolution != this.resINeed) {
-      //console.log("UPDATING");
       this.renderer.setPixelRatio(window.devicePixelRatio * this.settings.render_resolution);
       this.resINeed = this.settings.render_resolution;
     }
@@ -899,9 +898,11 @@ export class Neu3D {
   addJson(json) {
     return new Promise((resolve) => {
       if ((json === undefined) || !("ffbo_json" in json)) {
-        console.log('mesh json is undefined');
+        console.error(`[Neu3D] cannot addJson, ffbo_json is not undefined, ${json}`);
         return;
       }
+
+      /* Set Metadata */
       let metadata = {
         "type": undefined,
         "visibility": true,
@@ -915,23 +916,24 @@ export class Neu3D {
           metadata[key] = json[key];
         }
       }
+
+      /* Reset */
       if (('reset' in json) && json.reset) {
         this.reset();
       }
-      /* set colormap */
-      let keyList = Object.keys(json.ffbo_json);
-      let colorNum, id2float, lut;
 
+      /* set colormap */
+      let ridList = Object.keys(json.ffbo_json);
+      let colorNum, id2float, lut;
       if (metadata.colororder === "order") {
-        colorNum = keyList.length;
+        colorNum = ridList.length;
         id2float = function (i) { return i / colorNum; };
       } else {
         colorNum = this.maxColorNum;
         id2float = function (i) { return getRandomIntInclusive(1, colorNum) / colorNum; };
       }
-
       if (metadata.colororder === "order" && (colorNum !== this.maxColorNum || metadata.colormap !== "rainbow")) {
-        colorNum = keyList.length;
+        colorNum = ridList.length;
         lut = new Lut(metadata.colormap, colorNum);
         lut.setMin(0);
         lut.setMax(1);
@@ -939,30 +941,39 @@ export class Neu3D {
         lut = this.lut;
       }
 
+      /* Optionally delay showing till after everything is loaded  */
       if (metadata.showAfterLoadAll) {
         this.groups.front.visible = false;
       }
 
-      for (let i = 0; i < keyList.length; ++i) {
-        let key = keyList[i];
-        if (key == 'set') {
-          console.log('New setting configuration found.');
+      /* Add objects into meshDict */
+      for (const [i, [key, mesh]] of Object.entries(json.ffbo_json).entries()){
+
+        // settings? not sure when this is used and what it is for
+        if (key === 'set') {
+          console.debug(`[Neu3D] New setting configuration found.`);
           let _this = this;
           Object.keys(json.ffbo_json[key]).forEach(function (setkey) {
             _this.settings[setkey] = json.ffbo_json[key][setkey];
           });
           continue;
         }
+
+        // check if already exists
         if (key in this.meshDict) {
-          console.log('mesh object already exists... skip rendering...');
+          console.warn(`[Neu3D] mesh already exists, skipped.`);
           continue;
         }
+
+        // create propMan proxy of mesh if mesh is not already a propMan proxy
         let unit;
-        if (json.ffbo_json[key]._PropMan) {
-          unit = json.ffbo_json[key]
+        if (mesh.hasOwnProperty('_PropMan')) {
+          unit = mesh;
         } else {
-          unit = new PropertyManager(json.ffbo_json[key]);
+          unit = new PropertyManager(mesh);
         }
+
+        // set default values of unit
         unit.boundingBox = Object.assign({}, this.defaultBoundingBox);
         setAttrIfNotDefined(unit, 'highlight', true);
         if (unit.background) {
@@ -986,17 +997,22 @@ export class Neu3D {
         setAttrIfNotDefined(unit, 'xy_rot', 0.);
         setAttrIfNotDefined(unit, 'yz_rot', 0.);
 
+        // set unit color, this may not be used
         if (Array.isArray(unit.color)) {
           unit.color = new Color(...unit.color);
         }
 
-        /* read mesh */
+        /* load mesh */
         if (metadata.type === "morphology_json") {
-          this.loadMorphJSONCallBack(key, unit, metadata.visibility).bind(this)();
+          if (unit.hasOwnProperty('morph_type') && unit.morph_type === 'mesh'){
+            this.loadMeshCallBack(key, unit, metadata.visibility).bind(this)();
+          } else {
+            this.loadMorphJSONCallBack(key, unit, metadata.visibility).bind(this)();
+          }
         } else if (metadata.type === "obj") {
           this.loadObjCallBack(key, unit, metadata.visibility).bind(this)();
         } else if (('dataStr' in unit) && ('filename' in unit)) {
-          console.log('mesh object has both data string and filename... should only have one... skip rendering');
+          console.warn(`[Neu3D] mesh object ${key} has both dataStr and filename, should only have one. Skipped`);
           continue;
         } else if ('filename' in unit) {
           unit['filetype'] = unit.filename.split('.').pop();
@@ -1006,7 +1022,7 @@ export class Neu3D {
           } else if (unit['filetype'] == "swc") {
             loader.load(unit.filename, this.loadSWCCallBack(key, unit, metadata.visibility).bind(this));
           } else {
-            console.log('mesh object has unrecognized data format... skip rendering');
+            console.warn(`[Neu3D] mesh object ${key} has unrecognized data format, skipped`);
             continue;
           }
         } else if ('dataStr' in unit) {
@@ -1015,11 +1031,11 @@ export class Neu3D {
           } else if (unit['filetype'] == "swc") {
             this.loadSWCCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
           } else {
-            console.log('mesh object has unrecognized data format... skip rendering');
+            console.warn(`[Neu3D] mesh object ${key} has unrecognized data format, skipped`);
             continue;
           }
         } else {
-          console.log('mesh object has neither filename nor data string... skip rendering');
+          console.warn(`[Neu3D] mesh object ${key} has neither dataStr nor filename, skipped`);
           continue;
         }
       }
@@ -1486,7 +1502,6 @@ export class Neu3D {
    * @param {event} e 
    */
   onRemoveMesh(e) {
-    // console.log(e);
     if (this.states.highlight == e.prop)
       this.states.highlight = false;
     if (e.value['pinned'])

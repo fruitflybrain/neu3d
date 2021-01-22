@@ -44,14 +44,18 @@ let PropertyManagerHandler = {
         try{
           f({'event': 'add', 'prop': prop, 'value': value})
         }
-        catch(err){console.log(err);}
+        catch(err){
+          console.error(`[Neu3D-PropMan] Error, ${err}`);
+        }
       });
       if(prop in obj._PropMan_callbacks)
         obj._PropMan_callbacks[prop].add.forEach(function(f){
           try{
             f({'event': 'add', 'prop': prop, 'value': value})
           }
-          catch(err){console.log(err);}
+          catch(err){
+            console.error(`[Neu3D-PropMan] Error, ${err}`);
+          }
         });
     }
     return true;
@@ -63,14 +67,16 @@ let PropertyManagerHandler = {
       try{
         f({'event': 'remove', 'prop': prop, 'value': obj[prop]})
       }
-      catch(err) {console.log(err);}
+      catch(err) {console.error(`[Neu3D-PropMan] Error, ${err}`);}
     });
     if(prop in obj._PropMan_callbacks)
       obj._PropMan_callbacks[prop].remove.forEach(function(f){
         try{
           f({'event': 'remove', 'prop': prop, 'value': obj[prop]})
         }
-        catch(err) {console.log(err);}
+        catch(err) {
+          console.error(`[Neu3D-PropMan] Error, ${err}`);
+        }
       });
     try{
       if(obj[prop].hasOwnProperty('_PropMan'))
@@ -101,17 +107,17 @@ export class PropertyManager {
     Object.defineProperty(map, 'on', {
       value: function (event, callback, prop) {
         if (['add', 'remove', 'change'].indexOf(event) < 0) {
-          console.error('Event type not understood');
+          console.error(`[Neu3D-PropMan] Event type not understood`);
           return false;
         }
         if (!(callback instanceof Function)) {
-          console.error('CallBack should be a function');
+          console.error(`[Neu3D-PropMan] CallBack should be a function`);
           return false;
         }
 
         if (prop == undefined) {
           if (event == 'change') {
-            console.error('Change event can only have callbacks for specific properties');
+            console.error(`[Neu3D-PropMan] Change event can only have callbacks for specific properties`);
             return false;
           }
           event = ({ add: '_add_any', remove: '_remove_any' })[event]
@@ -139,7 +145,7 @@ export class PropertyManager {
     Object.defineProperty(map, 'add_validation', {
       value: function (prop, validator) {
         if (!(validator instanceof Function)) {
-          console.error('Validator should be a function');
+          console.error(`[Neu3D-PropMan] Validator should be a function`);
           return false;
         }
         if (!(prop in this._PropMan_validations))
@@ -156,8 +162,11 @@ export class PropertyManager {
       value: function (e) {
         if (e['prop'] in this._PropMan_callbacks)
           this._PropMan_callbacks[e['prop']]['change'].forEach(function (f) {
-            try { f(e) }
-            catch (err) { console.log(err); }
+            try { 
+              f(e) 
+            } catch (err) { 
+              console.error(`[Neu3D-PropMan] Error, ${err}`); 
+            }
           });
         if (this._PropMan_parent !== undefined) {
           e.path.push(this._PropMan_parent['prop']);
@@ -235,7 +244,7 @@ export class PropertyManager {
 //       if(e['prop'] in this._PropMan_callbacks)
 //         this._PropMan_callbacks[e['prop']]['change'].forEach(function(f){
 //           try { f(e) }
-//           catch(err) { console.log(err); }
+//           catch(err) { console.error(`[Neu3D-PropMan] Error, ${err}`); }
 //         });
 //       if(this._PropMan_parent !== undefined){
 //         e.path.push(this._PropMan_parent['prop']);
