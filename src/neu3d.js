@@ -143,7 +143,7 @@ export class Neu3D {
       neuron3dMode: 1,
       synapseMode: true,
       meshWireframe: true,
-      backgroundColor: "#260226",
+      backgroundColor: new Color("#260226"),
       render_resolution: 1.0
     });
     this.settings.toneMappingPass = new PropertyManager({ brightness: 0.95 });
@@ -975,6 +975,9 @@ export class Neu3D {
 
         // set default values of unit
         unit.boundingBox = Object.assign({}, this.defaultBoundingBox);
+        setAttrIfNotDefined(unit, 'background', 
+          (unit.hasOwnProperty('class') && unit.class == 'Neuropil')
+        );
         setAttrIfNotDefined(unit, 'highlight', true);
         if (unit.background) {
           setAttrIfNotDefined(unit, 'opacity', this.settings.backgroundOpacity);
@@ -982,10 +985,9 @@ export class Neu3D {
           setAttrIfNotDefined(unit, 'opacity', this.settings.defaultOpacity);
         }
         setAttrIfNotDefined(unit, 'visibility', true);
-        setAttrIfNotDefined(unit, 'background', 
-          (unit.hasOwnProperty('class') && unit.class == 'Neuropil')
+        setAttrIfNotDefined(unit, 'color', 
+          (unit.background) ? this.settings.backgroundColor :  lut.getColor(id2float(i))
         );
-        setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
         setAttrIfNotDefined(unit, 'label',
           getAttr(unit, 'uname', key)
         );
