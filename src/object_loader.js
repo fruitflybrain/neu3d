@@ -79,11 +79,13 @@ Neu3D.prototype._registerObject = function (key, unit, object) {
  */
 Neu3D.prototype.loadMeshCallBack = function (key, unit, visibility) {
   return (json_or_string) => {
-    let json;
+    let json = {};
     if (typeof json_or_string === 'string' || json_or_string instanceof String){
       json = JSON.parse(json_or_string);
-    } else {
+    } else if (typeof json_or_string === 'object' || json_or_string instanceof Object) {
       json = json_or_string;
+    } else {
+      json = unit;
     }
     let color = unit['color'];
     let geometry = new Geometry();
