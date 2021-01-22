@@ -982,7 +982,9 @@ export class Neu3D {
           setAttrIfNotDefined(unit, 'opacity', this.settings.defaultOpacity);
         }
         setAttrIfNotDefined(unit, 'visibility', true);
-        setAttrIfNotDefined(unit, 'background', false);
+        setAttrIfNotDefined(unit, 'background', 
+          (unit.hasOwnProperty('class') && unit.class == 'Neuropil')
+        );
         setAttrIfNotDefined(unit, 'color', lut.getColor(id2float(i)));
         setAttrIfNotDefined(unit, 'label',
           getAttr(unit, 'uname', key)
