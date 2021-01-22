@@ -974,10 +974,16 @@ export class Neu3D {
         }
 
         // set default values of unit
+
         unit.boundingBox = Object.assign({}, this.defaultBoundingBox);
         setAttrIfNotDefined(unit, 'background', 
           (unit.hasOwnProperty('class') && unit.class == 'Neuropil')
         );
+        setAttrIfNotDefined(unit, 'uname', 
+          getAttr(unit, 'uname', getAttr(unit, 'name', key))
+        );
+        setAttrIfNotDefined(unit, 'name', getAttr(unit, 'uname', key));
+        setAttrIfNotDefined(unit, 'label', unit.uname);
         setAttrIfNotDefined(unit, 'highlight', true);
         if (unit.background) {
           setAttrIfNotDefined(unit, 'opacity', this.settings.backgroundOpacity);
@@ -987,9 +993,6 @@ export class Neu3D {
         setAttrIfNotDefined(unit, 'visibility', true);
         setAttrIfNotDefined(unit, 'color', 
           (unit.background) ? this.settings.backgroundColor :  lut.getColor(id2float(i))
-        );
-        setAttrIfNotDefined(unit, 'label',
-          getAttr(unit, 'uname', key)
         );
         setAttrIfNotDefined(unit, 'radius_scale', 1.);
         setAttrIfNotDefined(unit, 'x_shift', 0.);
