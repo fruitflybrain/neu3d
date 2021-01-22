@@ -984,7 +984,7 @@ export class Neu3D {
         );
         setAttrIfNotDefined(unit, 'name', getAttr(unit, 'uname', key));
         setAttrIfNotDefined(unit, 'label', unit.uname);
-        setAttrIfNotDefined(unit, 'highlight', true);
+        setAttrIfNotDefined(unit, 'highlight', (unit.background) ? false: true);
         if (unit.background) {
           setAttrIfNotDefined(unit, 'opacity', this.settings.backgroundOpacity);
         } else {
