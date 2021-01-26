@@ -40,11 +40,12 @@ declare class Neu3D {
     toggleVis(key: string): void;
     togglePin(d: string | object): void;
 
-    unpin(id: string): void;
+    pin(id: string | Array<string>): void;
+    unpin(id: string | Array<string>): void;
     unpinAll(): void;
 
     removeUnpinned(): void;
-    remove(id: string): void;
+    remove(id: string | Array<string>): void;
     
     getPinned(): Array<any>;
 
@@ -53,8 +54,9 @@ declare class Neu3D {
     hideFrontAll(): void;
     showBackAll(): void;
     hideBackAll(): void;
-
+    hide(id: string | Array<string>): void;
     hideAll(): void;
+    show(id: string | Array<string>): void;
     showAll(): void;
 }
 
