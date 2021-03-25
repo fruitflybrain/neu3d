@@ -91,6 +91,16 @@ Neu3D.prototype.loadMeshCallBack = function (key, unit, visibility) {
     let geometry = new Geometry();
     let vtx = json['vertices'];
     let idx = json['faces'];
+
+    if (Math.max(...idx) >= (vtx.length/3)){
+      let err = `[Neu3D] Mesh ${key} has face index ${Math.max(...idx)} that exceeds maximum number of vertices ${vtx.length/3}.`;
+      if (Math.min(...idx) !== 0) {
+        err = `${err} The face index also start from ${Math.min(...idx)}, maybe the face indices should be shifted by 1.`;
+      }
+      console.error(err);
+      return;
+    }
+
     for (let j = 0; j < vtx.length / 3; j++) {
       let x = parseFloat(vtx[3 * j + 0]);
       let y = parseFloat(vtx[3 * j + 1]);
