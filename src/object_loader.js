@@ -50,7 +50,7 @@ Neu3D.prototype._registerObject = function (key, unit, object) {
     unit['position'] = new Vector3(0.5 * (unit.boundingBox.minX + unit.boundingBox.maxX), 0.5 * (unit.boundingBox.minY + unit.boundingBox.maxY), 0.5 * (unit.boundingBox.minZ + unit.boundingBox.maxZ));
   }
   // TODO: move the code below to a function
-  if (!('morph_type' in unit) || (unit['morph_type'] != 'Synapse SWC')) {
+  if (unit['class'] == 'Neuron') {
     if (unit['background']) {
       unit['object'].children[0].material.opacity = this.settings.backgroundOpacity;
       unit['object'].children[1].material.opacity = this.settings.backgroundWireframeOpacity;
@@ -399,9 +399,9 @@ Neu3D.prototype.loadMorphJSONCallBack = function (key, unit, visibility) {
       }
       this.updateObjectBoundingBox(unit, c.x, c.y, c.z);
       this.updateBoundingBox(c.x, c.y, c.z);
-      if ((c.parent != -1) && !(c.type == 7 || c.type == 8)) {
+      if (c.parent != -1) {
         let p = swcObj[c.parent];
-        if (this.settings.neuron3d) {
+        if (this.settings.neuron3d && unit['class'] == 'Neuron') {
           if (mergedGeometry == undefined) {
             mergedGeometry = new Geometry();
           }
@@ -462,7 +462,7 @@ Neu3D.prototype.loadMorphJSONCallBack = function (key, unit, visibility) {
         object.add(new Mesh(sphereGeometry, sphereMaterial));
         unit['position'] = new Vector3(c.x, c.y, c.z);
       }
-      if (c.type == 7 || c.type == 8) {
+      if (unit['class'] == 'Synapse') {
         console.debug('[Neu3D] Loading synapse node');
         if (this.settings.synapseMode == true){
           if(mergedGeometry == undefined)

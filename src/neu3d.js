@@ -1490,7 +1490,7 @@ export class Neu3D {
    */
   onAddMesh(e) {
     if (!e.value['background']) {
-      if (!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
+      if (e.value['class'] == 'Neuron')
         ++this.uiVars.frontNum;
       this.groups.front.add(e.value.object);
     }
@@ -1519,7 +1519,7 @@ export class Neu3D {
       meshobj.children[j].material.dispose();
     }
     if (!e.value['background']) {
-      if (!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
+      if (e.value['class'] == 'Neuron')
         --this.uiVars.frontNum;
       this.groups.front.remove(meshobj);
     }
@@ -1655,8 +1655,7 @@ export class Neu3D {
   resetOpacity() {
     for (const key of Object.keys(this.meshDict)) {
       if (!this.meshDict[key]['background']) {
-        if (!('morph_type' in this.meshDict[key]) ||
-          (this.meshDict[key]['morph_type'] != 'Synapse SWC')) {
+        if (this.meshDict[key]['class'] == 'Neuron') {
           for (let i in this.meshDict[key].object.children) {
             if (this.meshDict[key]['opacity'] >= 0.) {
               this.meshDict[key].object.children[i].material.opacity = this.meshDict[key]['opacity'] * this.settings.defaultOpacity;
