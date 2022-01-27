@@ -33,7 +33,7 @@
     "lodash": "^4.17.20",
     "popper.js": "^1.16.1",
     "stats.js": "^0.17.0",
-    "three": "^0.117.0"
+    "three": "^0.137.0"
   },
   "devDependencies": {
     "css-loader": "^2.1.1",
