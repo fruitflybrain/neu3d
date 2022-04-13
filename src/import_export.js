@@ -16,9 +16,11 @@ Neu3D.prototype.import_settings = function(settings) {
     if (postProcessing.ssao != undefined){
       this.settings.backrenderSSAO.enabled = postProcessing.ssao;
     }
-    if (postProcessing.toneMappingMinLum != undefined){
-      this.settings.toneMappingPass.brightness = 1 - postProcessing.toneMappingMinLum;
-    }
+    // if (postProcessing.toneMappingMinLum != undefined){
+    //   this.settings.toneMappingPass.brightness = 1 - postProcessing.toneMappingMinLum;
+    // }
+    if( postProcessing.bloom != undefined )
+           this.settings.bloomPass.enabled = postProcessing.bloom;
     if (postProcessing.bloomRadius != undefined){
       this.settings.bloomPass.radius = postProcessing.bloomRadius;
     }

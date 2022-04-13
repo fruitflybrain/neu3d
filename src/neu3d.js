@@ -1,14 +1,14 @@
 import { PropertyManager } from './propertymanager';
 import { FFBOLightsHelper } from './lightshelper';
 import {
-  Vector2, Raycaster,
+  Vector2, Raycaster, Matrix4,
   Group, WebGLRenderer,
   Scene, Vector3, LoadingManager,
-  PerspectiveCamera, Color, FileLoader, GammaEncoding, LessEqualStencilFunc
+  PerspectiveCamera, Color, FileLoader, GammaEncoding
 } from 'three';
 
 import { Lut } from 'three/examples/jsm/math/Lut'
-import { AdaptiveToneMappingPass } from 'three/examples/jsm/postprocessing/AdaptiveToneMappingPass';
+// import { AdaptiveToneMappingPass } from 'three/examples/jsm/postprocessing/AdaptiveToneMappingPass';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
@@ -16,7 +16,7 @@ import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader';
-
+import { CopyShader } from 'three/examples/jsm/shaders/CopyShader'
 // add FontAwesome
 import '@fortawesome/fontawesome-free/js/all.js';
 
@@ -124,36 +124,38 @@ export class Neu3D {
       synapseOpacity: 1.0,
       meshOscAmp: 0.0,
       nonHighlightableOpacity: 0.1,
-      lowOpacity: 0.1,
+      lowOpacity: 0.05,
       pinOpacity: 0.9,
-      pinLowOpacity: 0.15,
+      pinLowOpacity: 0.1,
       highlightedObjectOpacity: 1.0,
-      defaultRadius: 0.5,
-      defaultSomaRadius: 3.0,
-      defaultSynapseRadius: 0.2,
-      minRadius: 0.1,
-      minSomaRadius: 1.0,
-      minSynapseRadius: 0.01,
-      maxRadius: 1.0,
-      maxSomaRadius: 10.0,
-      maxSynapseRadius: 1.,
-      backgroundOpacity: 1.0,
+      defaultRadius: 1.0,
+      defaultSomaRadius: 0.5,
+      defaultSynapseRadius: 0.5,
+      minRadius: 0.01,
+      minSomaRadius: 0.01,
+      minSynapseRadius: 0.001,
+      maxRadius: 10.0,
+      maxSomaRadius: 20.0,
+      maxSynapseRadius: 5.0,
+      linewidth: 0.75,
+      backgroundOpacity: 0.5,
       backgroundWireframeOpacity: 0.07,
-      neuron3d: false,
-      neuron3dMode: 1,
+      neuron3dMode: 0,
       synapseMode: true,
       meshWireframe: true,
       backgroundColor: new Color("#260226"),
+      sceneBackgroundColor: '#030305',
       render_resolution: 1.0
     });
-    this.settings.toneMappingPass = new PropertyManager({ brightness: 0.95 });
-    this.settings.bloomPass = new PropertyManager({ radius: 0.2, strength: 0.2, threshold: 0.3 });
+    // this.settings.toneMappingPass = new PropertyManager({ brightness: 0.95 });
+    this.settings.bloomPass = new PropertyManager({enabled: false, radius: 0.2, strength: 0.2, threshold: 0.3 });
     this.settings.effectFXAA = new PropertyManager({ enabled: false });
     this.settings.backrenderSSAO = new PropertyManager({ enabled: false }); // change
     this.states = new PropertyManager({
       mouseOver: false,
       pinned: false,
-      highlight: false
+      highlight: false,
+      animate: false
     });
     this.activityData = {};
     this.it1 = {};
@@ -267,15 +269,26 @@ export class Neu3D {
         "backgroundWireframeOpacity", "synapseOpacity",
         "highlightedObjectOpacity", "nonHighlightableOpacity", "lowOpacity"
       ]);
+    this.settings.on("change", ((e) => {
+      this.updateLinewidth(e.value);
+    }), "linewidth");
+
+    this.settings.on("change", ((e) => {
+      this.updateSynapseRadius(e.value);
+    }), "defaultSynapseRadius");
+
     this.settings.on('change', ((e) => {
       this[e.path[0]][e.prop] = e.value;
     }), ['radius', 'strength', 'threshold', 'enabled']);
-    this.settings.toneMappingPass.on('change', ((e) => {
-      this.toneMappingPass.setMinLuminance(1 - this.settings.toneMappingPass.brightness);
-    }), 'brightness');
+    // this.settings.toneMappingPass.on('change', ((e) => {
+    //   this.toneMappingPass.setMinLuminance(1 - this.settings.toneMappingPass.brightness);
+    // }), 'brightness');
     this.settings.on('change', ((e) => {
       this.setBackgroundColor(e.value);
     }), 'backgroundColor');
+    this.settings.on('change', ((e) => {
+      this.setSceneBackgroundColor(e.value);
+    }), 'sceneBackgroundColor');
 
     // add data if instantiated with data
     if (data != undefined && Object.keys(data).length > 0) {
@@ -316,8 +329,15 @@ export class Neu3D {
         const file = evt.target.files.item(i);
         const name = file.name.split('.')[0];
         let isSWC = false;
+        let isSyn = false;
+        var filetype;
         if (file.name.match('.+(\.swc)$')) {
           isSWC = true;
+          filetype = 'swc';
+        }
+        if (file.name.match('.+(\.syn)$')) {
+          isSyn = true;
+          filetype = 'syn';
         }
         let reader = new FileReader();
         reader.onload = (event) => {
@@ -325,9 +345,9 @@ export class Neu3D {
           json[name] = {
             label: name,
             dataStr: event.target.result,
-            filetype: 'swc'
+            filetype: filetype,
           };
-          if (isSWC === true) {
+          if (isSWC === true || isSyn === true) {
             ffbomesh.addJson({ ffbo_json: json });
           } else {
             ffbomesh.addJson({ ffbo_json: json, type: 'obj' });
@@ -442,9 +462,12 @@ export class Neu3D {
 
   /** Initialize WebGL Renderer */
   initRenderer() {
-    let renderer = new WebGLRenderer({ 'logarithmicDepthBuffer': true });
+    let renderer = new WebGLRenderer({ 'logarithmicDepthBuffer': true, 'alpha': false, antialias: true});
     renderer.setPixelRatio(window.devicePixelRatio * this.settings.render_resolution);
     renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    renderer.setClearColor(0x000000, 0);
+    renderer.autoClear = false;
+    renderer.outputEncoding = GammaEncoding;
     this.container.appendChild(renderer.domElement);
     return renderer;
   }
@@ -522,20 +545,28 @@ export class Neu3D {
   initPostProcessing() {
     let height = this.container.clientHeight;
     let width = this.container.clientWidth;
+    this.EffectComposerPasses = {};
+
     this.renderScene = new RenderPass(this.scenes.front, this.camera);
     this.renderScene.clear = false;
     this.renderScene.clearAlpha = true;
     this.renderScene.clearDepth = true;
+    this.EffectComposerPasses['renderScene'] = this.renderScene;
 
     this.backrenderScene = new RenderPass(this.scenes.back, this.camera);
+    this.EffectComposerPasses['backrenderScene'] = this.backrenderScene;
+
     this.backrenderSSAO = new SSAOPass(this.scenes.back, this.camera, width, height);
     this.backrenderSSAO.enabled = this.settings.backrenderSSAO.enabled;
+    this.EffectComposerPasses['backrenderSSAO'] = this.backrenderSSAO;
+
     // this.volumeScene = new Scene();
     // this.volumeScene.background = null;
     // this.volumeRenderPass = new RenderPass(this.volumeScene, this.camera);
     this.effectFXAA = new ShaderPass(FXAAShader);
     this.effectFXAA.enabled = this.settings.effectFXAA.enabled;
     this.effectFXAA.uniforms['resolution'].value.set(1 / Math.max(width, 1440), 1 / Math.max(height, 900));
+    this.EffectComposerPasses['effectFXAA'] = this.effectFXAA;
 
     this.bloomPass = new UnrealBloomPass(
       new Vector2(width, height),
@@ -543,11 +574,14 @@ export class Neu3D {
       this.settings.bloomPass.radius,
       this.settings.bloomPass.threshold
     );
+    this.bloomPass.enabled = this.settings.bloomPass.enabled;
+    this.EffectComposerPasses['bloomPass'] = this.bloomPass;
+    this.bloomPass.renderToScreen = true;//
 
-    this.bloomPass.renderToScreen = true;
-
-    this.toneMappingPass = new AdaptiveToneMappingPass(true, nextPow2(width));
-    this.toneMappingPass.setMinLuminance(1. - this.settings.toneMappingPass.brightness);
+    this.effectCopy = new ShaderPass(CopyShader);
+    this.effectCopy.renderToScreen = true;
+    // this.toneMappingPass = new AdaptiveToneMappingPass(true, nextPow2(width));
+    // this.toneMappingPass.setMinLuminance(1. - this.settings.toneMappingPass.brightness);
 
     // this.renderer.gammaInput = true;
     // this.renderer.gammaOutput = true;
@@ -558,8 +592,9 @@ export class Neu3D {
     this.composer.addPass(this.backrenderSSAO);
     this.composer.addPass(this.renderScene);
     this.composer.addPass(this.effectFXAA);
-    this.composer.addPass(this.toneMappingPass);
+    // this.composer.addPass(this.toneMappingPass);
     this.composer.addPass(this.bloomPass);
+    this.composer.addPass( this.effectCopy );
     // // this.composer.addPass(this.volumeRenderPass);
     this.composer.setSize(
       width * window.devicePixelRatio,
@@ -611,33 +646,34 @@ export class Neu3D {
 
     lightsHelper.addDirectionalLight({
       intensity: 0.1,
-      position: new Vector3(0, 0, 5000),
+      position: new Vector3(0, 5000, 0),
       key: 'frontDirectional_1'
     });
 
     lightsHelper.addDirectionalLight({
       intensity: 0.55,
-      position: new Vector3(0, 0, 5000),
+      position: new Vector3(0, 5000, 0),
       scene: this.scenes.back,
       key: 'backDirectional_1'
     });
 
     lightsHelper.addDirectionalLight({
       intensity: 0.1,
-      position: new Vector3(0, 0, -5000),
+      position: new Vector3(0, -5000, 0),
       key: 'frontDirectional_2'
     });
 
     lightsHelper.addDirectionalLight({
       intensity: 0.55,
-      position: new Vector3(0, 0, -5000),
+      position: new Vector3(0, -5000, 0),
       scene: this.scenes.back,
       key: 'backDirectional_2'
     });
 
     lightsHelper.addSpotLight({
-      posAngle1: 80,
-      posAngle2: 80,
+      posAngle1: 0,
+      posAngle2: 0,
+      intensity: 2.0,
       key: 'frontSpot_1'
     });
 
@@ -650,8 +686,9 @@ export class Neu3D {
     });
 
     lightsHelper.addSpotLight({
-      posAngle1: -80,
-      posAngle2: 80,
+      posAngle1: 0,
+      posAngle2: 0,
+      intensity: 0.0,
       key: 'frontSpot_2'
     });
 
@@ -787,8 +824,8 @@ export class Neu3D {
     this.removeContainerEventListener();
 
     // delete scenes
-    this.scenes.front.dispose();
-    this.scenes.back.dispose();
+    // this.scenes.front.dispose();
+    // this.scenes.back.dispose();
     delete this.scenes.front;
     delete this.scenes.back;
     delete this.scenes;
@@ -818,8 +855,8 @@ export class Neu3D {
     // this.renderScene = null;
     delete this.effectFXAA;
     // this.effectFXAA = null;
-    this.toneMappingPass.dispose();
-    delete this.toneMappingPass;
+    // this.toneMappingPass.dispose();
+    // delete this.toneMappingPass;
     // this.toneMappingPass = null;
     this.bloomPass.dispose();
     delete this.bloomPass;
@@ -1008,7 +1045,6 @@ export class Neu3D {
         if (Array.isArray(unit.color)) {
           unit.color = new Color(...unit.color);
         }
-
         /* load mesh */
         if (metadata.type === "morphology_json") {
           if (unit.hasOwnProperty('morph_type') && unit.morph_type === 'mesh'){
@@ -1027,8 +1063,14 @@ export class Neu3D {
           if (unit['filetype'] == "json") {
             loader.load(unit.filename, this.loadMeshCallBack(key, unit, metadata.visibility).bind(this));
           } else if (unit['filetype'] == "swc") {
-            loader.load(unit.filename, this.loadSWCCallBack(key, unit, metadata.visibility).bind(this));
-          } else {
+            unit['class'] = 'Neuron';
+            unit['morph_type'] = 'swc'
+            loader.load(unit.filename, this.loadNeuronSkeletonCallBack(key, unit, metadata.visibility).bind(this));
+          } else if (unit['filetype'] == "syn") {
+            unit['class'] = 'Synapse';
+            unit['morph_type'] = 'swc'
+            loader.load(unit.filename, this.loadSynapsesCallBack(key, unit, metadata.visibility).bind(this));
+          }else {
             console.warn(`[Neu3D] mesh object ${key} has unrecognized data format, skipped`);
             continue;
           }
@@ -1036,7 +1078,13 @@ export class Neu3D {
           if (unit['filetype'] == "json") {
             this.loadMeshCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
           } else if (unit['filetype'] == "swc") {
-            this.loadSWCCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
+            unit['class'] = 'Neuron';
+            unit['morph_type'] = 'swc'
+            this.loadNeuronSkeletonCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
+          } else if (unit['filetype'] == "syn") {
+            unit['class'] = 'Synapse';
+            unit['morph_type'] = 'swc'
+            this.loadSynapsesCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
           } else {
             console.warn(`[Neu3D] mesh object ${key} has unrecognized data format, skipped`);
             continue;
@@ -1442,7 +1490,8 @@ export class Neu3D {
       postProcessing: {
         fxaa: this.settings.effectFXAA.enabled,
         ssao: this.settings.backrenderSSAO.enabled,
-        toneMappingMinLum: 1 - this.settings.toneMappingPass.brightness,
+        // toneMappingMinLum: 1 - this.settings.toneMappingPass.brightness,
+        bloom: this.settings.bloomPass.enabled,
         bloomRadius: this.settings.bloomPass.radius,
         bloomThreshold: this.settings.bloomPass.threshold,
         bloomStrength: this.settings.bloomPass.strength
@@ -1451,7 +1500,7 @@ export class Neu3D {
     });
     delete set.effectFXAA;
     delete set.backrenderSSAO;
-    delete set.toneMappingPass;
+    // delete set.toneMappingPass;
     delete set.bloomPass;
     return set;
   }
@@ -1490,7 +1539,7 @@ export class Neu3D {
    */
   onAddMesh(e) {
     if (!e.value['background']) {
-      if (!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
+      if (e.value['class'] === 'Neuron')
         ++this.uiVars.frontNum;
       this.groups.front.add(e.value.object);
     }
@@ -1519,7 +1568,7 @@ export class Neu3D {
       meshobj.children[j].material.dispose();
     }
     if (!e.value['background']) {
-      if (!('morph_type' in e.value) || (e.value['morph_type'] != 'Synapse SWC'))
+      if (e.value['class'] === 'Neuron')
         --this.uiVars.frontNum;
       this.groups.front.remove(meshobj);
     }
@@ -1605,10 +1654,11 @@ export class Neu3D {
       for (const key of list) {
         let val = this.meshDict[key];
         let opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
+        
         let depthTest = true;
         if (val['pinned']) {
           opacity = this.settings.pinOpacity;
-          depthTest = false;
+          depthTest = true;
         }
         for (var i in val.object.children) {
           val.object.children[i].material.opacity = opacity;
@@ -1625,7 +1675,7 @@ export class Neu3D {
       // Either entering pinned mode or pinned mode settings changing
     } else if ((e.prop == 'highlight' && this.states.pinned) ||
       (e.prop == 'pinned' && e.value && this.uiVars.pinnedObjects.size == 1) ||
-      (e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')) {
+      (( (e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')) && this.states.pinned))  {
       for (const key of Object.keys(this.meshDict)) {
         var val = this.meshDict[key];
         if (!val['background']) {
@@ -1655,21 +1705,24 @@ export class Neu3D {
   resetOpacity() {
     for (const key of Object.keys(this.meshDict)) {
       if (!this.meshDict[key]['background']) {
-        if (!('morph_type' in this.meshDict[key]) ||
-          (this.meshDict[key]['morph_type'] != 'Synapse SWC')) {
+        if (this.meshDict[key]['class'] === 'Neuron') {
           for (let i in this.meshDict[key].object.children) {
             if (this.meshDict[key]['opacity'] >= 0.) {
               this.meshDict[key].object.children[i].material.opacity = this.meshDict[key]['opacity'] * this.settings.defaultOpacity;
+              this.meshDict[key].object.children[i].material.depthTest = true;
             } else {
               this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
+              this.meshDict[key].object.children[i].material.depthTest = true;
             }
           }
         } else {
           for (let i in this.meshDict[key].object.children) {
             if (this.meshDict[key]['opacity'] >= 0.) {
               this.meshDict[key].object.children[i].material.opacity = this.meshDict[key]['opacity'] * this.settings.synapseOpacity;
+              this.meshDict[key].object.children[i].material.depthTest = true;
             } else {
               this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
+              this.meshDict[key].object.children[i].material.depthTest = true;
             }
           }
         }
@@ -1677,13 +1730,58 @@ export class Neu3D {
         if (this.meshDict[key]['opacity'] >= 0.) {
           this.meshDict[key].object.children[0].material.opacity = this.meshDict[key]['opacity'] * this.settings.backgroundOpacity;
           this.meshDict[key].object.children[1].material.opacity = this.meshDict[key]['opacity'] * this.settings.backgroundWireframeOpacity;
+          this.meshDict[key].object.children[0].material.depthTest = true;
+          this.meshDict[key].object.children[1].material.depthTest = true;
         } else {
           this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
           this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+          this.meshDict[key].object.children[0].material.depthTest = true;
+          this.meshDict[key].object.children[1].material.depthTest = true;
         }
       }
     }
   }
+
+  /**
+   * Update linewidth
+   * @param {*} e 
+   */
+  updateLinewidth(e) {
+    for (const key of Object.keys(this.meshDict)) {
+      if(this.meshDict[key]['class'] === 'Neuron'){
+        for (var i in this.meshDict[key].object.children) {
+          if (this.meshDict[key].object.children[i].material.type == 'LineMaterial'){
+            this.meshDict[key].object.children[i].material.linewidth = e;
+          }
+        }
+      }
+    }
+  }
+
+  updateSynapseRadius(e) {
+    var matrix = new Matrix4();
+    var new_matrix = new Matrix4();
+    var scale_vec = new Vector3();
+    var overallScale;
+    for (const key of Object.keys(this.meshDict)) {
+      if(this.meshDict[key]['class'] === 'Synapse'){
+          for (var i in this.meshDict[key].object.children) {
+            if ( this.meshDict[key].object.children[i].type === 'Mesh' ){
+              overallScale = this.meshDict[key].object.children[i].overallScale;
+              for(var j = 0; j < this.meshDict[key].object.children[i].count; j++){
+                this.meshDict[key].object.children[i].getMatrixAt(j, matrix);
+                scale_vec.setFromMatrixScale(matrix);
+                new_matrix.makeScale(scale_vec.x/overallScale*e, scale_vec.y/overallScale*e, scale_vec.z/overallScale*e);
+                new_matrix.copyPosition(matrix);
+                this.meshDict[key].object.children[i].setMatrixAt( j, new_matrix );
+              }
+              this.meshDict[key].object.children[i].instanceMatrix.needsUpdate=true;
+              this.meshDict[key].object.children[i].overallScale = e;
+            }
+          }
+        }
+      }
+   }
 
 
   /**
@@ -1800,10 +1898,10 @@ export class Neu3D {
       let meshobj = this.meshDict[id[i]].object;
       for (let j = 0; j < meshobj.children.length; ++j) {
         meshobj.children[j].material.color.set(color);
-        meshobj.children[j].geometry.colorsNeedUpdate = true;
-        for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
-          meshobj.children[j].geometry.colors[k].set(color);
-        }
+        // meshobj.children[j].geometry.colorsNeedUpdate = true;
+        // for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
+        //   meshobj.children[j].geometry.colors[k].set(color);
+        // }
       }
       this.meshDict[id[i]].color = color;
     }
@@ -1823,12 +1921,16 @@ export class Neu3D {
       let meshobj = this.groups.back.children[i];
       for (let j = 0; j < meshobj.children.length; ++j) {
         meshobj.children[j].material.color.set(color);
-        meshobj.children[j].geometry.colorsNeedUpdate = true;
-        for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
-          meshobj.children[j].geometry.colors[k].set(color);
-        }
+        // meshobj.children[j].geometry.colorsNeedUpdate = true;
+        // for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
+        //   meshobj.children[j].geometry.colors[k].set(color);
+        // }
       }
     }
+  }
+
+  setSceneBackgroundColor(color) {
+    this.scenes.back.background.set(color);
   }
 
   /**

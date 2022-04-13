@@ -24,7 +24,7 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
 
   let controlPanel = new dat.GUI(GUIOptions);
   controlPanel.remember(this.settings);
-  controlPanel.remember(this.settings.toneMappingPass);
+  // controlPanel.remember(this.settings.toneMappingPass);
   controlPanel.remember(this.settings.bloomPass);
   controlPanel.remember(this.settings.effectFXAA);
   controlPanel.remember(this.settings.backrenderSSAO);
@@ -66,13 +66,14 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   // add settings
   let f_vis = controlPanel.addFolder('Settings');
   let f0 = f_vis.addFolder('Display Mode');
-  f0.add(this.settings, 'neuron3d').name("Enable 3D Mode");
-  f0.add(this.settings, 'neuron3dMode', [1, 2, 3]);
+  // f0.add(this.settings, 'neuron3d').name("Enable 3D Mode");
+  f0.add(this.settings, 'neuron3dMode', [0, 1, 2, 3, 4, 5]);
   f0.add(this.settings, 'synapseMode');
 
   let f1 = f_vis.addFolder('Visualization');
   f1.add(this.settings, 'meshWireframe').name("Show Wireframe");
   f1.addColor(this.settings, 'backgroundColor').name("Background");
+  f1.addColor(this.settings, 'sceneBackgroundColor').name("Scene");
   let f1_1 = f1.addFolder('Opacity');
 
   f1_1.add(this.settings, 'defaultOpacity', 0.0, 1.0);//.listen();
@@ -87,7 +88,8 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
 
   let f1_2 = f1.addFolder('Advanced');
 
-  f1_2.add(this.settings.toneMappingPass, 'brightness').name("ToneMap Brightness");
+  // f1_2.add(this.settings.toneMappingPass, 'brightness').name("ToneMap Brightness");
+  f1_2.add(this.settings.bloomPass, 'enabled').name("Bloom");
   f1_2.add(this.settings.bloomPass, 'radius', 0.0, 10.0).name("BloomRadius");;
   f1_2.add(this.settings.bloomPass, 'strength', 0.0, 1.0).name("BloomStrength");;
   f1_2.add(this.settings.bloomPass, 'threshold', 0.0, 2.0).name("BloomThreshold");;
@@ -95,6 +97,7 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO");//.listen();
 
   let f2 = f_vis.addFolder('Size');
+  f2.add(this.settings, 'linewidth', 0.0, 5.0);
   f2.add(this.settings, 'defaultRadius', this.settings.minRadius, this.settings.maxRadius);//.listen();
   f2.add(this.settings, 'defaultSomaRadius', this.settings.minSomaRadius, this.settings.maxSomaRadius);//.listen();
   f2.add(this.settings, 'defaultSynapseRadius', this.settings.minSynapseRadius, this.settings.maxSynapseRadius);//.listen();
@@ -121,7 +124,7 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
     'defaultRadius', 'defaultSomaRadius', 'defaultSynapseRadius', 'minRadius', 'maxRadius',
     'minSomaRadius', 'maxSomaRadius', 'minSynapseRadius', 'maxSynapseRadius', 'backgroundColor'
   ]);
-  this.settings.toneMappingPass.on('change', ((e)=>{controlPanel.updateDisplay();}), ['brightness']);
+  // this.settings.toneMappingPass.on('change', ((e)=>{controlPanel.updateDisplay();}), ['brightness']);
   this.settings.bloomPass.on('change', ((e)=>{controlPanel.updateDisplay();}), ['radius', 'strength', 'threshold']);
   this.settings.effectFXAA.on('change', ((e)=>{controlPanel.updateDisplay();}), ['enabled']);
   this.settings.backrenderSSAO.on('change', ((e)=>{controlPanel.updateDisplay();}), ['enabled']);

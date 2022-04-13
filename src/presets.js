@@ -6,23 +6,28 @@ export const datGuiPresets ={
   "remembered": {
     "Low": {
       "0": {
-        "neuron3d": false,
-        "neuron3dMode": "1",
+        "neuron3dMode": "0",
         "synapseMode": true,
         "meshWireframe": true,
         "backgroundColor": "#260226",
         "defaultOpacity": 0.7,
-        "synapseOpacity": 1,
+        "synapseOpacity": 1.0,
         "nonHighlightableOpacity": 0.1,
-        "lowOpacity": 0.1,
+        "lowOpacity": 0.05,
         "pinOpacity": 0.9,
-        "pinLowOpacity": 0.15,
+        "pinLowOpacity": 0.1,
         "highlightedObjectOpacity": 1,
-        "backgroundOpacity": 1,
+        "backgroundOpacity": 0.5,
         "backgroundWireframeOpacity": 0.07,
         "defaultRadius": 0.5,
-        "defaultSomaRadius": 3,
-        "defaultSynapseRadius": 0.2
+        "defaultSomaRadius": 0.5,
+        'minRadius': 0.01,
+        'maxRadius': 10,
+        'maxSomaRadius': 3,
+        'minSomaRadius': 0.5,
+        "defaultSynapseRadius": 0.5,
+        "sceneBackgroundColor": '#030305',
+        "linewidth": 0.75
       },
       "1": {
         "brightness": 0.95
