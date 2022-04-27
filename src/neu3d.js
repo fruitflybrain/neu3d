@@ -1,7 +1,7 @@
 import { PropertyManager } from './propertymanager';
 import { FFBOLightsHelper } from './lightshelper';
 import {
-  Vector2, Raycaster, Matrix4,
+  Vector2, Raycaster,
   Group, WebGLRenderer,
   Scene, Vector3, LoadingManager,
   PerspectiveCamera, Color, FileLoader, GammaEncoding
@@ -19,6 +19,8 @@ import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader';
 import { CopyShader } from 'three/examples/jsm/shaders/CopyShader'
 // add FontAwesome
 import '@fortawesome/fontawesome-free/js/all.js';
+
+import { NeuronSkeleton, Synapses, MeshObj } from './swc_helper';
 
 const STATS = require('../etc/stats');
 // const Detector = require("three/examples/js/WEBGL");
@@ -272,6 +274,9 @@ export class Neu3D {
     this.settings.on("change", ((e) => {
       this.updateLinewidth(e.value);
     }), "linewidth");
+    this.settings.on("change", ((e) => {
+      this.recreateNeurons(e.value);
+    }), "neuron3dMode");
 
     this.settings.on("change", ((e) => {
       this.updateSynapseRadius(e.value);
@@ -740,16 +745,13 @@ export class Neu3D {
       if (this.meshDict[key]['pinned']) {
         this.meshDict[key]['pinned'] = false;
       }
-      let meshobj = this.meshDict[key].object;
-      for (let i = 0; i < meshobj.children.length; i++) {
-        meshobj.children[i].geometry.dispose();
-        meshobj.children[i].material.dispose();
-      }
+      let meshobj = this.meshDict[key].renderObj;
+      meshobj.dispose();
       --this.uiVars.meshNum;
       if (this.meshDict[key].background) {
-        this.groups.back.remove(meshobj);
+        this.groups.back.remove(meshobj.threeObj);
       } else {
-        this.groups.front.remove(meshobj);
+        this.groups.front.remove(meshobj.threeObj);
       }
       meshobj = null;
       delete this.meshDict[key];
@@ -1048,9 +1050,20 @@ export class Neu3D {
         /* load mesh */
         if (metadata.type === "morphology_json") {
           if (unit.hasOwnProperty('morph_type') && unit.morph_type === 'mesh'){
-            this.loadMeshCallBack(key, unit, metadata.visibility).bind(this)();
+            this.loadMeshCallBack(key, unit, metadata.visibility).bind(this)(unit);
+            delete unit['vertices'];
+            delete unit['faces'];
           } else {
-            this.loadMorphJSONCallBack(key, unit, metadata.visibility).bind(this)();
+            this.loadMorphJSONCallBack(key, unit, metadata.visibility).bind(this)(unit);
+            if (unit['morph_type'] === 'swc') {
+              delete unit['identifier'];
+              delete unit['x'];
+              delete unit['y'];
+              delete unit['z'];
+              delete unit['r'];
+              delete unit['parent'];
+              delete unit['sample'];
+            }
           }
         } else if (metadata.type === "obj") {
           this.loadObjCallBack(key, unit, metadata.visibility).bind(this)();
@@ -1110,18 +1123,18 @@ export class Neu3D {
         continue;
       if (this.meshDict[key].visibility) {
         updated = true;
-        if (this.meshDict[key].boundingBox.minX < this.visibleBoundingBox.minX)
-          this.visibleBoundingBox.minX = this.meshDict[key].boundingBox.minX;
-        if (this.meshDict[key].boundingBox.maxX > this.visibleBoundingBox.maxX)
-          this.visibleBoundingBox.maxX = this.meshDict[key].boundingBox.maxX;
-        if (this.meshDict[key].boundingBox.minY < this.visibleBoundingBox.minY)
-          this.visibleBoundingBox.minY = this.meshDict[key].boundingBox.minY;
-        if (this.meshDict[key].boundingBox.maxY > this.visibleBoundingBox.maxY)
-          this.visibleBoundingBox.maxY = this.meshDict[key].boundingBox.maxY;
-        if (this.meshDict[key].boundingBox.maxZ < this.visibleBoundingBox.minZ)
-          this.visibleBoundingBox.minZ = this.meshDict[key].boundingBox.minZ;
-        if (this.meshDict[key].boundingBox.maxZ > this.visibleBoundingBox.maxZ)
-          this.visibleBoundingBox.maxZ = this.meshDict[key].boundingBox.maxZ;
+        if (this.meshDict[key].renderObj.boundingBox.minX < this.visibleBoundingBox.minX)
+          this.visibleBoundingBox.minX = this.meshDict[key].renderObj.boundingBox.minX;
+        if (this.meshDict[key].renderObj.boundingBox.maxX > this.visibleBoundingBox.maxX)
+          this.visibleBoundingBox.maxX = this.meshDict[key].renderObj.boundingBox.maxX;
+        if (this.meshDict[key].renderObj.boundingBox.minY < this.visibleBoundingBox.minY)
+          this.visibleBoundingBox.minY = this.meshDict[key].renderObj.boundingBox.minY;
+        if (this.meshDict[key].renderObj.boundingBox.maxY > this.visibleBoundingBox.maxY)
+          this.visibleBoundingBox.maxY = this.meshDict[key].renderObj.boundingBox.maxY;
+        if (this.meshDict[key].renderObj.boundingBox.maxZ < this.visibleBoundingBox.minZ)
+          this.visibleBoundingBox.minZ = this.meshDict[key].renderObj.boundingBox.minZ;
+        if (this.meshDict[key].renderObj.boundingBox.maxZ > this.visibleBoundingBox.maxZ)
+          this.visibleBoundingBox.maxZ = this.meshDict[key].renderObj.boundingBox.maxZ;
       }
     }
     if (!updated)
@@ -1135,28 +1148,45 @@ export class Neu3D {
    * @param {*} y 
    * @param {*} z 
    */
-  updateObjectBoundingBox(obj, x, y, z) {
-    if (x < obj.boundingBox.minX)
-      obj.boundingBox.minX = x;
-    if (x > obj.boundingBox.maxX)
-      obj.boundingBox.maxX = x;
-    if (y < obj.boundingBox.minY)
-      obj.boundingBox.minY = y;
-    if (y > obj.boundingBox.maxY)
-      obj.boundingBox.maxY = y;
-    if (z < obj.boundingBox.minZ)
-      obj.boundingBox.minZ = z;
-    if (z > obj.boundingBox.maxZ)
-      obj.boundingBox.maxZ = z;
-  }
+  // updateObjectBoundingBox(obj, x, y, z) {
+  //   if (x < obj.boundingBox.minX)
+  //     obj.boundingBox.minX = x;
+  //   if (x > obj.boundingBox.maxX)
+  //     obj.boundingBox.maxX = x;
+  //   if (y < obj.boundingBox.minY)
+  //     obj.boundingBox.minY = y;
+  //   if (y > obj.boundingBox.maxY)
+  //     obj.boundingBox.maxY = y;
+  //   if (z < obj.boundingBox.minZ)
+  //     obj.boundingBox.minZ = z;
+  //   if (z > obj.boundingBox.maxZ)
+  //     obj.boundingBox.maxZ = z;
+  // }
 
   /** TODO: Add comment
    * @param {*} x 
    * @param {*} y 
    * @param {*} z 
    */
-  updateBoundingBox(x, y, z) {
-    this.updateObjectBoundingBox(this, x, y, z)
+  updateBoundingBox(boundingBox) {
+    if (boundingBox.minX < this.boundingBox.minX) {
+      this.boundingBox.minX = boundingBox.minX;
+    }
+    if (boundingBox.minY < this.boundingBox.minY) {
+      this.boundingBox.minY = boundingBox.minY;
+    }
+    if (boundingBox.minZ < this.boundingBox.minZ) {
+      this.boundingBox.minZ = boundingBox.minZ;
+    }
+    if (boundingBox.maxX > this.boundingBox.maxX) {
+      this.boundingBox.maxX = boundingBox.maxX;
+    }
+    if (boundingBox.maxY > this.boundingBox.maxY) {
+      this.boundingBox.maxY = boundingBox.maxY;
+    }
+    if (boundingBox.maxZ > this.boundingBox.maxZ) {
+      this.boundingBox.maxZ = boundingBox.maxZ;
+    }
   }
 
   animate() {
@@ -1365,10 +1395,10 @@ export class Neu3D {
     } else {
       if (this.settings.meshOscAmp && this.settings.meshOscAmp > 0) {
         for (let key in this.meshDict) {
-          if (this.meshDict[key].object !== undefined) {
+          if (this.meshDict[key].renderObj.threeObj !== undefined) {
             let x = new Date().getTime();
             if (this.meshDict[key]['background']) {
-              let obj = this.meshDict[key].object.children;
+              let obj = this.meshDict[key].renderObj.threeObj.children;
               if (this.meshDict[key]['opacity'] >= 0.00) {
                 obj[0].material.opacity = this.meshDict[key]['opacity'] * (this.settings.backgroundOpacity + 0.5 * this.settings.meshOscAmp * (1 + Math.sin(x * .0005)));
               } else {
@@ -1436,6 +1466,7 @@ export class Neu3D {
   showFrontAll() {
     for (let val of this.groups.front.children) {
       this.meshDict[val.rid].visibility = true;
+      this.meshDict[val.rid].renderObj.updateVisibility(true);
     }
   }
 
@@ -1443,6 +1474,7 @@ export class Neu3D {
   hideFrontAll() {
     for (let val of this.groups.front.children) {
       this.meshDict[val.rid].visibility = false;
+      this.meshDict[val.rid].renderObj.updateVisibility(false);
     }
   }
 
@@ -1450,6 +1482,7 @@ export class Neu3D {
   showBackAll() {
     for (let val of this.groups.back.children) {
       this.meshDict[val.rid].visibility = true;
+      this.meshDict[val.rid].renderObj.updateVisibility(true);
     }
   }
 
@@ -1457,6 +1490,7 @@ export class Neu3D {
   hideBackAll() {
     for (let val of this.groups.back.children) {
       this.meshDict[val.rid].visibility = false;
+      this.meshDict[val.rid].renderObj.updateVisibility(false);
     }
   }
 
@@ -1464,6 +1498,7 @@ export class Neu3D {
   showAll() {
     for (let key in this.meshDict) {
       this.meshDict[key].visibility = true;
+      this.meshDict[key].renderObj.updateVisibility(true);
     }
   }
 
@@ -1472,6 +1507,7 @@ export class Neu3D {
     for (let key in this.meshDict) {
       if (!this.meshDict[key]['pinned']) {
         this.meshDict[key].visibility = false;
+        this.meshDict[key].renderObj.updateVisibility(false);
       }
     }
   }
@@ -1516,6 +1552,7 @@ export class Neu3D {
         continue;
       }
       this.meshDict[id[i]].visibility = true;
+      this.meshDict[id[i]].renderObj.updateVisibility(true);
     }
   }
 
@@ -1530,6 +1567,7 @@ export class Neu3D {
         continue;
       }
       this.meshDict[id[i]].visibility = false;
+      this.meshDict[id[i]].renderObj.updateVisibility(false);
     }
   }
 
@@ -1541,10 +1579,10 @@ export class Neu3D {
     if (!e.value['background']) {
       if (e.value['class'] === 'Neuron')
         ++this.uiVars.frontNum;
-      this.groups.front.add(e.value.object);
+      this.groups.front.add(e.value.renderObj.threeObj);
     }
     else {
-      this.groups.back.add(e.value.object);
+      this.groups.back.add(e.value.renderObj.threeObj);
       ++this.uiVars.backNum;
     }
     ++this.uiVars.meshNum;
@@ -1562,18 +1600,15 @@ export class Neu3D {
       this.states.highlight = false;
     if (e.value['pinned'])
       e.value['pinned'] = false;
-    let meshobj = e.value.object;
-    for (let j = 0; j < meshobj.children.length; ++j) {
-      meshobj.children[j].geometry.dispose();
-      meshobj.children[j].material.dispose();
-    }
+    let meshobj = e.value.renderObj;
+    meshobj.dispose();
     if (!e.value['background']) {
       if (e.value['class'] === 'Neuron')
         --this.uiVars.frontNum;
-      this.groups.front.remove(meshobj);
+      this.groups.front.remove(meshobj.threeObj);
     }
     else {
-      this.groups.back.remove(meshobj);
+      this.groups.back.remove(meshobj.threeObj);
       --this.uiVars.backNum;
     }
     --this.uiVars.meshNum;
@@ -1588,6 +1623,7 @@ export class Neu3D {
   toggleVis(key) {
     if (key in this.meshDict)
       this.meshDict[key].visibility = !this.meshDict[key].visibility;
+      this.meshDict[key].renderObj.toggleVis();
   }
 
   /** Change visibility of the neuron
@@ -1595,7 +1631,8 @@ export class Neu3D {
    * @param {*} key 
    */
   onUpdateVisibility(key) {
-    this.meshDict[key]['object'].visible = this.meshDict[key].visibility;
+    // this.meshDict[key]['object'].visible = this.meshDict[key].visibility;
+    // this.meshDict[key].updateVisibility();
   }
 
   /** Highlight a  neuron
@@ -1634,13 +1671,13 @@ export class Neu3D {
    */
   onUpdateHighlight(e) {
     if (e.old_value) {
-      this.meshDict[e.old_value]['object']['visible'] = this.meshDict[e.old_value]['visibility'];
+      this.meshDict[e.old_value]['renderObj']['threeObj']['visible'] = this.meshDict[e.old_value]['visibility'];
     }
     if (e.value === false) {
       this.renderer.domElement.style.cursor = "auto";
     } else {
       this.renderer.domElement.style.cursor = "pointer";
-      this.meshDict[e.value]['object']['visible'] = true;
+      this.meshDict[e.value]['renderObj']['threeObj']['visible'] = true;
     }
   }
 
@@ -1660,16 +1697,12 @@ export class Neu3D {
           opacity = this.settings.pinOpacity;
           depthTest = true;
         }
-        for (var i in val.object.children) {
-          val.object.children[i].material.opacity = opacity;
-          val.object.children[i].material.depthTest = depthTest;
-        }
+        val.renderObj.updateOpacity(opacity);
+        val.renderObj.updateDepthTest(depthTest);
       }
       let val = this.meshDict[this.states.highlight];
-      for (let i in val.object.children) {
-        val.object.children[i].material.opacity = this.settings.highlightedObjectOpacity;
-        val.object.children[i].material.depthTest = false;
-      }
+      val.renderObj.updateOpacity(this.settings.highlightedObjectOpacity);
+      val.renderObj.updateDepthTest(false);
     } else if (this.states.highlight) {
       return;
       // Either entering pinned mode or pinned mode settings changing
@@ -1681,20 +1714,20 @@ export class Neu3D {
         if (!val['background']) {
           var opacity = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
           var depthTest = !this.meshDict[key]['pinned'];
-          for (var i in val.object.children) {
-            val.object.children[i].material.opacity = opacity;
-            val.object.children[i].material.depthTest = depthTest;
-          }
+          val.renderObj.updateOpacity(opacity);
+          val.renderObj.updateDepthTest(depthTest);
         } else {
-          val.object.children[0].material.opacity = this.settings.backgroundOpacity;
-          val.object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
+          val.renderObj.updateBackgroundOpacity(this.settings.backgroundOpacity, this.settings.backgroundWireframeOpacity);
         }
       }
     } else if (e.prop == 'pinned' && this.states.pinned) {// New object being pinned while already in pinned mode
-      for (var i in e.obj.object.children) {
-        e.obj.object.children[i].material.opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
-        e.obj.object.children[i].material.depthTest = !e.value;
-      }
+      // for (var i in e.obj.renderObj.children) {
+      //   e.obj.renderObj.children[i].material.opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+      //   e.obj.renderObj.children[i].material.depthTest = !e.value;
+      // }
+      var opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+      e.obj.renderObj.updateOpacity(opacity);
+      e.obj.renderObj.updateDepthTest(!e.value);
     } else if (!this.states.pinned || e.prop == 'highlight') { // Default opacity value change in upinned mode or exiting highlight mode
       this.resetOpacity();
     }
@@ -1704,40 +1737,19 @@ export class Neu3D {
   /** Reset Opacity of all objects in workspace */
   resetOpacity() {
     for (const key of Object.keys(this.meshDict)) {
-      if (!this.meshDict[key]['background']) {
-        if (this.meshDict[key]['class'] === 'Neuron') {
-          for (let i in this.meshDict[key].object.children) {
-            if (this.meshDict[key]['opacity'] >= 0.) {
-              this.meshDict[key].object.children[i].material.opacity = this.meshDict[key]['opacity'] * this.settings.defaultOpacity;
-              this.meshDict[key].object.children[i].material.depthTest = true;
-            } else {
-              this.meshDict[key].object.children[i].material.opacity = this.settings.defaultOpacity;
-              this.meshDict[key].object.children[i].material.depthTest = true;
-            }
-          }
+      var val = this.meshDict[key];
+      if (!val.background) {
+        if (val.class === 'Neuron') {
+          val.renderObj.updateOpacity(this.settings.defaultOpacity);
+          val.renderObj.updateDepthTest(true);
         } else {
-          for (let i in this.meshDict[key].object.children) {
-            if (this.meshDict[key]['opacity'] >= 0.) {
-              this.meshDict[key].object.children[i].material.opacity = this.meshDict[key]['opacity'] * this.settings.synapseOpacity;
-              this.meshDict[key].object.children[i].material.depthTest = true;
-            } else {
-              this.meshDict[key].object.children[i].material.opacity = this.settings.synapseOpacity;
-              this.meshDict[key].object.children[i].material.depthTest = true;
-            }
-          }
+          val.renderObj.updateOpacity(this.settings.synapseOpacity);
+          val.renderObj.updateDepthTest(true);
         }
       } else {
-        if (this.meshDict[key]['opacity'] >= 0.) {
-          this.meshDict[key].object.children[0].material.opacity = this.meshDict[key]['opacity'] * this.settings.backgroundOpacity;
-          this.meshDict[key].object.children[1].material.opacity = this.meshDict[key]['opacity'] * this.settings.backgroundWireframeOpacity;
-          this.meshDict[key].object.children[0].material.depthTest = true;
-          this.meshDict[key].object.children[1].material.depthTest = true;
-        } else {
-          this.meshDict[key].object.children[0].material.opacity = this.settings.backgroundOpacity;
-          this.meshDict[key].object.children[1].material.opacity = this.settings.backgroundWireframeOpacity;
-          this.meshDict[key].object.children[0].material.depthTest = true;
-          this.meshDict[key].object.children[1].material.depthTest = true;
-        }
+        val.renderObj.updateBackgroundOpacity(this.settings.backgroundOpacity,
+          this.settings.background);
+        val.renderObj.updateDepthTest(true);
       }
     }
   }
@@ -1748,40 +1760,36 @@ export class Neu3D {
    */
   updateLinewidth(e) {
     for (const key of Object.keys(this.meshDict)) {
-      if(this.meshDict[key]['class'] === 'Neuron'){
-        for (var i in this.meshDict[key].object.children) {
-          if (this.meshDict[key].object.children[i].material.type == 'LineMaterial'){
-            this.meshDict[key].object.children[i].material.linewidth = e;
-          }
+      if(this.meshDict[key].renderObj instanceof NeuronSkeleton){
+        this.meshDict[key].renderObj.updateLinewidth(e);
+      }
+    }
+  }
+
+  recreateNeurons(mode) {
+    for (const key of Object.keys(this.meshDict)) {
+      if(this.meshDict[key].renderObj instanceof NeuronSkeleton){
+        if (mode != this.meshDict[key].renderObj.mode) {
+          var object = this.meshDict[key].renderObj;
+          object.dispose();
+          this.groups.front.remove(object.threeObj);
+          object.createObject(object.color, object.background, this.settings, this.renderer.getSize(new Vector2()));
+          object.registerProperties(key);
+          this.updateBoundingBox(object.boundingBox);
+          this.groups.front.add(object.threeObj);
         }
+        
       }
     }
   }
 
   updateSynapseRadius(e) {
-    var matrix = new Matrix4();
-    var new_matrix = new Matrix4();
-    var scale_vec = new Vector3();
-    var overallScale;
     for (const key of Object.keys(this.meshDict)) {
-      if(this.meshDict[key]['class'] === 'Synapse'){
-          for (var i in this.meshDict[key].object.children) {
-            if ( this.meshDict[key].object.children[i].type === 'Mesh' ){
-              overallScale = this.meshDict[key].object.children[i].overallScale;
-              for(var j = 0; j < this.meshDict[key].object.children[i].count; j++){
-                this.meshDict[key].object.children[i].getMatrixAt(j, matrix);
-                scale_vec.setFromMatrixScale(matrix);
-                new_matrix.makeScale(scale_vec.x/overallScale*e, scale_vec.y/overallScale*e, scale_vec.z/overallScale*e);
-                new_matrix.copyPosition(matrix);
-                this.meshDict[key].object.children[i].setMatrixAt( j, new_matrix );
-              }
-              this.meshDict[key].object.children[i].instanceMatrix.needsUpdate=true;
-              this.meshDict[key].object.children[i].overallScale = e;
-            }
-          }
-        }
+      if(this.meshDict[key].renderObj instanceof Synapses){
+        this.meshDict[key].renderObj.updateRadius(e);
       }
-   }
+    }
+  }
 
 
   /**
@@ -1895,14 +1903,15 @@ export class Neu3D {
       if (!(id[i] in this.meshDict)) {
         continue;
       }
-      let meshobj = this.meshDict[id[i]].object;
-      for (let j = 0; j < meshobj.children.length; ++j) {
-        meshobj.children[j].material.color.set(color);
-        // meshobj.children[j].geometry.colorsNeedUpdate = true;
-        // for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
-        //   meshobj.children[j].geometry.colors[k].set(color);
-        // }
-      }
+      let meshobj = this.meshDict[id[i]].renderObj;
+      meshobj.setColor(color);
+      // for (let j = 0; j < meshobj.children.length; ++j) {
+      //   meshobj.children[j].material.color.set(color);
+      //   // meshobj.children[j].geometry.colorsNeedUpdate = true;
+      //   // for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
+      //   //   meshobj.children[j].geometry.colors[k].set(color);
+      //   // }
+      // }
       this.meshDict[id[i]].color = color;
     }
   }

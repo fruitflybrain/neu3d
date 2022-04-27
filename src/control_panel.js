@@ -67,7 +67,7 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   let f_vis = controlPanel.addFolder('Settings');
   let f0 = f_vis.addFolder('Display Mode');
   // f0.add(this.settings, 'neuron3d').name("Enable 3D Mode");
-  f0.add(this.settings, 'neuron3dMode', [0, 1, 2, 3, 4, 5]);
+  f0.add(this.settings, 'neuron3dMode', [0, 1, 2, 3, 4, 5, 6]);
   f0.add(this.settings, 'synapseMode');
 
   let f1 = f_vis.addFolder('Visualization');

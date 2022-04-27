@@ -61,7 +61,7 @@ Neu3D.prototype.export_state = function() {
   state_metadata['pinned'] = Array.from(this.uiVars.pinnedObjects);
   for (let key in this.meshDict) {
     if (this.meshDict.hasOwnProperty(key)) {
-      state_metadata['color'][key] = this.meshDict[key].object.children[0].material.color.toArray();
+      state_metadata['color'][key] = this.meshDict[key].object.object.children[0].material.color.toArray();
       state_metadata['visibility'][key] = this.meshDict[key].visibility;
     }
   }
@@ -98,7 +98,7 @@ Neu3D.prototype.import_state = function(state_metadata) {
     if (this.meshDict[key].background){
       continue;
     } 
-    let meshobj = this.meshDict[key].object;
+    let meshobj = this.meshDict[key].object.object;
     let color = state_metadata['color'][key];
     for (let j = 0; j < meshobj.children.length; ++j) {
       meshobj.children[j].material.color.fromArray(color);
