@@ -1106,6 +1106,15 @@ export class Neu3D {
           console.warn(`[Neu3D] mesh object ${key} has neither dataStr nor filename, skipped`);
           continue;
         }
+        delete unit['radius_scale'];
+        delete unit['x_scale'];
+        delete unit['y_scale'];
+        delete unit['z_scale'];
+        delete unit['x_shift'];
+        delete unit['y_shift'];
+        delete unit['z_shift'];
+        delete unit['xy_rot'];
+        delete unit['yz_rot'];
       }
       resolve();
     });
@@ -1671,13 +1680,13 @@ export class Neu3D {
    */
   onUpdateHighlight(e) {
     if (e.old_value) {
-      this.meshDict[e.old_value]['renderObj']['threeObj']['visible'] = this.meshDict[e.old_value]['visibility'];
+      this.meshDict[e.old_value].renderObj.updateVisibility(this.meshDict[e.old_value].visibility);
     }
     if (e.value === false) {
       this.renderer.domElement.style.cursor = "auto";
     } else {
       this.renderer.domElement.style.cursor = "pointer";
-      this.meshDict[e.value]['renderObj']['threeObj']['visible'] = true;
+      this.meshDict[e.value].renderObj.updateVisibility(true);
     }
   }
 

@@ -313,7 +313,6 @@ export class MeshObj extends RenderObj{
         object.children[1].visible = false;
         }
         this.threeObj = object;
-        return object;
     }
 
     /**
@@ -747,7 +746,6 @@ export class NeuronSkeleton extends RenderObj{
             }
         }
         this.threeObj = object;
-        return object;
     };
 
     /**
