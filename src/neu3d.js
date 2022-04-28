@@ -20,7 +20,7 @@ import { CopyShader } from 'three/examples/jsm/shaders/CopyShader'
 // add FontAwesome
 import '@fortawesome/fontawesome-free/js/all.js';
 
-import { NeuronSkeleton, Synapses, MeshObj } from './swc_helper';
+import { NeuronSkeleton, Synapses, MeshObj } from './render';
 
 const STATS = require('../etc/stats');
 // const Detector = require("three/examples/js/WEBGL");

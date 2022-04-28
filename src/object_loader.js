@@ -6,7 +6,7 @@ import {
 
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
 
-import { NeuronSkeleton, Synapses, MeshObj } from './swc_helper';
+import { NeuronSkeleton, Synapses, MeshObj } from './render';
 
 /** Clip value in between min/max
  *
