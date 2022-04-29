@@ -61,7 +61,7 @@ Neu3D.prototype.export_state = function() {
   state_metadata['pinned'] = Array.from(this.uiVars.pinnedObjects);
   for (let key in this.meshDict) {
     if (this.meshDict.hasOwnProperty(key)) {
-      state_metadata['color'][key] = this.meshDict[key].object.object.children[0].material.color.toArray();
+      state_metadata['color'][key] = this.meshDict[key].color.toArray();
       state_metadata['visibility'][key] = this.meshDict[key].visibility;
     }
   }
