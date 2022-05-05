@@ -68,7 +68,6 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   let f0 = f_vis.addFolder('Display Mode');
   // f0.add(this.settings, 'neuron3d').name("Enable 3D Mode");
   f0.add(this.settings, 'neuron3dMode', [0, 1, 2, 3, 4, 5, 6]);
-  f0.add(this.settings, 'synapseMode');
 
   let f1 = f_vis.addFolder('Visualization');
   f1.add(this.settings, 'meshWireframe').name("Show Wireframe");
@@ -99,17 +98,18 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
 
   let f2 = f_vis.addFolder('Size');
   f2.add(this.settings, 'defaultRadius', this.settings.minRadius, this.settings.maxRadius);//.listen();
-  f2.add(this.settings, 'defaultSomaRadius', this.settings.minSomaRadius, this.settings.maxSomaRadius);//.listen();
-  f2.add(this.settings, 'defaultSynapseRadius', this.settings.minSynapseRadius, this.settings.maxSynapseRadius);//.listen();
-
   let ctl_minR = f2.add(this.settings, 'minRadius', 0);//.listen();
   ctl_minR.onChange((value) => { value = Math.min(value, this.settings.maxRadius); })
   let ctl_maxR = f2.add(this.settings, 'maxRadius', 0);//.listen();
+
+  f2.add(this.settings, 'defaultSomaRadius', this.settings.minSomaRadius, this.settings.maxSomaRadius);//.listen();
   ctl_maxR.onChange((value) => { value = Math.max(value, this.settings.minRadius); })
   let ctl_minSomaR = f2.add(this.settings, 'minSomaRadius', 0);//.listen();
   ctl_minSomaR.onChange((value) => { value = Math.min(value, this.settings.maxSomaRadius); })
   let ctl_maxSomaR = f2.add(this.settings, 'maxSomaRadius', 0);//.listen();
   ctl_maxSomaR.onChange((value) => { value = Math.max(value, this.settings.minSomaRadius); })
+
+  f2.add(this.settings, 'defaultSynapseRadius', this.settings.minSynapseRadius, this.settings.maxSynapseRadius);//.listen();
   let ctl_minSynR = f2.add(this.settings, 'minSynapseRadius', 0);//.listen();
   ctl_minSynR.onChange((value) => { value = Math.min(value, this.settings.maxSynapseRadius); })
   let ctl_maxSynR = f2.add(this.settings, 'maxSynapseRadius', 0);//.listen();
@@ -118,7 +118,7 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   this.settings.on("change", ((e) => {
     controlPanel.updateDisplay();
   }), [
-    'neuron3d', 'neuron3dMode', 'synapseMode', 'meshWireframe', 'defaultOpacity',
+    'neuron3dMode', 'meshWireframe', 'defaultOpacity',
     'synapseOpacity', 'nonHighlightableOpacity', 'lowOpacity', 'pinOpacity', 'pinLowOpacity',
     'highlightedObjectOpacity', 'backgroundOpacity', 'backgroundWireframeOpacity',
     'defaultRadius', 'defaultSomaRadius', 'defaultSynapseRadius', 'minRadius', 'maxRadius',

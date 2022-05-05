@@ -142,7 +142,6 @@ export class Neu3D {
       backgroundOpacity: 0.5, // opacity of items in the background.
       backgroundWireframeOpacity: 0.07, // opacity of all wireframes, whether in background or not.
       neuron3dMode: 0,
-      synapseMode: true,
       meshWireframe: true,
       backgroundColor: new Color("#260226"),
       sceneBackgroundColor: new Color('#030305'),

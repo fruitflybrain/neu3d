@@ -8,7 +8,6 @@ export const datGuiPresets ={
     "Low": {
       "0": {
         "neuron3dMode": "0",
-        "synapseMode": true,
         "meshWireframe": true,
         "backgroundColor": "#260226",
         "defaultOpacity": 0.7,
@@ -48,7 +47,6 @@ export const datGuiPresets ={
       "0": {
         "neuron3d": true,
         "neuron3dMode": "3",
-        "synapseMode": true,
         "meshWireframe": true,
         "backgroundColor": "#260226",
         "defaultOpacity": 0.7,
@@ -83,7 +81,6 @@ export const datGuiPresets ={
       "0": {
         "neuron3d": true,
         "neuron3dMode": "2",
-        "synapseMode": true,
         "meshWireframe": true,
         "backgroundColor": "#260226",
         "defaultOpacity": 0.7,
