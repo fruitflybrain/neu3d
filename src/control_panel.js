@@ -76,15 +76,16 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   f1.addColor(this.settings, 'sceneBackgroundColor').name("Scene");
   let f1_1 = f1.addFolder('Opacity');
 
-  f1_1.add(this.settings, 'defaultOpacity', 0.0, 1.0);//.listen();
-  f1_1.add(this.settings, 'synapseOpacity', 0.0, 1.0);//.listen();
-  f1_1.add(this.settings, 'nonHighlightableOpacity', 0.0, 1.0);//.listen();
-  f1_1.add(this.settings, 'lowOpacity', 0.0, 1.0);//.listen();
-  f1_1.add(this.settings, 'pinOpacity', 0.0, 1.0);//.listen();
-  f1_1.add(this.settings, 'pinLowOpacity', 0.0, 1.0);//.listen();
-  f1_1.add(this.settings, 'highlightedObjectOpacity', 0.0, 1.0);//.listen();
-  f1_1.add(this.settings, 'backgroundOpacity', 0.0, 1.0);//.listen();
-  f1_1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0);//.listen();
+  f1_1.add(this.settings, 'defaultOpacity', 0.0, 1.0).name('Default');//.listen();
+  f1_1.add(this.settings, 'synapseOpacity', 0.0, 1.0).name('Synapse');//.listen();
+  f1_1.add(this.settings, 'backgroundOpacity', 0.0, 1.0).name("BG Opacity");//.listen();
+  f1_1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0).name("Wireframe Opacity");//.listen();
+  f1_1.add(this.settings, 'highlightedObjectOpacity', 0.0, 1.0).name('Highlighted');//.listen();
+  f1_1.add(this.settings, 'lowOpacity', 0.0, 1.0).name('Low in Highlight');//.listen();
+  f1_1.add(this.settings, 'nonHighlightableOpacity', 0.0, 1.0).name('Non-Highlightable');//.listen();
+  f1_1.add(this.settings, 'pinOpacity', 0.0, 1.0).name('Pinned');//.listen();
+  f1_1.add(this.settings, 'pinLowOpacity', 0.0, 1.0).name('Low in Pinned');//.listen();
+  
 
   let f1_2 = f1.addFolder('Advanced');
 
