@@ -1729,6 +1729,13 @@ export class Neu3D {
       e.obj.renderObj.updateDepthTest(!e.value);
     } else if (!this.states.pinned || e.prop == 'highlight') { // Default opacity value change in upinned mode or exiting highlight mode
       this.resetOpacity();
+    } else if (this.states.pinned && (e.prop == 'backgroundOpacity' || e.prop == 'backgroundWireframeOpacity')) {
+      for (const key of Object.keys(this.meshDict)) {
+        var val = this.meshDict[key];
+        if (val['background']) {
+          val.renderObj.updateBackgroundOpacity(this.settings.backgroundOpacity, this.settings.backgroundWireframeOpacity);
+        }
+      }
     }
   }
 
