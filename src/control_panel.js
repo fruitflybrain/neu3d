@@ -86,16 +86,24 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   f1.addColor(this.settings, 'sceneBackgroundColor').name("Scene");
   let f1_1 = f1.addFolder('Opacity');
 
-  f1_1.add(this.settings, 'defaultOpacity', 0.0, 1.0).name('Default');
-  f1_1.add(this.settings, 'synapseOpacity', 0.0, 1.0).name('Synapse');
-  f1_1.add(this.settings, 'backgroundOpacity', 0.0, 1.0).name("BG Opacity");
-  f1_1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0).name("Wireframe Opacity");
-  f1_1.add(this.settings, 'highlightedObjectOpacity', 0.0, 1.0).name('Highlighted');
-  f1_1.add(this.settings, 'lowOpacity', 0.0, 1.0).name('Low in Highlight');
-  f1_1.add(this.settings, 'nonHighlightableOpacity', 0.0, 1.0).name('NonHighlightable');
-  f1_1.add(this.settings, 'pinOpacity', 0.0, 1.0).name('Pinned');
-  f1_1.add(this.settings, 'pinLowOpacity', 0.0, 1.0).name('Low in Pinned');
+  let f1_1_1 = f1_1.addFolder('Normal Mode');
+  f1_1_1.add(this.settings, 'defaultOpacity', 0.0, 1.0).name('Default');
+  f1_1_1.add(this.settings, 'synapseOpacity', 0.0, 1.0).name('Synapse');
+  f1_1_1.add(this.settings, 'backgroundOpacity', 0.0, 1.0).name("BG Opacity");
+  f1_1_1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0).name("Wireframe Opacity");
 
+  let f1_1_2 = f1_1.addFolder('Highlight Mode');
+  f1_1_2.add(this.settings, 'highlightedObjectOpacity', 0.0, 1.0).name('Highlighted');
+  f1_1_2.add(this.settings, 'lowOpacity', 0.0, 1.0).name('Low in Highlight');
+  f1_1_2.add(this.settings, 'nonHighlightableOpacity', 0.0, 1.0).name('NonHighlightable');
+
+  let f1_1_3 = f1_1.addFolder('Pinned Mode');
+  f1_1_3.add(this.settings, 'pinOpacity', 0.0, 1.0).name('Pinned');
+  f1_1_3.add(this.settings, 'pinLowOpacity', 0.0, 1.0).name('Low in Pinned');
+  f1_1_1.closed = false;
+  f1_1_2.closed = false;
+  f1_1_3.closed = false;
+  
 
   let f1_2 = f1.addFolder('Advanced');
 
@@ -108,23 +116,30 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO");
 
   let f2 = f_vis.addFolder('Size');
-  f2.add(this.settings, 'defaultRadius', this.settings.minRadius, this.settings.maxRadius);
-  let ctl_minR = f2.add(this.settings, 'minRadius', 0);
+  let f2_1 = f2.addFolder('Neurite');
+  f2_1.add(this.settings, 'defaultRadius', this.settings.minRadius, this.settings.maxRadius);
+  let ctl_minR = f2_1.add(this.settings, 'minRadius', 0);
   ctl_minR.onChange((value) => { value = Math.min(value, this.settings.maxRadius); });
-  let ctl_maxR = f2.add(this.settings, 'maxRadius', 0);
+  let ctl_maxR = f2_1.add(this.settings, 'maxRadius', 0);
 
-  f2.add(this.settings, 'defaultSomaRadius', this.settings.minSomaRadius, this.settings.maxSomaRadius);
+  let f2_2 = f2.addFolder('Soma');
+  f2_2.add(this.settings, 'defaultSomaRadius', this.settings.minSomaRadius, this.settings.maxSomaRadius);
   ctl_maxR.onChange((value) => { value = Math.max(value, this.settings.minRadius); });
-  let ctl_minSomaR = f2.add(this.settings, 'minSomaRadius', 0);
+  let ctl_minSomaR = f2_2.add(this.settings, 'minSomaRadius', 0);
   ctl_minSomaR.onChange((value) => { value = Math.min(value, this.settings.maxSomaRadius); });
-  let ctl_maxSomaR = f2.add(this.settings, 'maxSomaRadius', 0);
+  let ctl_maxSomaR = f2_2.add(this.settings, 'maxSomaRadius', 0);
   ctl_maxSomaR.onChange((value) => { value = Math.max(value, this.settings.minSomaRadius); });
 
-  f2.add(this.settings, 'defaultSynapseRadius', this.settings.minSynapseRadius, this.settings.maxSynapseRadius);
-  let ctl_minSynR = f2.add(this.settings, 'minSynapseRadius', 0);
+  let f2_3 = f2.addFolder('Synapse');
+  f2_3.add(this.settings, 'defaultSynapseRadius', this.settings.minSynapseRadius, this.settings.maxSynapseRadius);
+  let ctl_minSynR = f2_3.add(this.settings, 'minSynapseRadius', 0);
   ctl_minSynR.onChange((value) => { value = Math.min(value, this.settings.maxSynapseRadius); });
-  let ctl_maxSynR = f2.add(this.settings, 'maxSynapseRadius', 0);
+  let ctl_maxSynR = f2_3.add(this.settings, 'maxSynapseRadius', 0);
   ctl_maxSynR.onChange((value) => { value = Math.max(value, this.settings.minSynapseRadius); });
+
+  f2_1.closed = false;
+  f2_2.closed = false;
+  f2_3.closed = false;
 
   this.settings.on("change", (() => {
     controlPanel.updateDisplay();
