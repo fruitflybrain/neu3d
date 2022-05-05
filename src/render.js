@@ -426,15 +426,23 @@ export class NeuronSkeleton extends RenderObj{
     * @param {*} setting: neu3dSettings
     * @param {Vector2} render_size: size of the rendered scene
     */
-    createObject(color, background, neu3dSettings, renderer_size = undefined) {
+    createObject(color, background, neu3dSettings, renderer_size = undefined, mode = undefined) {
         this.color = new Color(color);
         if (background === undefined) {
             this.background = false;
         } else {
             this.background = background;
         }
-        this.mode = neu3dSettings.neuron3dMode;
-
+        if (mode === undefined) {
+            this.mode = neu3dSettings.neuron3dMode;
+        } else {
+            if ([0,1,2,3,4,5,6].indexOf(mode) > -1) {
+                this.mode = mode;
+            } else {
+                console.log("Supplied mode must be an integer between 0 and 6.")
+                return
+            }
+        }
         var opacity;
         if (this.background) {
             opacity = neu3dSettings.backgroundOpacity;
@@ -442,7 +450,6 @@ export class NeuronSkeleton extends RenderObj{
             opacity = neu3dSettings.defaultOpacity;
         }
         this.opacity = opacity;
-        this.mode = neu3dSettings.neuron3dMode;
         var mergedGeometry = undefined;
         var geometryToMerge = [];
         var geometry = undefined;
@@ -467,7 +474,7 @@ export class NeuronSkeleton extends RenderObj{
         let defaultRadiusNodes = [];
         let defaultSomaRadiusNodes = [];
 
-        if (neu3dSettings.neuron3dMode == 0){
+        if (this.mode == 0){
             var matrix = new Matrix4();
             var materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
             geometrySphere = new SphereGeometry(1.0, 8, 8);
@@ -587,7 +594,7 @@ export class NeuronSkeleton extends RenderObj{
                     object.add(lines);
                 }
             }
-        } else if (neu3dSettings.neuron3dMode == 6){
+        } else if (this.mode == 6){
             var swcObj = {};
             for (const [nodeIndex, c] of Object.entries(vertices)) {
                 swcObj[nodeIndex] = {
@@ -698,7 +705,7 @@ export class NeuronSkeleton extends RenderObj{
         } else {
             // setup sphere geometry. Mode 3 and 5 requires a sphere for each node.
             // Other modes requires a sphere for each soma node.
-            if (neu3dSettings.neuron3dMode == 5 || neu3dSettings.neuron3dMode == 3) {
+            if (this.mode == 5 || this.mode == 3) {
                 materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
                 geometrySphere = new SphereGeometry(1.0, 8, 8);
                 spheres = new InstancedMesh( geometrySphere, materialSphere, len);
@@ -708,7 +715,7 @@ export class NeuronSkeleton extends RenderObj{
                 spheres = new InstancedMesh( geometrySphere, materialSphere, somalen);
             }
 
-            if (neu3dSettings.neuron3dMode > 3) { // create cylinders
+            if (this.mode > 3) { // create cylinders
                 for (var [idx, value] of Object.entries(segments) ) {
                     let c = vertices[value['start']];
                     let p = vertices[value['end']];
@@ -763,7 +770,7 @@ export class NeuronSkeleton extends RenderObj{
             }
 
             j = 0;
-            if (neu3dSettings.neuron3dMode == 5 || neu3dSettings.neuron3dMode == 3 ) {
+            if (this.mode == 5 || this.mode == 3 ) {
                 // render spheres for sphere mode or sphere+cylinder mode
                 scale;
                 matrix = new Matrix4();
@@ -822,7 +829,7 @@ export class NeuronSkeleton extends RenderObj{
 
 
             // add line segments
-            if (neu3dSettings.neuron3dMode <= 3) {
+            if (this.mode <= 3) {
                 vs = [];
                 for (const [idx, value] of Object.entries(segments) ) {
                     let c = vertices[value.start];
@@ -835,7 +842,7 @@ export class NeuronSkeleton extends RenderObj{
                     vs.push(p.z);
                 }
 
-                if (neu3dSettings.neuron3dMode == 2) {
+                if (this.mode == 2) {
                     geometry = new LineSegmentsGeometry()
                     geometry.setPositions(vs);
                     material_lines = new LineMaterial({ transparent: true, linewidth: neu3dSettings.defaultRadius*2, color: color.getHex(), dashed: false, worldUnits: true, opacity: opacity, resolution: renderer_size});

@@ -135,7 +135,8 @@ export class Neu3D {
       maxSynapseRadius: 5.0,
       backgroundOpacity: 0.5, // opacity of items in the background.
       backgroundWireframeOpacity: 0.07, // opacity of all wireframes, whether in background or not.
-      neuron3dMode: 0,
+      neuron3dMode: 0,  // 0-6
+      neuron3dApp: true, // apply change to neuron3dMode immediately to the workspace
       meshWireframe: true,
       backgroundColor: new Color("#260226"),
       sceneBackgroundColor: new Color('#030305'),
@@ -273,7 +274,9 @@ export class Neu3D {
     }), "defaultSomaRadius");
 
     this.settings.on("change", ((e) => {
-      this.recreateNeurons(e.value);
+      if (this.settings.neuron3dApp) {
+        this.recreateNeurons(e.value);
+      }
     }), "neuron3dMode");
 
     this.settings.on("change", ((e) => {
