@@ -16,9 +16,11 @@ Neu3D.prototype.import_settings = function(settings) {
     if (postProcessing.ssao != undefined){
       this.settings.backrenderSSAO.enabled = postProcessing.ssao;
     }
-    if (postProcessing.toneMappingMinLum != undefined){
-      this.settings.toneMappingPass.brightness = 1 - postProcessing.toneMappingMinLum;
-    }
+    // if (postProcessing.toneMappingMinLum != undefined){
+    //   this.settings.toneMappingPass.brightness = 1 - postProcessing.toneMappingMinLum;
+    // }
+    if( postProcessing.bloom != undefined )
+           this.settings.bloomPass.enabled = postProcessing.bloom;
     if (postProcessing.bloomRadius != undefined){
       this.settings.bloomPass.radius = postProcessing.bloomRadius;
     }
@@ -59,7 +61,7 @@ Neu3D.prototype.export_state = function() {
   state_metadata['pinned'] = Array.from(this.uiVars.pinnedObjects);
   for (let key in this.meshDict) {
     if (this.meshDict.hasOwnProperty(key)) {
-      state_metadata['color'][key] = this.meshDict[key].object.children[0].material.color.toArray();
+      state_metadata['color'][key] = this.meshDict[key].color.toArray();
       state_metadata['visibility'][key] = this.meshDict[key].visibility;
     }
   }
@@ -73,6 +75,7 @@ Neu3D.prototype.export_state = function() {
 * @param {object} state_metadata 
 */
 Neu3D.prototype.import_state = function(state_metadata) {
+  console.log("import_states")
   this.camera.position.x = state_metadata['camera']['position']['x'];
   this.camera.position.y = state_metadata['camera']['position']['y'];
   this.camera.position.z = state_metadata['camera']['position']['z'];
@@ -96,15 +99,9 @@ Neu3D.prototype.import_state = function(state_metadata) {
     if (this.meshDict[key].background){
       continue;
     } 
-    let meshobj = this.meshDict[key].object;
+    let meshobj = this.meshDict[key].renderObj;
     let color = state_metadata['color'][key];
-    for (let j = 0; j < meshobj.children.length; ++j) {
-      meshobj.children[j].material.color.fromArray(color);
-      for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
-        meshobj.children[j].geometry.colors[k].fromArray(color);
-      }
-      meshobj.children[j].geometry.colorsNeedUpdate = true;
-    }
+    meshobj.setColor(color);
   }
 }
 

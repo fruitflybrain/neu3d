@@ -32,10 +32,11 @@
     "lodash": "^4.17.15",
     "popper.js": "^1.16.1",
     "stats.js": "^0.17.0",
-    "three": "^0.126.1"
+    "three": "^0.139.2"
   },
   "devDependencies": {
     "css-loader": "^2.1.1",
+    "eslint": "^8.14.0",
     "rimraf": "^3.0.2",
     "style-loader": "^0.21.0",
     "webpack": "^5.72.0",
