@@ -75,45 +75,45 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   f1.addColor(this.settings, 'sceneBackgroundColor').name("Scene");
   let f1_1 = f1.addFolder('Opacity');
 
-  f1_1.add(this.settings, 'defaultOpacity', 0.0, 1.0).name('Default');//.listen();
-  f1_1.add(this.settings, 'synapseOpacity', 0.0, 1.0).name('Synapse');//.listen();
-  f1_1.add(this.settings, 'backgroundOpacity', 0.0, 1.0).name("BG Opacity");//.listen();
-  f1_1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0).name("Wireframe Opacity");//.listen();
-  f1_1.add(this.settings, 'highlightedObjectOpacity', 0.0, 1.0).name('Highlighted');//.listen();
-  f1_1.add(this.settings, 'lowOpacity', 0.0, 1.0).name('Low in Highlight');//.listen();
-  f1_1.add(this.settings, 'nonHighlightableOpacity', 0.0, 1.0).name('Non-Highlightable');//.listen();
-  f1_1.add(this.settings, 'pinOpacity', 0.0, 1.0).name('Pinned');//.listen();
-  f1_1.add(this.settings, 'pinLowOpacity', 0.0, 1.0).name('Low in Pinned');//.listen();
-  
+  f1_1.add(this.settings, 'defaultOpacity', 0.0, 1.0).name('Default');
+  f1_1.add(this.settings, 'synapseOpacity', 0.0, 1.0).name('Synapse');
+  f1_1.add(this.settings, 'backgroundOpacity', 0.0, 1.0).name("BG Opacity");
+  f1_1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0).name("Wireframe Opacity");
+  f1_1.add(this.settings, 'highlightedObjectOpacity', 0.0, 1.0).name('Highlighted');
+  f1_1.add(this.settings, 'lowOpacity', 0.0, 1.0).name('Low in Highlight');
+  f1_1.add(this.settings, 'nonHighlightableOpacity', 0.0, 1.0).name('NonHighlightable');
+  f1_1.add(this.settings, 'pinOpacity', 0.0, 1.0).name('Pinned');
+  f1_1.add(this.settings, 'pinLowOpacity', 0.0, 1.0).name('Low in Pinned');
+
 
   let f1_2 = f1.addFolder('Advanced');
 
   // f1_2.add(this.settings.toneMappingPass, 'brightness').name("ToneMap Brightness");
   f1_2.add(this.settings.bloomPass, 'enabled').name("Bloom");
-  f1_2.add(this.settings.bloomPass, 'radius', 0.0, 10.0).name("BloomRadius");;
-  f1_2.add(this.settings.bloomPass, 'strength', 0.0, 1.0).name("BloomStrength");;
-  f1_2.add(this.settings.bloomPass, 'threshold', 0.0, 2.0).name("BloomThreshold");;
-  f1_2.add(this.settings.effectFXAA, 'enabled').name("FXAA");//.listen();
-  f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO");//.listen();
+  f1_2.add(this.settings.bloomPass, 'radius', 0.0, 10.0).name("BloomRadius");
+  f1_2.add(this.settings.bloomPass, 'strength', 0.0, 1.0).name("BloomStrength");
+  f1_2.add(this.settings.bloomPass, 'threshold', 0.0, 2.0).name("BloomThreshold");
+  f1_2.add(this.settings.effectFXAA, 'enabled').name("FXAA");
+  f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO");
 
   let f2 = f_vis.addFolder('Size');
-  f2.add(this.settings, 'defaultRadius', this.settings.minRadius, this.settings.maxRadius);//.listen();
-  let ctl_minR = f2.add(this.settings, 'minRadius', 0);//.listen();
-  ctl_minR.onChange((value) => { value = Math.min(value, this.settings.maxRadius); })
-  let ctl_maxR = f2.add(this.settings, 'maxRadius', 0);//.listen();
+  f2.add(this.settings, 'defaultRadius', this.settings.minRadius, this.settings.maxRadius);
+  let ctl_minR = f2.add(this.settings, 'minRadius', 0);
+  ctl_minR.onChange((value) => { value = Math.min(value, this.settings.maxRadius); });
+  let ctl_maxR = f2.add(this.settings, 'maxRadius', 0);
 
-  f2.add(this.settings, 'defaultSomaRadius', this.settings.minSomaRadius, this.settings.maxSomaRadius);//.listen();
-  ctl_maxR.onChange((value) => { value = Math.max(value, this.settings.minRadius); })
-  let ctl_minSomaR = f2.add(this.settings, 'minSomaRadius', 0);//.listen();
-  ctl_minSomaR.onChange((value) => { value = Math.min(value, this.settings.maxSomaRadius); })
-  let ctl_maxSomaR = f2.add(this.settings, 'maxSomaRadius', 0);//.listen();
-  ctl_maxSomaR.onChange((value) => { value = Math.max(value, this.settings.minSomaRadius); })
+  f2.add(this.settings, 'defaultSomaRadius', this.settings.minSomaRadius, this.settings.maxSomaRadius);
+  ctl_maxR.onChange((value) => { value = Math.max(value, this.settings.minRadius); });
+  let ctl_minSomaR = f2.add(this.settings, 'minSomaRadius', 0);
+  ctl_minSomaR.onChange((value) => { value = Math.min(value, this.settings.maxSomaRadius); });
+  let ctl_maxSomaR = f2.add(this.settings, 'maxSomaRadius', 0);
+  ctl_maxSomaR.onChange((value) => { value = Math.max(value, this.settings.minSomaRadius); });
 
-  f2.add(this.settings, 'defaultSynapseRadius', this.settings.minSynapseRadius, this.settings.maxSynapseRadius);//.listen();
-  let ctl_minSynR = f2.add(this.settings, 'minSynapseRadius', 0);//.listen();
-  ctl_minSynR.onChange((value) => { value = Math.min(value, this.settings.maxSynapseRadius); })
-  let ctl_maxSynR = f2.add(this.settings, 'maxSynapseRadius', 0);//.listen();
-  ctl_maxSynR.onChange((value) => { value = Math.max(value, this.settings.minSynapseRadius); })
+  f2.add(this.settings, 'defaultSynapseRadius', this.settings.minSynapseRadius, this.settings.maxSynapseRadius);
+  let ctl_minSynR = f2.add(this.settings, 'minSynapseRadius', 0);
+  ctl_minSynR.onChange((value) => { value = Math.min(value, this.settings.maxSynapseRadius); });
+  let ctl_maxSynR = f2.add(this.settings, 'maxSynapseRadius', 0);
+  ctl_maxSynR.onChange((value) => { value = Math.max(value, this.settings.minSynapseRadius); });
 
   this.settings.on("change", ((e) => {
     controlPanel.updateDisplay();
