@@ -3,7 +3,7 @@ import {
     MeshLambertMaterial, MeshBasicMaterial, LineBasicMaterial,
     BufferGeometry, CylinderGeometry, SphereGeometry, TubeGeometry,
     QuadraticBezierCurve3, LineSegments,
-    CatmullRomCurve3, Line,
+    CatmullRomCurve3,
     Float32BufferAttribute, InstancedMesh, Color
 } from 'three';
 
@@ -191,11 +191,15 @@ export class RenderObj {
     * @param {*} color
     */
     setColor(color) {
-        var e = new Color(color);
+        if (Array.isArray(color)) {
+            color = new Color().fromArray(color);
+          } else {
+            color = new Color(color);
+          }
         for (var child of this.threeObj.children) {
-            child.material.color.set(e);
+            child.material.color.set(color);
         }
-        this.color = e;
+        this.color = color;
     }
 
     /** get color of the object;
@@ -281,6 +285,7 @@ export class MeshObj extends RenderObj{
         } else {
             this.background = background;
         }
+        this.meshWireframe = neu3dSettings.meshWireframe;
         
         var vtx = this.vertices;
         var idx = this.faces;
@@ -300,9 +305,10 @@ export class MeshObj extends RenderObj{
             opacity2 = neu3dSettings.backgroundWireframeOpacity;
         } else {
             opacity1 = neu3dSettings.defaultOpacity;
-            opacity2 = neu3dSettings.defaultOpacity;
+            opacity2 = neu3dSettings.backgroundWireframeOpacity;
         }
         this.opacity = opacity1;
+        this.WireframeOpacity = opacity2;
         let materials = [
             new MeshLambertMaterial({ color: color, transparent: true, side: 2, opacity: opacity1}),
             new MeshBasicMaterial({ color: color, wireframe: true, transparent: true, opacity: opacity2})
@@ -310,9 +316,18 @@ export class MeshObj extends RenderObj{
 
         let object = createMultiMaterialObject(geometry, materials);
         if (!neu3dSettings.meshWireframe) {
-        object.children[1].visible = false;
+            object.children[1].visible = false;
         }
         this.threeObj = object;
+    }
+
+    /**
+    * Update opacity
+    * @param {*} op1 : opacity of faces
+    */
+    updateOpacity(op1) {
+        this.opacity = op1;
+        this.threeObj.children[0].material.opacity = op1;
     }
 
     /**
@@ -321,8 +336,20 @@ export class MeshObj extends RenderObj{
     * @param {*} op2 : opacity of wireframe
     */
     updateBackgroundOpacity(op1, op2) {
+        this.opacity = op1;
+        this.WireframeOpacity = op2;
         this.threeObj.children[0].material.opacity = op1;
         this.threeObj.children[1].material.opacity = op2;
+    }
+
+    enableWireframe() {
+        this.meshWireframe = true;
+        this.threeObj.children[1].visible = true;
+    }
+
+    disableWireframe() {
+        this.meshWireframe = false;
+        this.threeObj.children[1].visible = false;
     }
 
     /**
@@ -428,11 +455,17 @@ export class NeuronSkeleton extends RenderObj{
         var vertices = this.vertices;
         var segments = this.segments;
         var len = Object.keys(vertices).length;
+        var somalen = 0;
 
         for (var [idx, c] of Object.entries(vertices)) {
             this.updateBoundingBox(c.x, c.y, c.z);
+            if (c.type == 1) {
+                somalen += 1;
+            }
         }
         // var total_seg = Object.keys(segments).length;
+        let defaultRadiusNodes = [];
+        let defaultSomaRadiusNodes = [];
         
         if (neu3dSettings.neuron3dMode == 0){
             var matrix = new Matrix4();
@@ -459,10 +492,17 @@ export class NeuronSkeleton extends RenderObj{
                 defaultBin = 49;
             }
 
+            var j = 0;
             for (var [idx, c] of Object.entries(vertices)) {
                 if(c.type == 1){
-                    scale = neu3dSettings.minSomaRadius;
+                    if (c.radius > 0){
+                        scale = clip(c.radius, neu3dSettings.minSomaRadius, neu3dSettings.maxSomaRadius);
+                    } else {
+                        scale = neu3dSettings.defaultSomaRadius; 
+                        defaultSomaRadiusNodes.push(j);
+                    }
                     sphere_params.push([c.x, c.y, c.z, scale])
+                    j += 1;
                     n_spheres += 1;
                 } else {
                     if (c.radius) {
@@ -483,43 +523,45 @@ export class NeuronSkeleton extends RenderObj{
                 var c = vertices[value['start']];
                 var p = vertices[value['end']];
                 
-                if (c.radius) {
-                    if (c.radius <= 1) {
-                        bin = Math.max(Math.ceil(Math.log10(c.radius)/0.05)+40, 1);
+                if (c.type != 1 && p.type != 1) {
+                    if (c.radius) {
+                        if (c.radius <= 1) {
+                            bin = Math.max(Math.ceil(Math.log10(c.radius)/0.05)+40, 1);
+                        } else {
+                            bin = Math.floor(c.radius)+40;
+                        }
+                        if (bin > 48){
+                            bin = 49;
+                        }
                     } else {
-                        bin = Math.floor(c.radius)+40;
+                        bin = defaultBin;
                     }
-                    if (bin > 48){
-                        bin = 49;
-                    }
-                } else {
-                    bin = defaultBin;
-                }
-                vs[bin.toString()].push(c.x);
-                vs[bin.toString()].push(c.y);
-                vs[bin.toString()].push(c.z);
-                vs[bin.toString()].push( (c.x+p.x)/2 );
-                vs[bin.toString()].push( (c.y+p.y)/2 );
-                vs[bin.toString()].push( (c.z+p.z)/2 );
-        
-                if (p.radius) {
-                    if (p.radius <= 1) {
-                        bin = Math.max(Math.ceil(Math.log10(p.radius)/0.05)+40, 1);
+                    vs[bin.toString()].push(c.x);
+                    vs[bin.toString()].push(c.y);
+                    vs[bin.toString()].push(c.z);
+                    vs[bin.toString()].push( (c.x+p.x)/2 );
+                    vs[bin.toString()].push( (c.y+p.y)/2 );
+                    vs[bin.toString()].push( (c.z+p.z)/2 );
+            
+                    if (p.radius) {
+                        if (p.radius <= 1) {
+                            bin = Math.max(Math.ceil(Math.log10(p.radius)/0.05)+40, 1);
+                        } else {
+                            bin = Math.floor(p.radius)+40;
+                        }
+                        if (bin > 48){
+                            bin = 49;
+                        }
                     } else {
-                        bin = Math.floor(p.radius)+40;
+                        bin = defaultBin;
                     }
-                    if (bin > 48){
-                        bin = 49;
-                    }
-                } else {
-                    bin = defaultBin;
+                    vs[bin.toString()].push(p.x);
+                    vs[bin.toString()].push(p.y);
+                    vs[bin.toString()].push(p.z);
+                    vs[bin.toString()].push( (c.x+p.x)/2 );
+                    vs[bin.toString()].push( (c.y+p.y)/2 );
+                    vs[bin.toString()].push( (c.z+p.z)/2 );
                 }
-                vs[bin.toString()].push(p.x);
-                vs[bin.toString()].push(p.y);
-                vs[bin.toString()].push(p.z);
-                vs[bin.toString()].push( (c.x+p.x)/2 );
-                vs[bin.toString()].push( (c.y+p.y)/2 );
-                vs[bin.toString()].push( (c.z+p.z)/2 );
             }
             spheres = new InstancedMesh( geometrySphere, materialSphere, n_spheres );
             var j = 0;
@@ -582,13 +624,14 @@ export class NeuronSkeleton extends RenderObj{
             let widths = new Set();
             for (let node of Object.values(swcObj)){
                 if (node.type !== 1){
-                    widths.add(clip(node.radius, neu3dSettings.minRadius, neu3dSettings.maxRadius));
+                    widths.add(node.radius);
                 }
             }
             const hasVariableWidth = widths.size > 1;
             
             if (!hasVariableWidth){
-                const radius = clip(Array.from(widths)[0], neu3dSettings.minRadius, neu3dSettings.maxRadius);
+                const radius = Array.from(widths)[0] == 0 ? neu3dSettings.defaultRadius : clip(Array.from(widths)[0], neu3dSettings.minRadius, neu3dSettings.maxRadius);
+                
                 for (let [head, branches] of Object.entries(all_branches)) {
                     for (let branch of branches) {
                         if (branch.length < 2) {
@@ -628,82 +671,166 @@ export class NeuronSkeleton extends RenderObj{
                     }
                 }
             }
+            var materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
+            geometrySphere = new SphereGeometry(1.0, 8, 8);
+            spheres = new InstancedMesh( geometrySphere, materialSphere, somalen);
+            var scale;
+            var matrix = new Matrix4();
+            var j = 0;
+            for (var [idx, c] of Object.entries(vertices)) {
+                if (c.type == 1) {
+                    if (c.radius > 0) {
+                        scale = clip(c.radius, neu3dSettings.minSomaRadius, neu3dSettings.maxSomaRadius);
+                    } else {
+                        scale = neu3dSettings.defaultSomaRadius;
+                        defaultSomaRadiusNodes.push(j);
+                    }
+                
+                    matrix.makeScale(scale, scale, scale);
+                    matrix.setPosition( c.x, c.y, c.z );
+                    spheres.setMatrixAt( j, matrix );
+                    j += 1;
+                }
+            }
+            object.add(spheres);
             
             const mergedGeometry = mergeBufferGeometries(geometryToMerge, false);
             var material_merge = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
             object.add(new Mesh(mergedGeometry, material_merge));
         } else {
-            if(neu3dSettings.neuron3dMode > 2){
-                if (neu3dSettings.neuron3dMode == 5 || neu3dSettings.neuron3dMode == 3) {
-                    var materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
-                    geometrySphere = new SphereGeometry(1.0, 8, 8);
-                    spheres = new InstancedMesh( geometrySphere, materialSphere, len);
-                }
-                var i = 0;
-                var j = 0;
-                if (neu3dSettings.neuron3dMode > 3) {
-                    for (var [idx, value] of Object.entries(segments) ) {
-                        var c = vertices[value['start']];
-                        var p = vertices[value['end']];
-                    
-                        var d = new Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
-                        if(!p.radius || !c.radius)
-                          var geometry = new CylinderGeometry(neu3dSettings.defaultRadius, neu3dSettings.defaultRadius, d.length(), 6, 1, 0);
-                        else
-                          var geometry = new CylinderGeometry(p.radius, c.radius, d.length(), 8, 1, 0);
-                        geometry.translate(0, 0.5*d.length(),0);
-                        geometry.applyMatrix4( new Matrix4().makeRotationX( Math.PI / 2 ) );
-                        geometry.lookAt(d.clone());
-                        geometry.translate(c.x, c.y, c.z);
-      
-                        geometryToMerge.push(geometry);
+            // setup sphere geometry. Mode 3 and 5 requires a sphere for each node.
+            // Other modes requires a sphere for each soma node.
+            if (neu3dSettings.neuron3dMode == 5 || neu3dSettings.neuron3dMode == 3) {
+                var materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
+                geometrySphere = new SphereGeometry(1.0, 8, 8);
+                spheres = new InstancedMesh( geometrySphere, materialSphere, len);
+            } else { // 1, 2, 4
+                var materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
+                geometrySphere = new SphereGeometry(1.0, 8, 8);
+                spheres = new InstancedMesh( geometrySphere, materialSphere, somalen);
+            }
 
-                        i += 1;
+            if (neu3dSettings.neuron3dMode > 3) { // create cylinders
+                for (var [idx, value] of Object.entries(segments) ) {
+                    var c = vertices[value['start']];
+                    var p = vertices[value['end']];
+                
+                    var d = new Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
+                    
+                    var cRadius, pRadius;
+                    if(c.radius > 0)
+                    {
+                        cRadius = clip(c.radius, neu3dSettings.minRadius, neu3dSettings.maxRadius);
+                    } else {
+                        cRadius = neu3dSettings.defaultRadius;
                     }
-                }
-                if (neu3dSettings.neuron3dMode == 5 || neu3dSettings.neuron3dMode == 3 ) {
-                    // render spheres for sphere mode or sphere+cylinder mode
-                    var scale;
-                    var matrix = new Matrix4();
-                    for (var [idx, c] of Object.entries(vertices)) {
-                        if(!c.radius) {
-                            if(c.type == 1) {
-                                scale = neu3dSettings.minSomaRadius;
-                                spheres.soma_index = j;
-                            } else {
-                                scale = neu3dSettings.defaultRadius;
-                            }
+
+                    if(p.radius > 0)
+                    {
+                        pRadius = clip(p.radius, neu3dSettings.minRadius, neu3dSettings.maxRadius);
+                    } else {
+                        pRadius = neu3dSettings.defaultRadius;
+                    }
+
+                    if (c.type == 1) {
+                        if(p.type != 1) {
+                            cRadius = pRadius;
                         } else {
-                          scale = c.radius;
+                            if (c.radius > 0) {
+                                cRadius = clip(c.radius, neu3dSettings.minSomaRadius, neu3dSettings.maxSomaRadius);
+                            } else {
+                                cRadius = neu3dSettings.defaultSomaRadius;
+                            }
                         }
+                    }
+
+                    if (p.type == 1) {
+                        if (c.type != 1) {
+                            pRadius = cRadius;
+                        } else {
+                            if (p.radius > 0) {
+                                pRadius = clip(p.radius, neu3dSettings.minSomaRadius, neu3dSettings.maxSomaRadius);
+                            } else {
+                                pRadius = neu3dSettings.defaultSomaRadius;
+                            }
+                        }
+                    }
+
+                    var geometry = new CylinderGeometry(pRadius, cRadius, d.length(), 8, 1, 0);
+                    geometry.translate(0, 0.5*d.length(),0);
+                    geometry.applyMatrix4( new Matrix4().makeRotationX( Math.PI / 2 ) );
+                    geometry.lookAt(d.clone());
+                    geometry.translate(c.x, c.y, c.z);
     
+                    geometryToMerge.push(geometry);
+                }
+            }
+
+            var j = 0;
+            if (neu3dSettings.neuron3dMode == 5 || neu3dSettings.neuron3dMode == 3 ) {
+                // render spheres for sphere mode or sphere+cylinder mode
+                var scale;
+                var matrix = new Matrix4();
+                for (var [idx, c] of Object.entries(vertices)) {
+                    if(c.radius > 0) {
+                        if (c.type == 1) {
+                            scale = clip(c.radius, neu3dSettings.minSomaRadius, neu3dSettings.maxSomaRadius);
+                        } else {
+                            scale = clip(c.radius, neu3dSettings.minRadius, neu3dSettings.maxRadius);
+                        }
+                    } else {
+                        if(c.type == 1) {
+                            scale = neu3dSettings.defaultSomaRadius;
+                            defaultSomaRadiusNodes.push(j);
+                        } else {
+                            scale = neu3dSettings.defaultRadius;
+                            defaultRadiusNodes.push(j);
+                        }
+                    }
+                    matrix.makeScale(scale, scale, scale);
+                    matrix.setPosition( c.x, c.y, c.z );
+                    spheres.setMatrixAt( j, matrix );
+                    j += 1;
+                }
+            } else { // mode 1, 2, 4
+                var scale;
+                var matrix = new Matrix4();
+                for (var [idx, c] of Object.entries(vertices)) {
+                    if (c.type == 1) {
+                        if (c.radius > 0) {
+                            scale = clip(c.radius, neu3dSettings.minSomaRadius, neu3dSettings.maxSomaRadius);
+                        } else {
+                            scale = neu3dSettings.defaultSomaRadius;
+                            defaultSomaRadiusNodes.push(j);
+                        }
+                    
                         matrix.makeScale(scale, scale, scale);
                         matrix.setPosition( c.x, c.y, c.z );
                         spheres.setMatrixAt( j, matrix );
                         j += 1;
                     }
                 }
-                if(spheres)
-                    object.add(spheres);
-                if(geometryToMerge.length) {
-                    mergedGeometry = mergeBufferGeometries(geometryToMerge, false);
-                    for (var n of geometryToMerge) {
-                        n.dispose();
-                    }
-                    var material_merge = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
-                    var mesh = new Mesh(mergedGeometry, material_merge);
-                    object.add(mesh);
-                }
             }
+
+
+            if(spheres)
+                object.add(spheres);
+            if(geometryToMerge.length) {
+                mergedGeometry = mergeBufferGeometries(geometryToMerge, false);
+                for (var n of geometryToMerge) {
+                    n.dispose();
+                }
+                var material_merge = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
+                var mesh = new Mesh(mergedGeometry, material_merge);
+                object.add(mesh);
+            }
+            
 
             // add line segments
             if (neu3dSettings.neuron3dMode <= 3) {
                 vs = [];
                 for (var [idx, value] of Object.entries(segments) ) {
                     var c = vertices[value.start];
-                    // console.log(value);
-                    // console.log(value.start);
-                    // console.log(vertices);
                     var p = vertices[value.end];
                     vs.push(c.x);
                     vs.push(c.y);
@@ -712,27 +839,11 @@ export class NeuronSkeleton extends RenderObj{
                     vs.push(p.y);
                     vs.push(p.z);
                 }
-
-                for (var [idx, c] of Object.entries(vertices) ) {
-                    if (c.type == 1) { // soma
-                        if(c.radius) {
-                            var sphereGeometry = new SphereGeometry(clip(c.radius, neu3dSettings.minSomaRadius, neu3dSettings.maxSomaRadius), 8, 8 );
-                        } else {
-                            var sphereGeometry = new SphereGeometry(neu3dSettings.minSomaRadius, 8, 8 );
-                        }   
-                        sphereGeometry.translate( c.x, c.y, c.z );
-                        var sphereMaterial = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity} );
-                        var soma = new Mesh( sphereGeometry, sphereMaterial);
-                        soma.soma_index = 0;
-                        object.add(soma);
-                        // unit['position'] = new THREE.Vector3(c.x,c.y,c.z);
-                    }
-                }
     
                 if (neu3dSettings.neuron3dMode == 2) {
                     geometry = new LineSegmentsGeometry()
                     geometry.setPositions(vs);
-                    var material_lines = new LineMaterial({ transparent: true, linewidth: neu3dSettings.linewidth, color: color.getHex(), dashed: false, worldUnits: true, opacity: opacity, resolution: renderer_size}); 
+                    var material_lines = new LineMaterial({ transparent: true, linewidth: neu3dSettings.defaultRadius*2, color: color.getHex(), dashed: false, worldUnits: true, opacity: opacity, resolution: renderer_size}); 
                     var lines = new LineSegments2(geometry, material_lines)
                     lines.computeLineDistances()
                 } else {
@@ -742,24 +853,57 @@ export class NeuronSkeleton extends RenderObj{
                     var lines = new LineSegments(geometry, material_lines)
                 }
                 object.add(lines);
-    
             }
         }
+        this.defaultSomaRadiusNodes = defaultSomaRadiusNodes;
+        this.defaultRadiusNodes = defaultRadiusNodes;
         this.threeObj = object;
     };
 
     /**
-    * Update the linewidth of the rendered skeleton if the render mode is 2
+    * Update the radius of the rendered skeleton if they are rendered with default radius
     * 
     * @param {*} unit
     * @returns skeleton json with vertices and segments
     */
-    updateLinewidth(width) {
-        if (this.mode == 2){
+    updateDefaultRadius(radius) {
+        if (this.mode == 0) {
+
+        } else if (this.mode == 2) {
             for (var child of this.threeObj.children) {
                 if (child.material.type == 'LineMaterial'){
-                    child.material.linewidth = width;
+                    child.material.linewidth = radius*2;
                 }
+            }
+        } else if (this.mode == 3) {
+            for (var child of this.threeObj.children) {
+                if (child instanceof InstancedMesh) {
+                    var matrix = new Matrix4();
+                    var old_matrix = new Matrix4();
+                    for (var j of this.defaultRadiusNodes) {
+                        matrix.makeScale(radius, radius, radius);
+                        child.getMatrixAt(j, old_matrix);
+                        matrix.copyPosition(old_matrix);
+                        child.setMatrixAt( j, matrix);
+                    }
+                    child.instanceMatrix.needsUpdate = true;
+                }
+            }
+        }
+    }
+
+    updateDefaultSomaRadius(radius) {
+        for (var child of this.threeObj.children) {
+            if (child instanceof InstancedMesh) {
+                var matrix = new Matrix4();
+                var old_matrix = new Matrix4();
+                for (var j of this.defaultSomaRadiusNodes) {
+                    matrix.makeScale(radius, radius, radius);
+                    child.getMatrixAt(j, old_matrix);
+                    matrix.copyPosition(old_matrix);
+                    child.setMatrixAt( j, matrix);
+                }
+                child.instanceMatrix.needsUpdate = true;
             }
         }
     }

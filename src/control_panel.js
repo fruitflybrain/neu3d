@@ -97,7 +97,6 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO");//.listen();
 
   let f2 = f_vis.addFolder('Size');
-  f2.add(this.settings, 'linewidth', 0.0, 5.0);
   f2.add(this.settings, 'defaultRadius', this.settings.minRadius, this.settings.maxRadius);//.listen();
   f2.add(this.settings, 'defaultSomaRadius', this.settings.minSomaRadius, this.settings.maxSomaRadius);//.listen();
   f2.add(this.settings, 'defaultSynapseRadius', this.settings.minSynapseRadius, this.settings.maxSynapseRadius);//.listen();

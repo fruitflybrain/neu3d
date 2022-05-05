@@ -1,4 +1,5 @@
 import { Lut } from 'three/examples/jsm/math/Lut';
+import { Color } from 'three';
 
 export const datGuiPresets ={
   "preset": "Default",
@@ -19,15 +20,14 @@ export const datGuiPresets ={
         "highlightedObjectOpacity": 1,
         "backgroundOpacity": 0.5,
         "backgroundWireframeOpacity": 0.07,
-        "defaultRadius": 0.5,
+        "defaultRadius": 0.2,
         "defaultSomaRadius": 0.5,
-        'minRadius': 0.01,
+        'minRadius': 0.1,
         'maxRadius': 10,
         'maxSomaRadius': 3,
         'minSomaRadius': 0.5,
         "defaultSynapseRadius": 0.5,
-        "sceneBackgroundColor": '#030305',
-        "linewidth": 0.75
+        "sceneBackgroundColor": '#030305'
       },
       "1": {
         "brightness": 0.95

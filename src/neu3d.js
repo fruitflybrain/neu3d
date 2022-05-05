@@ -4,7 +4,7 @@ import {
   Vector2, Raycaster,
   Group, WebGLRenderer,
   Scene, Vector3, LoadingManager,
-  PerspectiveCamera, Color, FileLoader, GammaEncoding
+  PerspectiveCamera, Color, FileLoader, GammaEncoding, Mesh
 } from 'three';
 
 import { Lut } from 'three/examples/jsm/math/Lut'
@@ -122,14 +122,14 @@ export class Neu3D {
         }
       }
     this.settings = new PropertyManager({
-      defaultOpacity: 0.7,
-      synapseOpacity: 1.0,
-      meshOscAmp: 0.0,
-      nonHighlightableOpacity: 0.1,
-      lowOpacity: 0.05,
-      pinOpacity: 0.9,
-      pinLowOpacity: 0.1,
-      highlightedObjectOpacity: 1.0,
+      defaultOpacity: 0.7, // opacity of neurons
+      synapseOpacity: 1.0, // opacity of synapses
+      meshOscAmp: 0.0, // mesh blinking amplitude
+      nonHighlightableOpacity: 0.1, // ratio of opacity of objects with highlight = false when something else is highlighted
+      lowOpacity: 0.05, // opacity of objects with highlight = true when something else is highlighted
+      pinOpacity: 0.9, // opacity of pinned object
+      pinLowOpacity: 0.1, // opacity of unpinned object under pinned mode
+      highlightedObjectOpacity: 1.0, // opacity of object being highlighted
       defaultRadius: 1.0,
       defaultSomaRadius: 0.5,
       defaultSynapseRadius: 0.5,
@@ -139,14 +139,13 @@ export class Neu3D {
       maxRadius: 10.0,
       maxSomaRadius: 20.0,
       maxSynapseRadius: 5.0,
-      linewidth: 0.75,
-      backgroundOpacity: 0.5,
-      backgroundWireframeOpacity: 0.07,
+      backgroundOpacity: 0.5, // opacity of items in the background.
+      backgroundWireframeOpacity: 0.07, // opacity of all wireframes, whether in background or not.
       neuron3dMode: 0,
       synapseMode: true,
       meshWireframe: true,
       backgroundColor: new Color("#260226"),
-      sceneBackgroundColor: '#030305',
+      sceneBackgroundColor: new Color('#030305'),
       render_resolution: 1.0
     });
     // this.settings.toneMappingPass = new PropertyManager({ brightness: 0.95 });
@@ -272,11 +271,20 @@ export class Neu3D {
         "highlightedObjectOpacity", "nonHighlightableOpacity", "lowOpacity"
       ]);
     this.settings.on("change", ((e) => {
-      this.updateLinewidth(e.value);
-    }), "linewidth");
+      this.updateDefaultRadius(e.value);
+    }), "defaultRadius");
+
+    this.settings.on("change", ((e) => {
+      this.updateDefaultSomaRadius(e.value);
+    }), "defaultSomaRadius");
+
     this.settings.on("change", ((e) => {
       this.recreateNeurons(e.value);
     }), "neuron3dMode");
+
+    this.settings.on("change", ((e) => {
+      this.updateWireframe(e.value);
+    }), "meshWireframe");
 
     this.settings.on("change", ((e) => {
       this.updateSynapseRadius(e.value);
@@ -1046,6 +1054,8 @@ export class Neu3D {
         // set unit color, this may not be used
         if (Array.isArray(unit.color)) {
           unit.color = new Color(...unit.color);
+        } else {
+          unit.color = new Color(unit.color);
         }
         /* load mesh */
         if (metadata.type === "morphology_json") {
@@ -1706,7 +1716,12 @@ export class Neu3D {
           opacity = this.settings.pinOpacity;
           depthTest = true;
         }
-        val.renderObj.updateOpacity(opacity);
+        if (val['background']){
+          val.renderObj.updateBackgroundOpacity(opacity*this.settings.backgroundOpacity, opacity*this.settings.backgroundWireframeOpacity);
+        } else {
+          val.renderObj.updateOpacity(opacity);
+        }
+        
         val.renderObj.updateDepthTest(depthTest);
       }
       let val = this.meshDict[this.states.highlight];
@@ -1748,29 +1763,57 @@ export class Neu3D {
     for (const key of Object.keys(this.meshDict)) {
       var val = this.meshDict[key];
       if (!val.background) {
-        if (val.class === 'Neuron') {
+        if (val.renderObj instanceof NeuronSkeleton) {
           val.renderObj.updateOpacity(this.settings.defaultOpacity);
           val.renderObj.updateDepthTest(true);
-        } else {
+        } else if (val.renderObj instanceof Synapses) {
           val.renderObj.updateOpacity(this.settings.synapseOpacity);
+          val.renderObj.updateDepthTest(true);
+        } else if (val.renderObj instanceof MeshObj) {
+          val.renderObj.updateBackgroundOpacity(this.settings.defaultOpacity, this.settings.backgroundWireframeOpacity);
           val.renderObj.updateDepthTest(true);
         }
       } else {
         val.renderObj.updateBackgroundOpacity(this.settings.backgroundOpacity,
-          this.settings.background);
+          this.settings.backgroundWireframeOpacity);
         val.renderObj.updateDepthTest(true);
       }
     }
   }
 
   /**
-   * Update linewidth
+   * Update defaultRadius
    * @param {*} e 
    */
-  updateLinewidth(e) {
+  updateDefaultRadius(e) {
     for (const key of Object.keys(this.meshDict)) {
       if(this.meshDict[key].renderObj instanceof NeuronSkeleton){
-        this.meshDict[key].renderObj.updateLinewidth(e);
+        this.meshDict[key].renderObj.updateDefaultRadius(e);
+      }
+    }
+  }
+
+  /**
+   * Update defaultSomaRadius
+   * @param {*} e 
+   */
+  updateDefaultSomaRadius(e) {
+    for (const key of Object.keys(this.meshDict)) {
+      if(this.meshDict[key].renderObj instanceof NeuronSkeleton){
+        this.meshDict[key].renderObj.updateDefaultSomaRadius(e);
+      }
+    }
+  }
+
+  updateWireframe(e) {
+    for (const key of Object.keys(this.meshDict)) {
+      var val = this.meshDict[key].renderObj;
+      if (val instanceof MeshObj){
+        if (e) {
+          val.enableWireframe();
+        } else {
+          val.disableWireframe();
+        }
       }
     }
   }
@@ -1935,19 +1978,20 @@ export class Neu3D {
     } else {
       color = new Color(color);
     }
-    for (let i = 0; i < this.groups.back.children.length; ++i) {
-      let meshobj = this.groups.back.children[i];
-      for (let j = 0; j < meshobj.children.length; ++j) {
-        meshobj.children[j].material.color.set(color);
-        // meshobj.children[j].geometry.colorsNeedUpdate = true;
-        // for (let k = 0; k < meshobj.children[j].geometry.colors.length; ++k) {
-        //   meshobj.children[j].geometry.colors[k].set(color);
-        // }
+    for (let key of Object.keys(this.meshDict)) {
+      var object = this.meshDict[key]
+      if (object.background) {
+        object.renderObj.setColor(color);
       }
     }
   }
 
   setSceneBackgroundColor(color) {
+    if (Array.isArray(color)) {
+      color = new Color().fromArray(color);
+    } else {
+      color = new Color(color);
+    }
     this.scenes.back.background.set(color);
   }
 

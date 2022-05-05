@@ -49,6 +49,7 @@ Neu3D.prototype._registerObject = function (key, unit, object) {
 Neu3D.prototype.loadMeshCallBack = function (key, unit, visibility) {
   return (data, transformation=undefined) => {
     let meshObj = new MeshObj(data, 'json', transformation)
+    console.log(unit.color)
     meshObj.createObject(unit['color'], unit['background'], this.settings);    
     meshObj.updateVisibility(visibility);
     this._registerObject(key, unit, meshObj);
