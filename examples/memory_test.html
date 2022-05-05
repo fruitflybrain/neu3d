@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Neu3d Test</title>
+    <script type="text/javascript" src=" https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="../lib/neu3d.min.js"> </script>
+  </head>
+  <body>
+    <div>
+      <div id="vis-3d-0" class="vis-3d" style="width: 33%; height: 33%; display: block;"></div>
+      <div id="vis-3d-1" class="vis-3d" style="width: 33%; height: 33%;  display: block;"></div>
+    </div>
+    <div>
+      <div id="vis-3d-2" class="vis-3d" style="width: 33%; height: 33%; display: block;"></div>
+      <div id="vis-3d-3" class="vis-3d" style="width: 33%; height: 33%; display: block;"></div>
+    </div>
+    <script>
+      const parentDiv = document.getElementById('vis-3d');
+      let options = {
+        'stats': false,
+        'datGUI': {
+          autoPlace: false,
+          resizable: false,
+          closed: true,
+          hideable: true
+        }
+      }
+      for (let n=0; n<4; n++){
+        for (let iter=0; iter<10; iter ++){
+          console.log(`Creating Neu3d ${n}`);
+          let neu3d = new Neu3D(document.getElementById(`vis-3d-${n}`), undefined, { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } }, options);
+          console.log(`Disposing Neu3d ${n}`);
+          neu3d.dispose();
+        }
+      }
+      console.log("DONE");
+    </script>
+  </body>
+</html>

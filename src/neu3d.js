@@ -898,8 +898,10 @@ export class Neu3D {
     // this._metadata = null;
     delete this.states;
 
-    this.stats.dom.remove();
-    delete this.stats;
+    if (this.stats) {
+      this.stats.dom.remove();
+      delete this.stats;
+    }
     // this.states = null;
     delete this.meshDict;
     // this.meshDict = null;

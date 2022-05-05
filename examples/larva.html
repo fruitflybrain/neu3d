@@ -21,10 +21,23 @@
 
       var neu3d = new Neu3D(parentDiv,
                                undefined,
-                               {  "globalCenter": { 'x': 0, 'y': -250, 'z': 0 }, 
-                                  "enablePositionReset": true, 
-                                  "resetPosition": { 'x': 54655.7431422481, 'y': 39426.92341342993, 'z': -174729.78082825127 },
-                                  "upSign": -1.,
+                               {  "globalCenter": { 'x': 0, 'y': -250, 'z': 0 },
+                                  "enablePositionReset": true,
+                                  resetPosition: {
+                                    x: 42.057169835814626,
+                                    y: 18.465885594337543,
+                                    z: -509.65272951348953
+                                  },
+                                  upVector: {
+                                    x: 0.0022681554337180836,
+                                    y: -0.9592325957384876,
+                                    z: 0.2826087096034669
+                                  },
+                                  cameraTarget: {
+                                    x: 42.11358557008077,
+                                    y: 74.90946190543991,
+                                    z: 58.654427921234685
+                                  }
                                 },
                                options);
 
@@ -35,12 +48,6 @@
           ffbo_json: json,
           showAfterLoadAll: true
         });
-      });
-
-
-      $(document).ready(() => {
-        neu3d.onWindowResize();
-        document.getElementById('neu3d-file-upload').click();
       });
     </script>
   </body>
