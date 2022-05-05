@@ -1,6 +1,6 @@
 import * as dat from 'dat.gui';
 //import 'dat.gui.css';
-/* 
+/*
  * overload dat.GUI library to enable tooltip
  */
 function setTitle (v) {
@@ -10,7 +10,7 @@ function setTitle (v) {
     } else {
         this.__li.removeAttribute('title')
     }
-    
+
     return this;
 };
 
@@ -24,8 +24,8 @@ function setCommandIcon(faName,displayType='strip',attrs={}) {
     // __li is the root dom element of each controller
     this.__li.classList.add("neu3dbutton",'tooltip');
 
-    
-    
+
+
     if (faName) {
         this.__li.setAttribute('icon', faName);
         let faicon;
@@ -54,7 +54,7 @@ function setCommandIcon(faName,displayType='strip',attrs={}) {
             this.__li.childNodes[0].innerHTML = faiconHTML + this.__li.childNodes[0].innerHTML;
             console.warn("display Type = " + displayType+ " not recognized, default to `dropdown`");
         }
-        
+
     } else {
         this.__li.style['display'] = '';
         this.__li.removeAttribute('icon');
@@ -64,21 +64,21 @@ function setCommandIcon(faName,displayType='strip',attrs={}) {
 
 function eachController(fnc) {
     for (let controllerName in dat.controllers) {
-        if (dat.controllers.hasOwnProperty(controllerName)) {
+        if (Object.prototype.hasOwnProperty.call(dat.controllers, controllerName)) {
             fnc(dat.controllers[controllerName]);
         }
     }
 }
 
 eachController(controller => {
-    if (!controller.prototype.hasOwnProperty('title')) {
+    if (!Object.prototype.hasOwnProperty.call(controller.prototype, 'title')) {
         controller.prototype.title = setTitle;
     }
 });
 
 
 eachController(controller => {
-    if (!controller.prototype.hasOwnProperty('icon')) {
+    if (!Object.prototype.hasOwnProperty.call(controller.prototype, 'icon')) {
         controller.prototype.icon = setCommandIcon;
     }
 });

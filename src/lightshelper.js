@@ -104,8 +104,8 @@ export class FFBOLightsHelper {
         this[key] = lightImporter(settings[key], light);
       }
       catch (err) {
+        // do nothing
       }
-      ;
     }
   }
   export() {

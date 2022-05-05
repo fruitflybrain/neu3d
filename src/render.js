@@ -206,7 +206,7 @@ export class RenderObj {
     */
     getColor() {
         return this.color;
-    };
+    }
 
     /** dispose threejs object
     */
@@ -215,7 +215,7 @@ export class RenderObj {
             this.threeObj.children[i].geometry.dispose();
             this.threeObj.children[i].material.dispose();
         }
-    };
+    }
 
     /** transforms coordinate according to the transformation
     *
@@ -245,7 +245,7 @@ export class RenderObj {
         } else {
             return [x_f, y_f, z_f, r * this.transformation.scale.radius];
         }
-    };
+    }
 }
 
 
@@ -286,7 +286,7 @@ export class MeshObj extends RenderObj{
             this.background = background;
         }
         this.meshWireframe = neu3dSettings.meshWireframe;
-        
+
         var vtx = this.vertices;
         var idx = this.faces;
 
@@ -354,7 +354,7 @@ export class MeshObj extends RenderObj{
 
     /**
     * Convert input json to mesh json
-    * 
+    *
     * @param {*} unit
     * @returns mesh json with vertices and faces
     */
@@ -364,7 +364,7 @@ export class MeshObj extends RenderObj{
         const vertices = [];
         // check if vertics and indices match dimensionality
         if (Math.max(...idx) >= (vtx.length/3)){
-            let err = `[Neu3D] Mesh ${key} has face index ${Math.max(...idx)} that exceeds maximum number of vertices ${vtx.length/3}.`;
+            let err = `[Neu3D] Mesh ${unit} has face index ${Math.max(...idx)} that exceeds maximum number of vertices ${vtx.length/3}.`;
             if (Math.min(...idx) !== 0) {
                 err = `${err} The face index also start from ${Math.min(...idx)}, maybe the face indices should be shifted by 1.`;
             }
@@ -380,13 +380,13 @@ export class MeshObj extends RenderObj{
             vertices.push(xyz[0], xyz[1], xyz[2]);
         }
         return {'vertices': vertices, 'faces': idx};
-    };
+    }
 
     parseMeshFile(meshString) {
         let data = {};
         data = JSON.parse(meshString);
         return this.parseMeshDict(data);
-    };
+    }
 }
 
 export class NeuronSkeleton extends RenderObj{
@@ -417,7 +417,7 @@ export class NeuronSkeleton extends RenderObj{
         this.segments = skeleton['segments'];
         this.heads = skeleton['heads'];
         this.morph_type = type;
-    };
+    }
 
     /** create 3d object
     *
@@ -466,7 +466,7 @@ export class NeuronSkeleton extends RenderObj{
         // var total_seg = Object.keys(segments).length;
         let defaultRadiusNodes = [];
         let defaultSomaRadiusNodes = [];
-        
+
         if (neu3dSettings.neuron3dMode == 0){
             var matrix = new Matrix4();
             var materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
@@ -480,9 +480,9 @@ export class NeuronSkeleton extends RenderObj{
               31: [], 32: [], 33: [], 34: [], 35: [], 36: [], 37: [], 38: [], 39: [], 40: [],
               41: [], 42: [], 43: [], 44: [], 45: [], 46: [], 47: [], 48: [], 49: []
             };
-            
+
             var bin, defaultBin;
-            
+
             if (neu3dSettings.defaultRadius <= 1) {
                 defaultBin = Math.max(Math.ceil(Math.log10(neu3dSettings.defaultRadius)/0.05)+40, 1);
             } else {
@@ -492,13 +492,13 @@ export class NeuronSkeleton extends RenderObj{
                 defaultBin = 49;
             }
 
-            var j = 0;
-            for (var [idx, c] of Object.entries(vertices)) {
+            let j = 0;
+            for (let [idx, c] of Object.entries(vertices)) {
                 if(c.type == 1){
                     if (c.radius > 0){
                         scale = clip(c.radius, neu3dSettings.minSomaRadius, neu3dSettings.maxSomaRadius);
                     } else {
-                        scale = neu3dSettings.defaultSomaRadius; 
+                        scale = neu3dSettings.defaultSomaRadius;
                         defaultSomaRadiusNodes.push(j);
                     }
                     sphere_params.push([c.x, c.y, c.z, scale])
@@ -519,10 +519,10 @@ export class NeuronSkeleton extends RenderObj{
                 }
             }
 
-            for (var [idx, value] of Object.entries(segments) ) {
-                var c = vertices[value['start']];
-                var p = vertices[value['end']];
-                
+            for (let [idx, value] of Object.entries(segments) ) {
+                let c = vertices[value['start']];
+                let p = vertices[value['end']];
+
                 if (c.type != 1 && p.type != 1) {
                     if (c.radius) {
                         if (c.radius <= 1) {
@@ -542,7 +542,7 @@ export class NeuronSkeleton extends RenderObj{
                     vs[bin.toString()].push( (c.x+p.x)/2 );
                     vs[bin.toString()].push( (c.y+p.y)/2 );
                     vs[bin.toString()].push( (c.z+p.z)/2 );
-            
+
                     if (p.radius) {
                         if (p.radius <= 1) {
                             bin = Math.max(Math.ceil(Math.log10(p.radius)/0.05)+40, 1);
@@ -564,12 +564,10 @@ export class NeuronSkeleton extends RenderObj{
                 }
             }
             spheres = new InstancedMesh( geometrySphere, materialSphere, n_spheres );
-            var j = 0;
-            for (var n of sphere_params){
+            for (const [j, n] of sphere_params.entries()){
                 matrix.makeScale(n[3], n[3], n[3]);
                 matrix.setPosition( n[0], n[1], n[2] );
                 spheres.setMatrixAt( j, matrix );
-                j += 1;
             }
             object.add(spheres);
 
@@ -583,7 +581,7 @@ export class NeuronSkeleton extends RenderObj{
                 if (vs[i.toString()].length){
                     geometry = new LineSegmentsGeometry();
                     geometry.setPositions(vs[i.toString()]);
-                    var material_lines = new LineMaterial({ transparent: true, linewidth: width*2, color: color.getHex(), dashed: false, worldUnits: true, opacity: opacity, resolution: renderer_size, alphaToCoverage: false}); 
+                    var material_lines = new LineMaterial({ transparent: true, linewidth: width*2, color: color.getHex(), dashed: false, worldUnits: true, opacity: opacity, resolution: renderer_size, alphaToCoverage: false});
                     var lines = new LineSegments2(geometry, material_lines);
                     lines.computeLineDistances();
                     object.add(lines);
@@ -591,7 +589,7 @@ export class NeuronSkeleton extends RenderObj{
             }
         } else if (neu3dSettings.neuron3dMode == 6){
             var swcObj = {};
-            for (var [nodeIndex, c] of Object.entries(vertices)) {
+            for (const [nodeIndex, c] of Object.entries(vertices)) {
                 swcObj[nodeIndex] = {
                     'type': c['type'],
                     'x': c['x'],
@@ -601,12 +599,12 @@ export class NeuronSkeleton extends RenderObj{
                     'parent': null,
                     'children': []
                 };
-            };
+            }
             for (var nodeIndex of this.heads) {
                 swcObj[nodeIndex].parent = -1;
             }
             var start, end;
-            for (let [segmentId, c] of Object.entries(segments)){
+            for (const [segmentId, c] of Object.entries(segments)){
                 start = c['start'];
                 end = c['end'];
                 if (start in swcObj && end in swcObj){
@@ -617,7 +615,7 @@ export class NeuronSkeleton extends RenderObj{
 
             var all_branches = {};
 
-            for (var nodeIndex of this.heads) {
+            for (const nodeIndex of this.heads) {
                 all_branches[nodeIndex] = createTreeFromSWC(swcObj, nodeIndex);
             }
 
@@ -628,11 +626,11 @@ export class NeuronSkeleton extends RenderObj{
                 }
             }
             const hasVariableWidth = widths.size > 1;
-            
+
             if (!hasVariableWidth){
                 const radius = Array.from(widths)[0] == 0 ? neu3dSettings.defaultRadius : clip(Array.from(widths)[0], neu3dSettings.minRadius, neu3dSettings.maxRadius);
-                
-                for (let [head, branches] of Object.entries(all_branches)) {
+
+                for (const [head, branches] of Object.entries(all_branches)) {
                     for (let branch of branches) {
                         if (branch.length < 2) {
                             // this should only happen for soma when soma is directly connected to multiple branches
@@ -644,7 +642,7 @@ export class NeuronSkeleton extends RenderObj{
                     }
                 }
             } else{
-                for (let [head, branches] of Object.entries(all_branches)) {
+                for (const [head, branches] of Object.entries(all_branches)) {
                     for (let branch of branches) {
                         for (let start_idx in branch.slice(0, -1)) {
                             start_idx = parseInt(start_idx);
@@ -671,11 +669,11 @@ export class NeuronSkeleton extends RenderObj{
                     }
                 }
             }
-            var materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
+            materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
             geometrySphere = new SphereGeometry(1.0, 8, 8);
             spheres = new InstancedMesh( geometrySphere, materialSphere, somalen);
             var scale;
-            var matrix = new Matrix4();
+            matrix = new Matrix4();
             var j = 0;
             for (var [idx, c] of Object.entries(vertices)) {
                 if (c.type == 1) {
@@ -685,7 +683,7 @@ export class NeuronSkeleton extends RenderObj{
                         scale = neu3dSettings.defaultSomaRadius;
                         defaultSomaRadiusNodes.push(j);
                     }
-                
+
                     matrix.makeScale(scale, scale, scale);
                     matrix.setPosition( c.x, c.y, c.z );
                     spheres.setMatrixAt( j, matrix );
@@ -693,7 +691,7 @@ export class NeuronSkeleton extends RenderObj{
                 }
             }
             object.add(spheres);
-            
+
             const mergedGeometry = mergeBufferGeometries(geometryToMerge, false);
             var material_merge = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
             object.add(new Mesh(mergedGeometry, material_merge));
@@ -701,23 +699,21 @@ export class NeuronSkeleton extends RenderObj{
             // setup sphere geometry. Mode 3 and 5 requires a sphere for each node.
             // Other modes requires a sphere for each soma node.
             if (neu3dSettings.neuron3dMode == 5 || neu3dSettings.neuron3dMode == 3) {
-                var materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
+                materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
                 geometrySphere = new SphereGeometry(1.0, 8, 8);
                 spheres = new InstancedMesh( geometrySphere, materialSphere, len);
             } else { // 1, 2, 4
-                var materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
+                materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
                 geometrySphere = new SphereGeometry(1.0, 8, 8);
                 spheres = new InstancedMesh( geometrySphere, materialSphere, somalen);
             }
 
             if (neu3dSettings.neuron3dMode > 3) { // create cylinders
                 for (var [idx, value] of Object.entries(segments) ) {
-                    var c = vertices[value['start']];
-                    var p = vertices[value['end']];
-                
-                    var d = new Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
-                    
-                    var cRadius, pRadius;
+                    let c = vertices[value['start']];
+                    let p = vertices[value['end']];
+                    let d = new Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
+                    let cRadius, pRadius;
                     if(c.radius > 0)
                     {
                         cRadius = clip(c.radius, neu3dSettings.minRadius, neu3dSettings.maxRadius);
@@ -756,22 +752,22 @@ export class NeuronSkeleton extends RenderObj{
                         }
                     }
 
-                    var geometry = new CylinderGeometry(pRadius, cRadius, d.length(), 8, 1, 0);
+                    geometry = new CylinderGeometry(pRadius, cRadius, d.length(), 8, 1, 0);
                     geometry.translate(0, 0.5*d.length(),0);
                     geometry.applyMatrix4( new Matrix4().makeRotationX( Math.PI / 2 ) );
                     geometry.lookAt(d.clone());
                     geometry.translate(c.x, c.y, c.z);
-    
+
                     geometryToMerge.push(geometry);
                 }
             }
 
-            var j = 0;
+            j = 0;
             if (neu3dSettings.neuron3dMode == 5 || neu3dSettings.neuron3dMode == 3 ) {
                 // render spheres for sphere mode or sphere+cylinder mode
-                var scale;
-                var matrix = new Matrix4();
-                for (var [idx, c] of Object.entries(vertices)) {
+                scale;
+                matrix = new Matrix4();
+                for (const [idx, c] of Object.entries(vertices)) {
                     if(c.radius > 0) {
                         if (c.type == 1) {
                             scale = clip(c.radius, neu3dSettings.minSomaRadius, neu3dSettings.maxSomaRadius);
@@ -793,9 +789,9 @@ export class NeuronSkeleton extends RenderObj{
                     j += 1;
                 }
             } else { // mode 1, 2, 4
-                var scale;
-                var matrix = new Matrix4();
-                for (var [idx, c] of Object.entries(vertices)) {
+                scale;
+                matrix = new Matrix4();
+                for (const [idx, c] of Object.entries(vertices)) {
                     if (c.type == 1) {
                         if (c.radius > 0) {
                             scale = clip(c.radius, neu3dSettings.minSomaRadius, neu3dSettings.maxSomaRadius);
@@ -803,7 +799,7 @@ export class NeuronSkeleton extends RenderObj{
                             scale = neu3dSettings.defaultSomaRadius;
                             defaultSomaRadiusNodes.push(j);
                         }
-                    
+
                         matrix.makeScale(scale, scale, scale);
                         matrix.setPosition( c.x, c.y, c.z );
                         spheres.setMatrixAt( j, matrix );
@@ -820,18 +816,17 @@ export class NeuronSkeleton extends RenderObj{
                 for (var n of geometryToMerge) {
                     n.dispose();
                 }
-                var material_merge = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
-                var mesh = new Mesh(mergedGeometry, material_merge);
-                object.add(mesh);
+                material_merge = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
+                object.add(new Mesh(mergedGeometry, material_merge));
             }
-            
+
 
             // add line segments
             if (neu3dSettings.neuron3dMode <= 3) {
                 vs = [];
-                for (var [idx, value] of Object.entries(segments) ) {
-                    var c = vertices[value.start];
-                    var p = vertices[value.end];
+                for (const [idx, value] of Object.entries(segments) ) {
+                    let c = vertices[value.start];
+                    let p = vertices[value.end];
                     vs.push(c.x);
                     vs.push(c.y);
                     vs.push(c.z);
@@ -839,18 +834,18 @@ export class NeuronSkeleton extends RenderObj{
                     vs.push(p.y);
                     vs.push(p.z);
                 }
-    
+
                 if (neu3dSettings.neuron3dMode == 2) {
                     geometry = new LineSegmentsGeometry()
                     geometry.setPositions(vs);
-                    var material_lines = new LineMaterial({ transparent: true, linewidth: neu3dSettings.defaultRadius*2, color: color.getHex(), dashed: false, worldUnits: true, opacity: opacity, resolution: renderer_size}); 
-                    var lines = new LineSegments2(geometry, material_lines)
+                    material_lines = new LineMaterial({ transparent: true, linewidth: neu3dSettings.defaultRadius*2, color: color.getHex(), dashed: false, worldUnits: true, opacity: opacity, resolution: renderer_size});
+                    lines = new LineSegments2(geometry, material_lines)
                     lines.computeLineDistances()
                 } else {
                     geometry = new BufferGeometry();
                     geometry.setAttribute('position', new Float32BufferAttribute(vs, 3));
-                    var material_lines = new LineBasicMaterial({ transparent: true, color: color, opacity: opacity});
-                    var lines = new LineSegments(geometry, material_lines)
+                    material_lines = new LineBasicMaterial({ transparent: true, color: color, opacity: opacity});
+                    lines = new LineSegments(geometry, material_lines)
                 }
                 object.add(lines);
             }
@@ -858,17 +853,17 @@ export class NeuronSkeleton extends RenderObj{
         this.defaultSomaRadiusNodes = defaultSomaRadiusNodes;
         this.defaultRadiusNodes = defaultRadiusNodes;
         this.threeObj = object;
-    };
+    }
 
     /**
     * Update the radius of the rendered skeleton if they are rendered with default radius
-    * 
+    *
     * @param {*} unit
     * @returns skeleton json with vertices and segments
     */
     updateDefaultRadius(radius) {
         if (this.mode == 0) {
-
+            // do nothing
         } else if (this.mode == 2) {
             for (var child of this.threeObj.children) {
                 if (child.material.type == 'LineMaterial'){
@@ -876,7 +871,7 @@ export class NeuronSkeleton extends RenderObj{
                 }
             }
         } else if (this.mode == 3) {
-            for (var child of this.threeObj.children) {
+            for (let child of this.threeObj.children) {
                 if (child instanceof InstancedMesh) {
                     var matrix = new Matrix4();
                     var old_matrix = new Matrix4();
@@ -935,7 +930,7 @@ export class NeuronSkeleton extends RenderObj{
             } else {
                 radius = parseFloat(unit['r'][j]);
             }
-            
+
             x = parseFloat(unit['x'][j]);
             y = parseFloat(unit['y'][j]);
             z = parseFloat(unit['z'][j]);
@@ -964,7 +959,7 @@ export class NeuronSkeleton extends RenderObj{
                         'segments': segments,
                         'heads': heads};
         return skeleton;
-    };
+    }
 
     /**
     * Convert string of SWC to json object
@@ -1080,7 +1075,7 @@ export class Synapses extends RenderObj{
             this.updateBoundingBox(c.pre_x, c.pre_y, c.pre_z);
         }
         // var total_seg = Object.keys(segments).length;
-        
+
         var material_synapse = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
 
         var matrix = new Matrix4();
@@ -1093,7 +1088,7 @@ export class Synapses extends RenderObj{
 
         var scale;
         var i = 0;
-        for (var c of locations) {
+        for (const c of locations) {
             if (c.pre_radius) {
                 scale = c.pre_radius * neu3dSettings.defaultSynapseRadius;
             } else {
@@ -1124,7 +1119,7 @@ export class Synapses extends RenderObj{
         geometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
         var material_lines = new LineBasicMaterial({ transparent: true, color: color, opacity: opacity});
         object.add(new LineSegments(geometry, material_lines));
-        
+
         this.threeObj = object;
     }
 
@@ -1184,9 +1179,9 @@ export class Synapses extends RenderObj{
                 var y2 = parseFloat(seg[5]);
                 var z2 = parseFloat(seg[6]);
                 var r2 = parseFloat(seg[7]);
-    
+
                 var xyzr2 = this.transform(x2, y2, z2, r2);
-            
+
                 locations.push({
                     'pre_x': xyzr[0],
                     'pre_y': xyzr[1],
@@ -1249,7 +1244,7 @@ export class Synapses extends RenderObj{
                 locdict[parentIndex]['post_radius'] = xyzr[3];
             }
         }
-        for (var [k, v] of Object.entries(locdict)){
+        for (const [k, v] of Object.entries(locdict)){
             locations.push(v);
         }
 

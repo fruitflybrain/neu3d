@@ -3,6 +3,25 @@ import dat from '../etc/dat.gui';
 import { datGuiPresets } from './presets.js';
 
 /**
+ * Create a button in control Panel with tooltip and icon.
+ * @param {*} controlPanel
+ * @param {*} name
+ * @param {*} icon
+ * @param {*} iconAttrs
+ * @param {*} tooltip
+ * @param {*} func
+ * @returns
+ */
+function _createBtn(controlPanel, name, icon, iconAttrs, tooltip, func) {
+  let newButton = function () {
+    this[name] = func;
+  };
+  let btn = new newButton();
+  let buttonid = controlPanel.add(btn, name).title(tooltip).icon(icon, "strip", iconAttrs);
+  return buttonid;
+}
+
+/**
 * Initialize Control Panel dat.GUI
 * @param {object} options
 */
@@ -34,33 +53,24 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   neuronNum.domElement.style["pointerEvents"] = "None";
   neuronNum.domElement.parentNode.parentNode.classList.add('noneurons');
   if (GUIOptions['createButtons']) {
-    function _createBtn(name, icon, iconAttrs, tooltip, func) {
-      let newButton = function () {
-        this[name] = func;
-      };
-      let btn = new newButton();
-      let buttonid = controlPanel.add(btn, name).title(tooltip).icon(icon, "strip", iconAttrs);
-      return buttonid;
-    }
-
     let btnId = ''
-    btnId = _createBtn("uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { this.fileUploadInput.click(); });
+    btnId = _createBtn(controlPanel, "uploadFile", "fa fa-upload", {}, "Upload SWC File", () => { this.fileUploadInput.click(); });
     this._controlPanelBtnIds.push(btnId);
-    btnId = _createBtn("resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { this.resetView() });
+    btnId = _createBtn(controlPanel, "resetView", "fa fa-sync", { "aria-hidden": "true" }, "Reset View", () => { this.resetView() });
     this._controlPanelBtnIds.push(btnId);
-    btnId = _createBtn("resetVisibleView", "fa fa-align-justify", {}, "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
+    btnId = _createBtn(controlPanel, "resetVisibleView", "fa fa-align-justify", {}, "Center and zoom into visible Neurons/Synapses", () => { this.resetVisibleView() });
     this._controlPanelBtnIds.push(btnId);
-    btnId = _createBtn("hideAll", "fa fa-eye-slash", {}, "Hide All", () => { this.hideAll() });
+    btnId = _createBtn(controlPanel, "hideAll", "fa fa-eye-slash", {}, "Hide All", () => { this.hideAll() });
     this._controlPanelBtnIds.push(btnId);
-    btnId = _createBtn("showAll", "fa fa-eye", {}, "Show All", () => { this.showAll() });
+    btnId = _createBtn(controlPanel, "showAll", "fa fa-eye", {}, "Show All", () => { this.showAll() });
     this._controlPanelBtnIds.push(btnId);
-    btnId = _createBtn("takeScreenshot", "fa fa-camera", {}, "Download Screenshot", () => { this._take_screenshot = true; });
+    btnId = _createBtn(controlPanel, "takeScreenshot", "fa fa-camera", {}, "Download Screenshot", () => { this._take_screenshot = true; });
     this._controlPanelBtnIds.push(btnId);
-    btnId = _createBtn("removeUnpin", "fa fa-trash", {}, "Remove Unpinned Neurons", () => { this.removeUnpinned(); })
+    btnId = _createBtn(controlPanel, "removeUnpin", "fa fa-trash", {}, "Remove Unpinned Neurons", () => { this.removeUnpinned(); })
     this._controlPanelBtnIds.push(btnId);
-    btnId = _createBtn("removeUnpin", "fa fa-map-upin", {}, "Unpin All", () => { this.unpinAll(); })
+    btnId = _createBtn(controlPanel, "removeUnpin", "fa fa-map-upin", {}, "Unpin All", () => { this.unpinAll(); })
     this._controlPanelBtnIds.push(btnId);
-    btnId = _createBtn("showSettings", "fa fa-cogs", {}, "Display Settings", () => { controlPanel.__closeButton.click(); })
+    btnId = _createBtn(controlPanel, "showSettings", "fa fa-cogs", {}, "Display Settings", () => { controlPanel.__closeButton.click(); })
     this._controlPanelBtnIds.push(btnId);
   }
   // add settings
@@ -115,7 +125,7 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   let ctl_maxSynR = f2.add(this.settings, 'maxSynapseRadius', 0);
   ctl_maxSynR.onChange((value) => { value = Math.max(value, this.settings.minSynapseRadius); });
 
-  this.settings.on("change", ((e) => {
+  this.settings.on("change", (() => {
     controlPanel.updateDisplay();
   }), [
     'neuron3dMode', 'meshWireframe', 'defaultOpacity',
@@ -125,10 +135,10 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
     'minSomaRadius', 'maxSomaRadius', 'minSynapseRadius', 'maxSynapseRadius', 'backgroundColor'
   ]);
   // this.settings.toneMappingPass.on('change', ((e)=>{controlPanel.updateDisplay();}), ['brightness']);
-  this.settings.bloomPass.on('change', ((e)=>{controlPanel.updateDisplay();}), ['radius', 'strength', 'threshold']);
-  this.settings.effectFXAA.on('change', ((e)=>{controlPanel.updateDisplay();}), ['enabled']);
-  this.settings.backrenderSSAO.on('change', ((e)=>{controlPanel.updateDisplay();}), ['enabled']);
-  this.uiVars.on('change', ((e)=>{controlPanel.updateDisplay();}), ['frontNum']);
+  this.settings.bloomPass.on('change', (()=>{controlPanel.updateDisplay();}), ['radius', 'strength', 'threshold']);
+  this.settings.effectFXAA.on('change', (()=>{controlPanel.updateDisplay();}), ['enabled']);
+  this.settings.backrenderSSAO.on('change', (()=>{controlPanel.updateDisplay();}), ['enabled']);
+  this.uiVars.on('change', (()=>{controlPanel.updateDisplay();}), ['frontNum']);
 
   controlPanel.open();
   return controlPanel;

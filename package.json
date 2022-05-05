@@ -7,8 +7,8 @@
   "scripts": {
     "build": "npx webpack --config webpack.config.js",
     "watch": "npx webpack --config webpack.config.js --watch",
-    "test": "echo \"To see it in action, server HTML server in root after build\"",
     "dev": "npx webpack --config webpack.config.js --watch",
+    "lint": "npx eslint src/**",
     "clean": "rimraf lib",
     "clean:node_modules": "rimraf node_modules lib"
   },

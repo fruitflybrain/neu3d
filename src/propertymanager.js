@@ -4,26 +4,29 @@ let PropertyManagerHandler = {
       obj[prop] = value;
       return true;
     }
-    try{
+    try {
       if(!Object.getOwnPropertyDescriptor(obj, prop).writable){
         console.error("Can't set the value for " + prop + " in PropertyManager");
         return false;
       }
+    } catch(e) {
+      // do nothing
     }
-    catch(e){};
 
     if(prop in obj._PropMan_validations){
       if(!(obj._PropMan_validations[prop].reduce(function(a,b) {return a&&b(value)}, true)))
         return false;
     }
 
-    try{
-      if(value.hasOwnProperty('_PropMan'))
-        if(value._PropMan_parent === undefined)
-          value._PropMan_parent = {'prop': prop,
-                                    'obj':obj};
+    try {
+      if(Object.prototype.hasOwnProperty.call(value, '_PropMan')){
+        if(value._PropMan_parent === undefined){
+          value._PropMan_parent = {'prop': prop, 'obj':obj};
+        }
+      }
+    } catch(err){
+      // do nothing
     }
-    catch(err){}
 
 
     if(prop in obj){
@@ -69,7 +72,7 @@ let PropertyManagerHandler = {
       }
       catch(err) {console.error(`[Neu3D-PropMan] Error, ${err}`);}
     });
-    if(prop in obj._PropMan_callbacks)
+    if(prop in obj._PropMan_callbacks){
       obj._PropMan_callbacks[prop].remove.forEach(function(f){
         try{
           f({'event': 'remove', 'prop': prop, 'value': obj[prop]})
@@ -78,12 +81,17 @@ let PropertyManagerHandler = {
           console.error(`[Neu3D-PropMan] Error, ${err}`);
         }
       });
-    try{
-      if(obj[prop].hasOwnProperty('_PropMan'))
-        if(obj[prop]._PropMan_parent !== undefined)
-          obj[prop]._PropMan_parent = undefined
     }
-    catch(err) {}
+
+    try {
+      if(Object.prototype.hasOwnProperty.call(obj[prop], '_PropMan')){
+        if(obj[prop]._PropMan_parent !== undefined){
+          obj[prop]._PropMan_parent = undefined;
+        }
+      }
+    } catch(err) {
+      // do nothing
+    }
     delete obj[prop];
     return true;
   },
@@ -162,10 +170,10 @@ export class PropertyManager {
       value: function (e) {
         if (e['prop'] in this._PropMan_callbacks)
           this._PropMan_callbacks[e['prop']]['change'].forEach(function (f) {
-            try { 
-              f(e) 
-            } catch (err) { 
-              console.error(`[Neu3D-PropMan] Error, ${err}`); 
+            try {
+              f(e)
+            } catch (err) {
+              console.error(`[Neu3D-PropMan] Error, ${err}`);
             }
           });
         if (this._PropMan_parent !== undefined) {

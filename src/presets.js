@@ -1,5 +1,4 @@
 import { Lut } from 'three/examples/jsm/math/Lut';
-import { Color } from 'three';
 
 export const datGuiPresets ={
   "preset": "Default",

@@ -4,9 +4,8 @@ import {
   Vector2, Raycaster,
   Group, WebGLRenderer,
   Scene, Vector3, LoadingManager,
-  PerspectiveCamera, Color, FileLoader, GammaEncoding, Mesh
+  PerspectiveCamera, Color, FileLoader, GammaEncoding
 } from 'three';
-
 import { Lut } from 'three/examples/jsm/math/Lut'
 // import { AdaptiveToneMappingPass } from 'three/examples/jsm/postprocessing/AdaptiveToneMappingPass';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
@@ -29,11 +28,6 @@ import '../style/neu3d.css';
 
 var isOnMobile = checkOnMobile();
 var _saveImage;
-
-// return next power of 2 of given number
-function nextPow2(x) {
-  return Math.pow(2, Math.round(Math.max(x, 0)).toString(2).length);
-}
 
 // used for generating unique file upload div id
 function generateGuid() {
@@ -84,11 +78,11 @@ function getRandomIntInclusive(min, max) {
 
 export class Neu3D {
   /**
-   * 
+   *
    * @param {HTMLDivElement} container : parent div element
    * @param {JSON | undefined } data : optionally add initalization data
    * @param {JSON | undefined } metadata : optional metadata
-   * @param {Object} [options={}] : additional options 
+   * @param {Object} [options={}] : additional options
    */
   constructor(container, data, metadata, options = {}) {
     this.container = container;
@@ -145,7 +139,8 @@ export class Neu3D {
       meshWireframe: true,
       backgroundColor: new Color("#260226"),
       sceneBackgroundColor: new Color('#030305'),
-      render_resolution: 1.0
+      render_resolution: 1.0,
+      adaptive_resolution: options["adaptive"] ? true : false
     });
     // this.settings.toneMappingPass = new PropertyManager({ brightness: 0.95 });
     this.settings.bloomPass = new PropertyManager({enabled: false, radius: 0.2, strength: 0.2, threshold: 0.3 });
@@ -257,7 +252,7 @@ export class Neu3D {
     this.on('remove', ((e) => { this.onRemoveMesh(e); }));
     this.on('pinned', ((e) => { this.updatePinned(e); this.updateOpacity(e); }));
     this.on('visibility', ((e) => { this.onUpdateVisibility(e.path[0]); }));
-    //this.on('num', (function () { this.updateInfoPanel(); }).bind(this)); 
+    //this.on('num', (function () { this.updateInfoPanel(); }).bind(this));
     // this.on('num', () => { this.controlPanel.__controllers[0].setValue(this.uiVars.frontNum); });
     this.on('highlight', ((e) => { this.updateOpacity(e); this.onUpdateHighlight(e); }));
 
@@ -343,11 +338,11 @@ export class Neu3D {
         let isSWC = false;
         let isSyn = false;
         var filetype;
-        if (file.name.match('.+(\.swc)$')) {
+        if (file.name.match('.+(.swc)$')) {
           isSWC = true;
           filetype = 'swc';
         }
-        if (file.name.match('.+(\.syn)$')) {
+        if (file.name.match('.+(.syn)$')) {
           isSyn = true;
           filetype = 'syn';
         }
@@ -607,7 +602,7 @@ export class Neu3D {
     // this.composer.addPass(this.toneMappingPass);
     this.composer.addPass(this.bloomPass);
     this.composer.addPass( this.effectCopy );
-    // // this.composer.addPass(this.volumeRenderPass);
+    // this.composer.addPass(this.volumeRenderPass);
     this.composer.setSize(
       width * window.devicePixelRatio,
       height * window.devicePixelRatio
@@ -716,7 +711,7 @@ export class Neu3D {
   }
 
 
-  /** 
+  /**
    * Initialize LoadingManager
    * https://threejs.org/docs/#api/en/loaders/managers/LoadingManager
   */
@@ -731,17 +726,17 @@ export class Neu3D {
     return loadingManager;
   }
 
-  /** 
-   * Update selected object 
+  /**
+   * Update selected object
    * @param {string} id uid of selected object
    */
   select(id) {
     this.uiVars.selected = id;
   }
 
-  /** 
-   * Reset workspace 
-   * 
+  /**
+   * Reset workspace
+   *
    * @param {boolean=} resetBackground whether to reset background
    */
   reset(resetBackground = false) {
@@ -908,7 +903,7 @@ export class Neu3D {
     delete this.settings;
     // this.settings = null;
     delete this.uiVars;
-    // this.uiVars = null;    
+    // this.uiVars = null;
     delete this.dispatch;
     // this.dispatch = null;
     delete this.commandDispatcher;
@@ -921,8 +916,8 @@ export class Neu3D {
   }
 
   /**
-   * 
-   * @param {object} json 
+   *
+   * @param {object} json
    */
   execCommand(json) {
     let neuList = json['neurons'] || [];
@@ -939,7 +934,7 @@ export class Neu3D {
 
   /**
    * Add Object to workspace as JSON
-   * @param {object} json 
+   * @param {object} json
    */
   addJson(json) {
     return new Promise((resolve) => {
@@ -1013,7 +1008,7 @@ export class Neu3D {
 
         // create propMan proxy of mesh if mesh is not already a propMan proxy
         let unit;
-        if (mesh.hasOwnProperty('_PropMan')) {
+        if (Object.prototype.hasOwnProperty.call(mesh, '_PropMan')) {
           unit = mesh;
         } else {
           unit = new PropertyManager(mesh);
@@ -1022,10 +1017,10 @@ export class Neu3D {
         // set default values of unit
 
         unit.boundingBox = Object.assign({}, this.defaultBoundingBox);
-        setAttrIfNotDefined(unit, 'background', 
-          (unit.hasOwnProperty('class') && unit.class == 'Neuropil')
+        setAttrIfNotDefined(unit, 'background',
+          (Object.prototype.hasOwnProperty.call(unit, 'class') && unit.class == 'Neuropil')
         );
-        setAttrIfNotDefined(unit, 'uname', 
+        setAttrIfNotDefined(unit, 'uname',
           getAttr(unit, 'uname', getAttr(unit, 'name', key))
         );
         setAttrIfNotDefined(unit, 'name', getAttr(unit, 'uname', key));
@@ -1037,7 +1032,7 @@ export class Neu3D {
           setAttrIfNotDefined(unit, 'opacity', this.settings.defaultOpacity);
         }
         setAttrIfNotDefined(unit, 'visibility', true);
-        setAttrIfNotDefined(unit, 'color', 
+        setAttrIfNotDefined(unit, 'color',
           (unit.background) ? this.settings.backgroundColor :  lut.getColor(id2float(i))
         );
         setAttrIfNotDefined(unit, 'radius_scale', 1.);
@@ -1058,7 +1053,7 @@ export class Neu3D {
         }
         /* load mesh */
         if (metadata.type === "morphology_json") {
-          if (unit.hasOwnProperty('morph_type') && unit.morph_type === 'mesh'){
+          if (Object.prototype.hasOwnProperty.call(unit, 'morph_type') && unit.morph_type === 'mesh'){
             this.loadMeshCallBack(key, unit, metadata.visibility).bind(this)(unit);
             delete unit['vertices'];
             delete unit['faces'];
@@ -1131,9 +1126,8 @@ export class Neu3D {
 
   /**
    * Compute Visible Bounding Box of all objects.
-   * @param {boolean=} includeBackground 
    */
-  computeVisibleBoundingBox(includeBackground = false) {
+  computeVisibleBoundingBox() {
     this.visibleBoundingBox = Object.assign({}, this.defaultBoundingBox);
     let updated = false;
     for (let key in this.meshDict) {
@@ -1161,10 +1155,10 @@ export class Neu3D {
 
   /**
    * Update Bounding Box of Object
-   * @param {*} obj 
-   * @param {*} x 
-   * @param {*} y 
-   * @param {*} z 
+   * @param {*} obj
+   * @param {*} x
+   * @param {*} y
+   * @param {*} z
    */
   // updateObjectBoundingBox(obj, x, y, z) {
   //   if (x < obj.boundingBox.minX)
@@ -1182,9 +1176,9 @@ export class Neu3D {
   // }
 
   /** TODO: Add comment
-   * @param {*} x 
-   * @param {*} y 
-   * @param {*} z 
+   * @param {*} x
+   * @param {*} y
+   * @param {*} z
    */
   updateBoundingBox(boundingBox) {
     if (boundingBox.minX < this.boundingBox.minX) {
@@ -1214,19 +1208,9 @@ export class Neu3D {
     this.controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
     if (this.states.mouseOver && this.dispatch.syncControls) {
       this.dispatch.syncControls(this);
-      if (options['adaptive']) {
+      if (this.settings.adaptive_resolution) {
         this.updateResolution();
         this.updateShaders();
-        /*
-        if(this.frameCounter < 3){
-          this.frameCounter++;
-        }else{
-          this.updateResolution();
-          this.updateShaders();
-          this.frameCounter = 0;
-        }
-        */
-
       }
     }
     if ((this.activeRender && this.powerSaving) || (!(this.powerSaving))) {
@@ -1237,8 +1221,6 @@ export class Neu3D {
     }
     this._animationId = requestAnimationFrame(this.animate.bind(this));
   }
-
-
 
   /**
    * Load swc files on drop
@@ -1252,7 +1234,7 @@ export class Neu3D {
       const file = event.dataTransfer.files.item(i);
       const name = file.name.split('.')[0];
       let isSWC = false;
-      if (file.name.match('.+(\.swc)$')) {
+      if (file.name.match('.+(.swc)$')) {
         isSWC = true;
       }
       let reader = new FileReader();
@@ -1275,7 +1257,7 @@ export class Neu3D {
 
   /**
    * Mouse Click Event
-   * @param {*} event 
+   * @param {*} event
    */
   onDocumentMouseClick(event) {
     if (event !== undefined) {
@@ -1301,7 +1283,7 @@ export class Neu3D {
 
   /**
    * Double Click callback
-   * @param {*} event 
+   * @param {*} event
    */
   onDocumentMouseDBLClick(event) {
     if (event !== undefined) {
@@ -1319,7 +1301,7 @@ export class Neu3D {
 
   /**
    * Double Click Mobile
-   * @param {*} event 
+   * @param {*} event
    */
   onDocumentMouseDBLClickMobile(event) {
     if (event !== undefined) {
@@ -1335,8 +1317,8 @@ export class Neu3D {
   }
 
   /** TODO: Add Comment
-   * 
-   * @param {*} event 
+   *
+   * @param {*} event
    */
   onDocumentMouseMove(event) {
     event.preventDefault();
@@ -1349,8 +1331,8 @@ export class Neu3D {
   }
 
   /**TODO: Add comment
-   * 
-   * @param {*} event 
+   *
+   * @param {*} event
    */
   onDocumentMouseEnter(event) {
     event.preventDefault();
@@ -1359,8 +1341,8 @@ export class Neu3D {
   }
 
   /**TODO: Add comment
-   * 
-   * @param {*} event 
+   *
+   * @param {*} event
    */
   onDocumentMouseLeave(event) {
     event.preventDefault();
@@ -1371,7 +1353,7 @@ export class Neu3D {
 
 
   /**
-   * Response to window resize 
+   * Response to window resize
    */
   onWindowResize() {
     let height = this.container.clientHeight;
@@ -1405,7 +1387,7 @@ export class Neu3D {
 
 
   /**
-   * Render 
+   * Render
    */
   render() {
     if (this.states.highlight) {
@@ -1457,7 +1439,7 @@ export class Neu3D {
 
   /**
    * Raycaster intersection groups
-   * @param {Array<object>} groups 
+   * @param {Array<object>} groups
    */
   getIntersection(groups) {
     if (groups === undefined) {
@@ -1466,12 +1448,11 @@ export class Neu3D {
     let val = undefined;
     let object = undefined;
     this.raycaster.setFromCamera(this.uiVars.cursorPosition, this.camera);
-    var b = false;
     for (const group of groups) {
       let intersects = this.raycaster.intersectObjects(group.children, true);
       if (intersects.length > 0) {
         object = intersects[0].object.parent;
-        if (object.hasOwnProperty('rid') && object.rid in this.meshDict) {
+        if (Object.prototype.hasOwnProperty.call(object, 'rid') && object.rid in this.meshDict) {
           val = this.meshDict[object.rid];
           break;
         }
@@ -1561,7 +1542,7 @@ export class Neu3D {
 
   /**
    * show individual object
-   * @param {string} id 
+   * @param {string} id
    */
   show(id) {
     id = this.asarray(id);
@@ -1591,7 +1572,7 @@ export class Neu3D {
 
   /**
    * callback for when mesh is added
-   * @param {event} e 
+   * @param {event} e
    */
   onAddMesh(e) {
     if (!e.value['background']) {
@@ -1609,9 +1590,9 @@ export class Neu3D {
 
   /**
    * callback when mesh is removed
-   * 
+   *
    * Dispose objects, decrement counters
-   * @param {event} e 
+   * @param {event} e
    */
   onRemoveMesh(e) {
     if (this.states.highlight == e.prop)
@@ -1635,8 +1616,8 @@ export class Neu3D {
   }
 
   /** TODO: Add Comment
-   * 
-   * @param {*} key 
+   *
+   * @param {*} key
    */
   toggleVis(key) {
     if (key in this.meshDict)
@@ -1645,8 +1626,7 @@ export class Neu3D {
   }
 
   /** Change visibility of the neuron
-   * 
-   * @param {*} key 
+   * @param {*} key
    */
   onUpdateVisibility(key) {
     // this.meshDict[key]['object'].visible = this.meshDict[key].visibility;
@@ -1654,9 +1634,9 @@ export class Neu3D {
   }
 
   /** Highlight a  neuron
-   * 
-   * @param {*} d 
-   * @param {*} updatePos 
+   *
+   * @param {*} d
+   * @param {*} updatePos
    */
   highlight(d, updatePos) {
     if (d === undefined || d === false) {
@@ -1684,8 +1664,8 @@ export class Neu3D {
   }
 
   /** TODO: Add Comment
-   * 
-   * @param {event} e 
+   *
+   * @param {event} e
    */
   onUpdateHighlight(e) {
     if (e.old_value) {
@@ -1700,8 +1680,8 @@ export class Neu3D {
   }
 
   /** TODO: Add Comment
-   * 
-   * @param {*} e 
+   *
+   * @param {*} e
    */
   updateOpacity(e) {
     if (e.prop == 'highlight' && this.states.highlight) {
@@ -1709,7 +1689,7 @@ export class Neu3D {
       for (const key of list) {
         let val = this.meshDict[key];
         let opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
-        
+
         let depthTest = true;
         if (val['pinned']) {
           opacity = this.settings.pinOpacity;
@@ -1720,7 +1700,7 @@ export class Neu3D {
         } else {
           val.renderObj.updateOpacity(opacity);
         }
-        
+
         val.renderObj.updateDepthTest(depthTest);
       }
       let val = this.meshDict[this.states.highlight];
@@ -1735,8 +1715,8 @@ export class Neu3D {
       for (const key of Object.keys(this.meshDict)) {
         var val = this.meshDict[key];
         if (!val['background']) {
-          var opacity = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
-          var depthTest = !this.meshDict[key]['pinned'];
+          let opacity = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+          let depthTest = !this.meshDict[key]['pinned'];
           val.renderObj.updateOpacity(opacity);
           val.renderObj.updateDepthTest(depthTest);
         } else {
@@ -1744,11 +1724,7 @@ export class Neu3D {
         }
       }
     } else if (e.prop == 'pinned' && this.states.pinned) {// New object being pinned while already in pinned mode
-      // for (var i in e.obj.renderObj.children) {
-      //   e.obj.renderObj.children[i].material.opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
-      //   e.obj.renderObj.children[i].material.depthTest = !e.value;
-      // }
-      var opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+      let opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
       e.obj.renderObj.updateOpacity(opacity);
       e.obj.renderObj.updateDepthTest(!e.value);
     } else if (!this.states.pinned || e.prop == 'highlight') { // Default opacity value change in upinned mode or exiting highlight mode
@@ -1782,7 +1758,7 @@ export class Neu3D {
 
   /**
    * Update defaultRadius
-   * @param {*} e 
+   * @param {*} e
    */
   updateDefaultRadius(e) {
     for (const key of Object.keys(this.meshDict)) {
@@ -1794,7 +1770,7 @@ export class Neu3D {
 
   /**
    * Update defaultSomaRadius
-   * @param {*} e 
+   * @param {*} e
    */
   updateDefaultSomaRadius(e) {
     for (const key of Object.keys(this.meshDict)) {
@@ -1829,7 +1805,7 @@ export class Neu3D {
           this.updateBoundingBox(object.boundingBox);
           this.groups.front.add(object.threeObj);
         }
-        
+
       }
     }
   }
@@ -1845,7 +1821,7 @@ export class Neu3D {
 
   /**
    * Conver to array
-   * @param {any} variable 
+   * @param {any} variable
    */
   asarray(variable) {
     if (variable.constructor !== Array) {
@@ -1857,7 +1833,7 @@ export class Neu3D {
 
   /**
    * Update Pinned objects
-   * @param {*} e 
+   * @param {*} e
    */
   updatePinned(e) {
     if (e.obj['pinned']) {
@@ -1871,7 +1847,7 @@ export class Neu3D {
 
   /**
    * pin an object in workspace
-   * @param {string} id 
+   * @param {string} id
    */
   pin(id) {
     id = this.asarray(id);
@@ -1919,7 +1895,7 @@ export class Neu3D {
 
   /**
    * remove object by id
-   * @param {string} id 
+   * @param {string} id
    */
   remove(id) {
     id = this.asarray(id);
@@ -1944,8 +1920,8 @@ export class Neu3D {
 
   /**
    * Set color of given object
-   * @param id 
-   * @param color 
+   * @param id
+   * @param color
    */
   setColor(id, color) {
     id = this.asarray(id);
@@ -1969,7 +1945,7 @@ export class Neu3D {
 
   /**
    * Set background color
-   * @param {Array} color 
+   * @param {Array} color
    */
   setBackgroundColor(color) {
     if (Array.isArray(color)) {
@@ -2122,14 +2098,14 @@ export class Neu3D {
     this.toolTipDiv.style.opacity = 0.0;
   }
 
-  /** TODO: what is this? */
+  /** FIXME: what is this? */
   _getInfo(d) {
     return d;
   }
 
   /**
    * Get position of neuron on the screen
-   * @param {*} id 
+   * @param {*} id
    */
   getNeuronScreenPosition(id) {
     let vector = this.meshDict[id].position.clone();
@@ -2144,7 +2120,7 @@ export class Neu3D {
 
   /**
    * Synchronize controls with another `Neu3D` object
-   * @param {*} ffbomesh 
+   * @param {*} ffbomesh
    */
   syncControls(ffbomesh) {
     if (this === ffbomesh) {
@@ -2156,4 +2132,4 @@ export class Neu3D {
     this.camera.up.copy(ffbomesh.camera.up);
     this.camera.lookAt(ffbomesh.controls.target);
   }
-};
+}

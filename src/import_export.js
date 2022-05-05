@@ -6,7 +6,7 @@ Neu3D.prototype.import_settings = function(settings) {
     this.lightsHelper.import(settings.lightsHelper);
     delete settings.lightsHelper;
   }
-  
+
   if ('postProcessing' in settings) {
     let postProcessing = settings.postProcessing;
     delete settings.postProcessing;
@@ -31,7 +31,7 @@ Neu3D.prototype.import_settings = function(settings) {
       this.settings.bloomPass.threshold = postProcessing.bloomThreshold;
     }
   }
-  
+
   if ('backgroundColor' in settings) {
     let bg = settings.backgroundColor;
     setTimeout( ()=> {
@@ -42,9 +42,9 @@ Neu3D.prototype.import_settings = function(settings) {
   Object.assign(this.settings, settings);
 }
 
-/** 
-* Export state of the workspace 
-* 
+/**
+* Export state of the workspace
+*
 * Note: useful for tagging
 */
 Neu3D.prototype.export_state = function() {
@@ -60,7 +60,7 @@ Neu3D.prototype.export_state = function() {
   state_metadata['target']['z'] = this.controls.target.z;
   state_metadata['pinned'] = Array.from(this.uiVars.pinnedObjects);
   for (let key in this.meshDict) {
-    if (this.meshDict.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(this.meshDict, key)) {
       state_metadata['color'][key] = this.meshDict[key].color.toArray();
       state_metadata['visibility'][key] = this.meshDict[key].visibility;
     }
@@ -70,9 +70,9 @@ Neu3D.prototype.export_state = function() {
 
 /**
 * Import State
-* 
+*
 * Note: useful for tagging
-* @param {object} state_metadata 
+* @param {object} state_metadata
 */
 Neu3D.prototype.import_state = function(state_metadata) {
   console.log("import_states")
@@ -88,20 +88,21 @@ Neu3D.prototype.import_state = function(state_metadata) {
   this.camera.lookAt(this.controls.target);
   for (let i = 0; i < state_metadata['pinned'].length; ++i) {
     let key = state_metadata['pinned'][i];
-    if (this.meshDict.hasOwnProperty(key))
-    this.meshDict[key]['pinned'] = true;
+    if (Object.prototype.hasOwnProperty.call(this.meshDict, key)){
+      this.meshDict[key]['pinned'] = true;
+    }
   }
   for (let key of Object.keys(state_metadata['visibility'])) {
-    if (!this.meshDict.hasOwnProperty(key)){
+    if (!Object.prototype.hasOwnProperty.call(this.meshDict, key)){
       continue;
     }
     this.meshDict[key].visibility = state_metadata['visibility'][key];
     if (this.meshDict[key].background){
       continue;
-    } 
-    let meshobj = this.meshDict[key].renderObj;
-    let color = state_metadata['color'][key];
-    meshobj.setColor(color);
+    }
+    this.meshDict[key].renderObj.setColor(
+      state_metadata['color'][key]
+    );
   }
 }
 
