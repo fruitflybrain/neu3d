@@ -77,7 +77,17 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   let f_vis = controlPanel.addFolder('Settings');
   let f0 = f_vis.addFolder('Display Mode');
   // f0.add(this.settings, 'neuron3d').name("Enable 3D Mode");
-  f0.add(this.settings, 'neuron3dMode', [0, 1, 2, 3, 4, 5, 6]);
+  f0.add(this.settings, 'neuron3dMode', [0, 1, 2, 3, 4, 5, 6]).title(
+    `Display mode for neuron visualization:
+      mode 0: default mode (light), renders a neuron in their approximate branch width.
+      mode 1: skeleton mode (very light), renders a neuron with lines, was the previous default mode.
+      mode 2: thick line mode (light), render similarly to mode 0 but radii of each segment is the same and defined by setting, can change width from setting and takes immediate effect.
+      mode 3: sphere mode (medium), renders each point on the skeleton as a sphere and connected by a line.
+      mode 4: cylinder mode (heavy), renders a neuron with cylinders.
+      mode 5: cylinder+sphere mode (heavy), renders a neuron with cylinders and spheres.
+      mode 6: cylinder+tube (very heavy), renders a neuron with cylinders and tubes as joints.
+    `
+  );
   f0.add(this.settings, 'neuron3dApp').name("Change Existing").title("Change existing neurons' rendering mode?");
 
   let f1 = f_vis.addFolder('Visualization');
