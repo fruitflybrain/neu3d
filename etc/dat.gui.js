@@ -12,7 +12,7 @@ function setTitle (v) {
     }
 
     return this;
-};
+}
 
 /**
  * overload dat.GUI library to add command strip where all commands are in a row
@@ -70,14 +70,11 @@ function eachController(fnc) {
     }
 }
 
+// Add title, icon methods to controllers
 eachController(controller => {
     if (!Object.prototype.hasOwnProperty.call(controller.prototype, 'title')) {
         controller.prototype.title = setTitle;
     }
-});
-
-
-eachController(controller => {
     if (!Object.prototype.hasOwnProperty.call(controller.prototype, 'icon')) {
         controller.prototype.icon = setCommandIcon;
     }

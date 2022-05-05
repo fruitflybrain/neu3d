@@ -78,28 +78,28 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   let f0 = f_vis.addFolder('Display Mode');
   // f0.add(this.settings, 'neuron3d').name("Enable 3D Mode");
   f0.add(this.settings, 'neuron3dMode', [0, 1, 2, 3, 4, 5, 6]);
-  f0.add(this.settings, 'neuron3dApp').name("Change existing?").title("Change existing neurons' rendering mode?");
+  f0.add(this.settings, 'neuron3dApp').name("Change Existing").title("Change existing neurons' rendering mode?");
 
   let f1 = f_vis.addFolder('Visualization');
   f1.add(this.settings, 'meshWireframe').name("Show Wireframe");
-  f1.addColor(this.settings, 'backgroundColor').name("Background");
-  f1.addColor(this.settings, 'sceneBackgroundColor').name("Scene");
+  f1.addColor(this.settings, 'backgroundColor').name("Background").title("Change neuropil mesh color");
+  f1.addColor(this.settings, 'sceneBackgroundColor').name("Scene").title("Change scene background color");
   let f1_1 = f1.addFolder('Opacity');
 
   let f1_1_1 = f1_1.addFolder('Normal Mode');
   f1_1_1.add(this.settings, 'defaultOpacity', 0.0, 1.0).name('Default');
   f1_1_1.add(this.settings, 'synapseOpacity', 0.0, 1.0).name('Synapse');
-  f1_1_1.add(this.settings, 'backgroundOpacity', 0.0, 1.0).name("BG Opacity");
-  f1_1_1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0).name("Wireframe Opacity");
+  f1_1_1.add(this.settings, 'backgroundOpacity', 0.0, 1.0).name("BG Opacity").title("Change neuropil mesh opacity");
+  f1_1_1.add(this.settings, 'backgroundWireframeOpacity', 0.0, 1.0).name("Wireframe Opacity").title("Change neuropil wireframe opacity");
 
   let f1_1_2 = f1_1.addFolder('Highlight Mode');
   f1_1_2.add(this.settings, 'highlightedObjectOpacity', 0.0, 1.0).name('Highlighted');
-  f1_1_2.add(this.settings, 'lowOpacity', 0.0, 1.0).name('Low in Highlight');
+  f1_1_2.add(this.settings, 'lowOpacity', 0.0, 1.0).name('Low in Highlight').title("Opacity of neurons that are not highlighted when some other neuron is highlighted");
   f1_1_2.add(this.settings, 'nonHighlightableOpacity', 0.0, 1.0).name('NonHighlightable');
 
   let f1_1_3 = f1_1.addFolder('Pinned Mode');
   f1_1_3.add(this.settings, 'pinOpacity', 0.0, 1.0).name('Pinned');
-  f1_1_3.add(this.settings, 'pinLowOpacity', 0.0, 1.0).name('Low in Pinned');
+  f1_1_3.add(this.settings, 'pinLowOpacity', 0.0, 1.0).name('Low in Pinned').title("Opacity of neurons that are not pinned when some other neuron is pinned");
   f1_1_1.closed = false;
   f1_1_2.closed = false;
   f1_1_3.closed = false;
@@ -112,8 +112,8 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   f1_2.add(this.settings.bloomPass, 'radius', 0.0, 10.0).name("BloomRadius");
   f1_2.add(this.settings.bloomPass, 'strength', 0.0, 1.0).name("BloomStrength");
   f1_2.add(this.settings.bloomPass, 'threshold', 0.0, 2.0).name("BloomThreshold");
-  f1_2.add(this.settings.effectFXAA, 'enabled').name("FXAA");
-  f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO");
+  f1_2.add(this.settings.effectFXAA, 'enabled').name("FXAA").title("Enable Fast Approximate Anti-Aliasing");
+  f1_2.add(this.settings.backrenderSSAO, 'enabled').name("SSAO").title("Enable Screen Space Ambient Occlusion");
 
   let f2 = f_vis.addFolder('Size');
   let f2_1 = f2.addFolder('Neurite');
