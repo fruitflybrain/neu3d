@@ -78,7 +78,7 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   let f0 = f_vis.addFolder('Display Mode');
   // f0.add(this.settings, 'neuron3d').name("Enable 3D Mode");
   f0.add(this.settings, 'neuron3dMode', [0, 1, 2, 3, 4, 5, 6]);
-  f0.add(this.settings, 'neuron3dApp').name("Change existing?");
+  f0.add(this.settings, 'neuron3dApp').name("Change existing?").title("Change existing neurons' rendering mode?");
 
   let f1 = f_vis.addFolder('Visualization');
   f1.add(this.settings, 'meshWireframe').name("Show Wireframe");
@@ -103,7 +103,7 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
   f1_1_1.closed = false;
   f1_1_2.closed = false;
   f1_1_3.closed = false;
-  
+
 
   let f1_2 = f1.addFolder('Advanced');
 
