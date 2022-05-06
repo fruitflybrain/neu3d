@@ -5,6 +5,7 @@ import {
 } from 'three';
 
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 
 import { NeuronSkeleton, Synapses, MeshObj } from './render';
 
@@ -29,8 +30,14 @@ Math.clip = function (number, min, max) {
 * @param {*} object
 */
 Neu3D.prototype._registerObject = function (key, unit, object) {
-  object.registerProperties(key);
-  this.updateBoundingBox(object.boundingBox);
+  try {
+    object.registerProperties(key);
+    this.updateBoundingBox(object.boundingBox);
+  }
+  catch (e) {
+    console.error(`[Neu3D] A new type of object lacks a superclass with registerProperties()`);
+  }
+  
   unit['rid'] = key;
   unit['renderObj'] = object;
   unit['pinned'] = false;
@@ -135,6 +142,59 @@ Neu3D.prototype.loadObjCallBack = function (key, unit, visibility) {
     loader.load(
       '', unit['dataStr'],
       function (object) {
+        object.visible = visibility;
+        _this._registerObject(key, unit, object);
+        delete unit['identifier'];
+        delete unit['x'];
+        delete unit['y'];
+        delete unit['z'];
+        delete unit['r'];
+        delete unit['parent'];
+        delete unit['sample'];
+        delete unit['type'];
+      },
+      function (xhr) {
+        console.debug(`[Neu3D] loading Object: ${(xhr.loaded / xhr.total * 100)}% loaded`);
+      },
+      function (error) {
+        console.error(`[Neu3D] An error happened in loadObjCallBack, ${error}`);
+      }
+    );
+
+  };
+}
+
+/** Load a GLTF file
+ *
+ * @param {*} key
+ * @param {*} unit
+ * @param {*} visibility
+ * @returns
+ */
+ Neu3D.prototype.loadGltfCallBack = function (key, unit, visibility) {
+  return () => {
+    // instantiate a loader
+    var loader = new GLTFLoader();
+    var _this = this;
+    loader.load = function load(url, localtext, onLoad, onProgress, onError) {
+      var scope = this;
+      var loader = new FileLoader(scope.manager);
+      loader.setPath(this.path);
+      loader.setResponseType( 'arraybuffer' );
+      loader.load(url, function (text) {
+        if (url == "") {
+          text = localtext;
+        }
+        scope.parse(text,'', onLoad, onError);
+      }, onProgress, onError);
+    };
+    // load a resource
+    loader.load(
+      '', unit['dataStr'],
+      function (object) {
+        console.log(object);
+        object = object.scene.children[0];
+        console.log(object,_this);
         object.visible = visibility;
         _this._registerObject(key, unit, object);
         delete unit['identifier'];

@@ -339,11 +339,16 @@ export class Neu3D {
         const file = evt.target.files.item(i);
         const name = file.name.split('.')[0];
         let isSWC = false;
+        let isGLTF = false;
         let isSyn = false;
         var filetype;
         if (file.name.match('.+(.swc)$')) {
           isSWC = true;
           filetype = 'swc';
+        }
+        if (file.name.match('.+(.gltf)$')||file.name.match('.+(.glb)$')) {
+          isGLTF = true;
+          filetype = 'gltf';
         }
         if (file.name.match('.+(.syn)$')) {
           isSyn = true;
@@ -359,11 +364,19 @@ export class Neu3D {
           };
           if (isSWC === true || isSyn === true) {
             ffbomesh.addJson({ ffbo_json: json });
+          }
+          else if (isGLTF === true) {
+            ffbomesh.addJson({ ffbo_json: json, type: 'gltf' });
           } else {
             ffbomesh.addJson({ ffbo_json: json, type: 'obj' });
           }
         };
-        reader.readAsText(file);
+        if (isGLTF === true) {
+          reader.readAsArrayBuffer(file);
+        }
+        else{
+          reader.readAsText(file);
+        }
       }
     }
 
@@ -942,6 +955,7 @@ export class Neu3D {
    * @param {object} json
    */
   addJson(json) {
+    console.log(json);
     return new Promise((resolve) => {
       if ((json === undefined) || !("ffbo_json" in json)) {
         console.error(`[Neu3D] cannot addJson, ffbo_json is not undefined, ${json}`);
@@ -962,6 +976,7 @@ export class Neu3D {
           metadata[key] = json[key];
         }
       }
+      console.log(metadata);
 
       /* Reset */
       if (('reset' in json) && json.reset) {
@@ -1075,8 +1090,11 @@ export class Neu3D {
             }
           }
         } else if (metadata.type === "obj") {
+          console.log('obj detected');
           this.loadObjCallBack(key, unit, metadata.visibility).bind(this)();
-        } else if (('dataStr' in unit) && ('filename' in unit)) {
+        } else if (metadata.type === "gltf") {
+          this.loadGltfCallBack(key, unit, metadata.visibility).bind(this)();
+        }else if (('dataStr' in unit) && ('filename' in unit)) {
           console.warn(`[Neu3D] mesh object ${key} has both dataStr and filename, should only have one. Skipped`);
           continue;
         } else if ('filename' in unit) {
@@ -1239,8 +1257,12 @@ export class Neu3D {
       const file = event.dataTransfer.files.item(i);
       const name = file.name.split('.')[0];
       let isSWC = false;
+      let isGLTF = false;
       if (file.name.match('.+(.swc)$')) {
         isSWC = true;
+      }
+      if (file.name.match('.+(.gltf)$')||file.name.match('.+(.glb)$')) {
+        isGLTF = true;
       }
       let reader = new FileReader();
       reader.onload = (evt) => {
@@ -1252,11 +1274,19 @@ export class Neu3D {
         };
         if (isSWC === true) {
           ffbomesh.addJson({ ffbo_json: json });
+        }
+        else if (isGLTF === true) {
+          ffbomesh.addJson({ ffbo_json: json, type: 'gltf' });
         } else {
           ffbomesh.addJson({ ffbo_json: json, type: 'obj' });
         }
       };
-      reader.readAsText(file);
+      if (isGLTF === true) {
+        reader.readAsArrayBuffer(file);
+      }
+      else{
+        reader.readAsText(file);
+      }
     }
   }
 
