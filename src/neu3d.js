@@ -955,7 +955,6 @@ export class Neu3D {
    * @param {object} json
    */
   addJson(json) {
-    console.log(json);
     return new Promise((resolve) => {
       if ((json === undefined) || !("ffbo_json" in json)) {
         console.error(`[Neu3D] cannot addJson, ffbo_json is not undefined, ${json}`);
@@ -976,7 +975,6 @@ export class Neu3D {
           metadata[key] = json[key];
         }
       }
-      console.log(metadata);
 
       /* Reset */
       if (('reset' in json) && json.reset) {
@@ -1092,8 +1090,6 @@ export class Neu3D {
         } else if (metadata.type === "obj") {
           console.log('obj detected');
           this.loadObjCallBack(key, unit, metadata.visibility).bind(this)();
-        } else if (metadata.type === "gltf") {
-          this.loadGltfCallBack(key, unit, metadata.visibility).bind(this)();
         }else if (('dataStr' in unit) && ('filename' in unit)) {
           console.warn(`[Neu3D] mesh object ${key} has both dataStr and filename, should only have one. Skipped`);
           continue;
@@ -1125,6 +1121,10 @@ export class Neu3D {
             unit['class'] = 'Synapse';
             unit['morph_type'] = 'swc'
             this.loadSynapsesCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
+          } else if (unit['filetype'] == "gltf") {
+            unit['class'] = 'Neuron';
+            unit['morph_type'] = 'gltf'
+            this.loadGltfCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
           } else {
             console.warn(`[Neu3D] mesh object ${key} has unrecognized data format, skipped`);
             continue;
@@ -1780,7 +1780,7 @@ export class Neu3D {
     for (const key of Object.keys(this.meshDict)) {
       var val = this.meshDict[key];
       if (!val.background) {
-        if (val.renderObj instanceof NeuronSkeleton) {
+        if (val.class = "Neuron") {//renderObj instanceof NeuronSkeleton) {
           val.renderObj.updateOpacity(this.settings.defaultOpacity);
           val.renderObj.updateDepthTest(true);
         } else if (val.renderObj instanceof Synapses) {

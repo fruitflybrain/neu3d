@@ -4,10 +4,14 @@ import {
   FileLoader,
 } from 'three';
 
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import {
+  OBJLoader 
+} from 'three/examples/jsm/loaders/OBJLoader'
+import {
+  GLTFLoader
+} from 'three/examples/jsm/loaders/GLTFLoader'
 
-import { NeuronSkeleton, Synapses, MeshObj } from './render';
+import { NeuronSkeleton, Synapses, MeshObj, GLTFObj } from './render';
 
 /** Clip value in between min/max
  *
@@ -172,10 +176,8 @@ Neu3D.prototype.loadObjCallBack = function (key, unit, visibility) {
  * @returns
  */
  Neu3D.prototype.loadGltfCallBack = function (key, unit, visibility) {
-  return () => {
-    // instantiate a loader
+  return (data, transformation=undefined) => {
     var loader = new GLTFLoader();
-    var _this = this;
     loader.load = function load(url, localtext, onLoad, onProgress, onError) {
       var scope = this;
       var loader = new FileLoader(scope.manager);
@@ -188,34 +190,24 @@ Neu3D.prototype.loadObjCallBack = function (key, unit, visibility) {
         scope.parse(text,'', onLoad, onError);
       }, onProgress, onError);
     };
-    // load a resource
-    loader.load(
-      '', unit['dataStr'],
-      function (object) {
-        console.log(object);
-        object = object.scene.children[0];
-        console.log(object,_this);
-        object.visible = visibility;
-        _this._registerObject(key, unit, object);
-        delete unit['identifier'];
-        delete unit['x'];
-        delete unit['y'];
-        delete unit['z'];
-        delete unit['r'];
-        delete unit['parent'];
-        delete unit['sample'];
-        delete unit['type'];
-      },
-      function (xhr) {
-        console.debug(`[Neu3D] loading Object: ${(xhr.loaded / xhr.total * 100)}% loaded`);
-      },
-      function (error) {
-        console.error(`[Neu3D] An error happened in loadObjCallBack, ${error}`);
-      }
-    );
 
+    var _this = this;
+    loader.load(
+        '', unit['dataStr'],
+        function (gltf) {
+          let obj = new GLTFObj(gltf, 'gltf', transformation);
+          obj.createObject(unit['color'], unit['background'], _this.settings);
+          obj.updateVisibility(visibility);
+          _this._registerObject(key, unit, obj);
+        },
+        function (xhr) {
+          console.debug(`[Neu3D] loading Object: ${(xhr.loaded / xhr.total * 100)}% loaded`);
+        },
+        function (error) {
+          console.error(`[Neu3D] An error happened in loadGltfCallBack, ${error}`);
+        }
+      );
   };
 }
-
 
 export { Neu3D };

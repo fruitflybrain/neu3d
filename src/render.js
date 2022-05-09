@@ -1037,7 +1037,7 @@ export class Synapses extends RenderObj{
             if (type === 'syn'){
                 locations = this.parseSynFile(data);
             } else {
-                console.error("[Neu3D] NeuronSkeleton unknown type.");
+                console.error("[Neu3D] Synapse unknown type.");
             }
         } else {
             if (type === 'syn') {
@@ -1257,5 +1257,54 @@ export class Synapses extends RenderObj{
 
         return locations;
     }
+}
 
+
+export class GLTFObj extends RenderObj{
+    constructor(data, type, transformation=undefined) {
+        super(transformation);
+        var object = undefined;
+        if (type === 'gltf'){
+            for (var child of data.scene.children[0].children){
+                if (child instanceof Mesh){
+                    var object = child;
+                }
+            }  
+        } 
+        
+        if (object === undefined) {
+            console.error("[Neu3D] file unknown type.");
+        }
+        this.threeObj = object;
+        this.morph_type = 'gltf';
+    }
+
+    createObject(color, background, neu3dSettings) {
+        this.color = new Color(color);
+        if (background === undefined) {
+            this.background = false;
+        } else {
+            this.background = background;
+        }
+
+        var opacity;
+        if (this.background) {
+            opacity = neu3dSettings.backgroundOpacity;
+        } else {
+            opacity = neu3dSettings.defaultOpacity;
+        }
+        this.opacity = opacity;
+        
+        var object = new Object3D();
+        var mesh = this.threeObj;
+        mesh.material.transparent = true;
+        mesh.material.color = color;
+        mesh.material.opacity = opacity;
+        mesh.geometry.scale(0.008, 0.008, 0.008);
+        mesh.geometry.computeBoundingBox();
+        object.add(mesh);
+
+        this.threeObj = object;
+        delete this.object;
+    }
 }
