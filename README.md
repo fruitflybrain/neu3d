@@ -66,7 +66,7 @@ A json file with the following dict items [example](https://cdn.rawgit.com/fruit
 
 **Neuron**:
 
-An SWC file with columns in the following order:
+An SWC file with columns in the following order [example1](https://cdn.rawgit.com/fruitflybrain/neu3d/master/data/hemibrain_neuron.swc) [example2](https://cdn.rawgit.com/fruitflybrain/neu3d/master/data/larva_neuron.swc):
 
 - `sample`: sample ID of the node
 - `identifier`: type of the node, 0: unspecified, 1: soma
@@ -76,11 +76,11 @@ An SWC file with columns in the following order:
 - `r` or `radius`: width of the node
 - `parent`: sample ID of the parent node
 
-In addition to SWC files, a neuron mesh in GLTF format, with '.gltf' extension, can also be visualized.
+In addition to SWC files, a neuron mesh in GLTF format, with '.gltf' extension, can also be visualized [example](https://cdn.rawgit.com/fruitflybrain/neu3d/master/data/hemibrain_neuron.gltf).
 
 **Synapse**:
 
-A `.syn` file defined as a csv file with the columns in the following order:
+A `.syn` file defined as a csv file with the columns in the following order [example](https://cdn.rawgit.com/fruitflybrain/neu3d/master/data/synapses.swc):
 
 - `pre_x`: x coordinate of the presynaptic site,
 - `pre_y`: y coordinate of the presynaptic site,
