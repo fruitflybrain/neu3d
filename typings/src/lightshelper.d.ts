@@ -10,4 +10,3 @@ export class FFBOLightsHelper {
     _updateSpotLight(light: any): void;
     addSpotLight(properties?: {}): any;
 }
-//# sourceMappingURL=lightshelper.d.ts.map

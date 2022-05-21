@@ -546,7 +546,11 @@ export class Neu3D {
                     t_next = 0;
                 }
                 for (let key of Object.keys(activityData)) {
-                    this.meshDict[key]['opacity'] = activityData[key][t_current] * (1 - interp) + activityData[key][t_next] * (interp);
+                    try {
+                        this.meshDict[key]['opacity'] = activityData[key][t_current] * (1 - interp) + activityData[key][t_next] * (interp);
+                    } catch (e) {
+                        console.error(`Cannot Animate for some reaason: ${e}`);
+                    }
                 }
                 this.resetOpacity();
             },
@@ -1069,6 +1073,7 @@ export class Neu3D {
         return new Promise((resolve) => {
             if ((json === undefined) || !("ffbo_json" in json)) {
                 console.error(`[Neu3D] cannot addJson, ffbo_json is not undefined, ${json}`);
+                resolve();
                 return;
             }
 
@@ -1215,11 +1220,11 @@ export class Neu3D {
                         loader.load(unit.filename, this.loadMeshCallBack(key, unit, metadata.visibility).bind(this));
                     } else if (unit['filetype'] == "swc") {
                         unit['class'] = 'Neuron';
-                        unit['morph_type'] = 'swc'
+                        unit['morph_type'] = 'swc';
                         loader.load(unit.filename, this.loadNeuronSkeletonCallBack(key, unit, metadata.visibility).bind(this));
                     } else if (unit['filetype'] == "syn") {
                         unit['class'] = 'Synapse';
-                        unit['morph_type'] = 'swc'
+                        unit['morph_type'] = 'swc';
                         loader.load(unit.filename, this.loadSynapsesCallBack(key, unit, metadata.visibility).bind(this));
                     } else {
                         console.warn(`[Neu3D] mesh object ${key} has unrecognized data format, skipped`);
@@ -1230,15 +1235,15 @@ export class Neu3D {
                         this.loadMeshCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
                     } else if (unit['filetype'] == "swc") {
                         unit['class'] = 'Neuron';
-                        unit['morph_type'] = 'swc'
+                        unit['morph_type'] = 'swc';
                         this.loadNeuronSkeletonCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
                     } else if (unit['filetype'] == "syn") {
                         unit['class'] = 'Synapse';
-                        unit['morph_type'] = 'swc'
+                        unit['morph_type'] = 'swc';
                         this.loadSynapsesCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
                     } else if (unit['filetype'] == "gltf") {
                         unit['class'] = 'Neuron';
-                        unit['morph_type'] = 'gltf'
+                        unit['morph_type'] = 'gltf';
                         this.loadGltfCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
                     } else {
                         console.warn(`[Neu3D] mesh object ${key} has unrecognized data format, skipped`);
@@ -1339,7 +1344,9 @@ export class Neu3D {
         }
     }
 
+    /** Main animation loop */
     animate() {
+        console.debug("[Neu3D] animate()");
         if (this.stats) {
             this.stats.begin();
         }
@@ -1546,6 +1553,7 @@ export class Neu3D {
      * Render
      */
     render() {
+        console.debug("[Neu3D] render()");
         if (this.states.highlight) {
             // do nothing
         } else {
@@ -1587,8 +1595,8 @@ export class Neu3D {
         this.composer.render();
         if (this._take_screenshot) {
             this.renderer.domElement.toBlob(function(b) {
-                _saveImage(b, "ffbo_screenshot.png")
-            })
+                _saveImage(b, "ffbo_screenshot.png");
+            });
             this._take_screenshot = false;
         }
     }

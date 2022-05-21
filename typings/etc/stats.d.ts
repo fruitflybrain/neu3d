@@ -20,4 +20,3 @@ export namespace Stats {
         update: (value: any, maxValue: any) => void;
     };
 }
-//# sourceMappingURL=stats.d.ts.map

@@ -147,4 +147,3 @@ export namespace datGuiPresets {
         }
     }
 }
-//# sourceMappingURL=presets.d.ts.map

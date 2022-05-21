@@ -2,11 +2,11 @@ export class Neu3D {
     /** Neu3D Instance
      *
      * @param {HTMLDivElement} container : parent div element
-     * @param {JSON | undefined } data : optionally add initalization data
-     * @param {JSON | undefined } metadata : optional metadata
-     * @param {Object} [options={}] : additional options
+     * @param {JSON} data : optionally add initalization data
+     * @param {IMetadata} metadata : optional metadata
+     * @param {INeu3DOptions} [options={}] : additional options
      */
-    constructor(container: HTMLDivElement, data: JSON | undefined, metadata: JSON | undefined, options?: any);
+    constructor(container: HTMLDivElement, data?: JSON, metadata?: IMetadata, options?: INeu3DOptions);
     container: HTMLDivElement;
     frameCounter: number;
     resINeed: number;
@@ -478,6 +478,37 @@ export class Neu3D {
      */
     syncControls(ffbomesh: any): void;
 }
+
+interface INeu3DOptions {
+    stats: boolean,
+    datGUI: {
+        autoPlace?: boolean,
+        resizable?: boolean,
+        scrollable?: boolean,
+        closeOnTop?: boolean,
+        createButtons?: boolean,
+        preset?: string, // identifier in `load` JSON
+        load?: JSON // json object associated with the presets
+    }
+}
+
+interface IMetadata {
+    colormap: string
+    maxColorNum: Number,
+    allowPin: boolean,
+    allowHighlight: boolean,
+    enablePositionReset: boolean,
+    resetPosition: ICoords,
+    upVector: ICoords,
+    cameraTarget: ICoords,
+    upSign: Number
+}
+
+interface ICoords {
+    x: Number,
+    y: Number,
+    z: Number
+}
+
 import { PropertyManager } from "./propertymanager";
 import { FFBOLightsHelper } from "./lightshelper";
-//# sourceMappingURL=neu3d.d.ts.map

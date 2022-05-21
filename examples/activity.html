@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Neu3d Test</title>
+    <title>Neu3d Activity Visualization Test</title>
     <script type="text/javascript" src=" https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="../lib/neu3d.min.js"> </script>
 </head>
@@ -32,22 +32,24 @@
 
         window.neu3d = neu3d;
 
-        $.getJSON("../data/adult_mesh.json", function(json) {
-            neu3d.addJson({
-                ffbo_json: json,
-                showAfterLoadAll: true
-            });
+        $.getJSON("../data/adult_mesh.json", async (json) => {
             var activityData = {
                 'al_r': [0.5, 0.1, 0.8],
                 'mb_r': [0.1, 0.8, 0.5]
             };
+            await neu3d.addJson({
+                ffbo_json: json,
+                showAfterLoadAll: true
+            });
             neu3d.animateActivity(activityData, 0, 1000, 5);
+            setInterval(()=>{
+                console.log(`al_r: ${neu3d.meshDict.al_r.opacity}, mb_r: ${neu3d.meshDict.mb_r.opacity}`);
+            }, 1000);
         });
 
 
         $(document).ready(() => {
             neu3d.onWindowResize();
-            document.getElementById('neu3d-file-upload').click();
         });
     </script>
 </body>

@@ -205,4 +205,3 @@ export class GLTFObj extends RenderObj {
     createObject(color: any, background: any, neu3dSettings: any): void;
     background: any;
 }
-//# sourceMappingURL=render.d.ts.map
