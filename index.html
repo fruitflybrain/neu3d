@@ -1,44 +1,52 @@
 <!doctype html>
 <html>
-  <head>
+
+<head>
     <title>Neu3d Test</title>
     <script type="text/javascript" src=" https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="./lib/neu3d.min.js"> </script>
-  </head>
-  <body>
+</head>
+
+<body>
     <div id="vis-3d" class="vis-3d" style="width: 100%; height: 100%;"></div>
     <script>
-      const parentDiv = document.getElementById('vis-3d');
-      let options = {
-        'stats': true, // set to false if you don't want to see stats
-        'adaptive': true,
-        'stats': true, 
-        'datGUI': {
-          autoPlace: false,
-          resizable: false,
-          closed: true,
-          hideable: true
+        const parentDiv = document.getElementById('vis-3d');
+        let options = {
+            'stats': true, // set to false if you don't want to see stats
+            'adaptive': true,
+            'stats': true,
+            'datGUI': {
+                autoPlace: false,
+                resizable: false,
+                closed: true,
+                hideable: true
+            }
         }
-      }
-      var neu3d = new Neu3D(parentDiv,
-                               undefined,
-                               { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } },
-                               options);
+        var neu3d = new Neu3D(parentDiv,
+            undefined, {
+                "globalCenter": {
+                    'x': 0,
+                    'y': -250,
+                    'z': 0
+                }
+            },
+            options);
 
-      window.neu3d = neu3d; // expose neu3d instance to console for experimentation
+        window.neu3d = neu3d; // expose neu3d instance to console for experimentation
 
-      $.getJSON("./data/data.json", function (json) {
-        neu3d.addJson({
-          ffbo_json: json,
-          showAfterLoadAll: true
+        $.getJSON("./data/adult_mesh.json", function(json) {
+            neu3d.addJson({
+                ffbo_json: json,
+                showAfterLoadAll: true
+            });
         });
-      });
 
 
-      $(document).ready(() => {
-        neu3d.onWindowResize();
-        document.getElementById('neu3d-file-upload').click();
-      });
+        $(document).ready(() => {
+            neu3d.onWindowResize();
+            neu3d.fileUploadInput.click();
+        });
     </script>
-  </body>
+</body>
+
 </html>

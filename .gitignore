@@ -1,5 +1,4 @@
 bundle.js
 node_modules/
-/lib
 .DS_Store
 .ipynb_checkpoints

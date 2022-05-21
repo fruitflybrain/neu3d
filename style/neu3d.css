@@ -43,6 +43,10 @@
   width: 268px;
 }
 
+li.noneurons.cr div {
+  display: flex;
+}
+
 .noneurons .c input[type=text] {
   background: #00000000;
   outline: none;

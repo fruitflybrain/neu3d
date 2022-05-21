@@ -1,47 +1,61 @@
 <!doctype html>
 <html>
-  <head>
-    <title>Neu3d Test</title>
+
+<head>
+    <title>Neu3d Larva Test</title>
     <script type="text/javascript" src=" https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="../lib/neu3d.min.js"> </script>
-  </head>
-  <body>
+</head>
+
+<body>
     <div id="vis-3d" class="vis-3d" style="width: 100%; height: 100%;"></div>
     <script>
-      const parentDiv = document.getElementById('vis-3d');
-      let options = {
-        'stats': false,
-        'datGUI': {
-          autoPlace: false,
-          resizable: false,
-          closed: true,
-          hideable: true
+        const parentDiv = document.getElementById('vis-3d');
+        let options = {
+            'stats': false,
+            'datGUI': {
+                autoPlace: false,
+                resizable: false,
+                closed: true,
+                hideable: true
+            }
         }
-      }
 
-      var neu3d = new Neu3D(parentDiv,
-                               undefined,
-                               {  "globalCenter": { 'x': 0, 'y': -250, 'z': 0 }, 
-                                  "enablePositionReset": true, 
-                                  "resetPosition": { 'x': 54655.7431422481, 'y': 39426.92341342993, 'z': -174729.78082825127 },
-                                  "upSign": -1.,
-                                },
-                               options);
+        var neu3d = new Neu3D(parentDiv,
+            undefined, {
+                "globalCenter": {
+                    'x': 0,
+                    'y': -250,
+                    'z': 0
+                },
+                "enablePositionReset": true,
+                resetPosition: {
+                    x: 42.057169835814626,
+                    y: 18.465885594337543,
+                    z: -509.65272951348953
+                },
+                upVector: {
+                    x: 0.0022681554337180836,
+                    y: -0.9592325957384876,
+                    z: 0.2826087096034669
+                },
+                cameraTarget: {
+                    x: 42.11358557008077,
+                    y: 74.90946190543991,
+                    z: 58.654427921234685
+                }
+            },
+            options);
 
-      window.neu3d = neu3d;
+        window.neu3d = neu3d;
 
-      $.getJSON("../data/larvadata.json", function (json) {
-        neu3d.addJson({
-          ffbo_json: json,
-          showAfterLoadAll: true
+        $.getJSON("../data/larva_mesh.json", function(json) {
+            neu3d.addJson({
+                ffbo_json: json,
+                showAfterLoadAll: true
+            });
         });
-      });
-
-
-      $(document).ready(() => {
-        neu3d.onWindowResize();
-        document.getElementById('neu3d-file-upload').click();
-      });
     </script>
-  </body>
+</body>
+
 </html>

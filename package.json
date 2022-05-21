@@ -7,8 +7,8 @@
   "scripts": {
     "build": "npx webpack --config webpack.config.js",
     "watch": "npx webpack --config webpack.config.js --watch",
-    "test": "echo \"To see it in action, server HTML server in root after build\"",
     "dev": "npx webpack --config webpack.config.js --watch",
+    "lint": "npx eslint src/**",
     "clean": "rimraf lib",
     "clean:node_modules": "rimraf node_modules lib"
   },
@@ -26,20 +26,21 @@
     "@fortawesome/fontawesome-free": "5.12.0",
     "bootstrap": "^4.5.0",
     "dat.gui": "^0.7.7",
-    "dts-gen": "^0.6.0",
     "exports-loader": "^0.7.0",
     "imports-loader": "^0.8.0",
     "jquery": "^3.5.1",
     "lodash": "^4.17.20",
     "popper.js": "^1.16.1",
     "stats.js": "^0.17.0",
-    "three": "^0.117.0"
+    "three": "^0.139.2"
   },
   "devDependencies": {
     "css-loader": "^2.1.1",
+    "eslint": "^8.14.0",
     "rimraf": "^3.0.2",
     "style-loader": "^0.21.0",
-    "webpack": "^4.43.0",
+    "typescript": "^4.6.4",
+    "webpack": "^5.72.0",
     "webpack-cli": "^3.3.11"
   }
 }

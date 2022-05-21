@@ -25,17 +25,11 @@
 
       window.neu3d = neu3d;
 
-      $.getJSON("../data/data.json", function (json) {
+      $.getJSON("../data/adult_mesh.json", function (json) {
         neu3d.addJson({
           ffbo_json: json,
           showAfterLoadAll: true
         });
-      });
-
-
-      $(document).ready(() => {
-        neu3d.onWindowResize();
-        document.getElementById('neu3d-file-upload').click();
       });
     </script>
   </body>
