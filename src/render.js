@@ -1,27 +1,39 @@
 import {
-    Vector3, Object3D, Matrix4, Mesh, Vector4,
-    MeshLambertMaterial, MeshBasicMaterial, LineBasicMaterial,
-    BufferGeometry, CylinderGeometry, SphereGeometry, TubeGeometry,
-    QuadraticBezierCurve3, LineSegments,
+    Vector3,
+    Object3D,
+    Matrix4,
+    Mesh,
+    Vector4,
+    MeshLambertMaterial,
+    MeshBasicMaterial,
+    LineBasicMaterial,
+    BufferGeometry,
+    CylinderGeometry,
+    SphereGeometry,
+    TubeGeometry,
+    QuadraticBezierCurve3,
+    LineSegments,
     CatmullRomCurve3,
-    Float32BufferAttribute, InstancedMesh, Color
+    Float32BufferAttribute,
+    InstancedMesh,
+    Color
 } from 'three';
 
 import {
     createMultiMaterialObject
-  } from 'three/examples/jsm/utils/SceneUtils';
+} from 'three/examples/jsm/utils/SceneUtils';
 import {
     mergeBufferGeometries
-} from 'three/examples/jsm/utils/BufferGeometryUtils'
+} from 'three/examples/jsm/utils/BufferGeometryUtils';
 import {
     LineSegmentsGeometry
-} from 'three/examples/jsm/lines/LineSegmentsGeometry'
+} from 'three/examples/jsm/lines/LineSegmentsGeometry';
 import {
     LineSegments2
-} from 'three/examples/jsm/lines/LineSegments2'
+} from 'three/examples/jsm/lines/LineSegments2';
 import {
     LineMaterial
-} from 'three/examples/jsm/lines/LineMaterial'
+} from 'three/examples/jsm/lines/LineMaterial';
 
 
 /** Clip value in between min/max
@@ -31,12 +43,12 @@ import {
  * @param {Number} max
  * @returns number clipped between min and max
  */
- function clip (number, min, max) {
+function clip(number, min, max) {
     if (max < min) {
-      return number
+        return number;
     }
     return Math.max(min, Math.min(number, max));
-  }
+}
 
 /**
  * Create an array of branches that each define a 3D trajectory in the neuronal tree
@@ -46,7 +58,7 @@ import {
  * @param {*} branches
  * @returns
  */
-function createTreeFromSWC(swc, rootId, current_branch=undefined, branches=undefined) {
+function createTreeFromSWC(swc, rootId, current_branch = undefined, branches = undefined) {
     if (current_branch === undefined) {
         current_branch = [];
     }
@@ -54,16 +66,16 @@ function createTreeFromSWC(swc, rootId, current_branch=undefined, branches=undef
         branches = [];
     }
     if (!(rootId in swc)) {
-        return
+        return;
     }
-    let root = swc[rootId]
-    let rootVec = new Vector4(root.x, root.y, root.z, root.radius)
+    let root = swc[rootId];
+    let rootVec = new Vector4(root.x, root.y, root.z, root.radius);
     current_branch.push(rootVec);
     if (root.children.length === 0) {
         branches.push(current_branch);
-        return
+        return;
     } else if (root.children.length === 1) {
-        createTreeFromSWC(swc, root.children[0], current_branch, branches)
+        createTreeFromSWC(swc, root.children[0], current_branch, branches);
     } else {
         branches.push(current_branch); // save current branch
         for (let childId of root.children) {
@@ -78,32 +90,49 @@ function createTreeFromSWC(swc, rootId, current_branch=undefined, branches=undef
 export class RenderObj {
 
     /**
-    *
-    * @param {*} transformation :  scale, rotation and shift
-    */
-    constructor(transformation=undefined) {
+     *
+     * @param {*} transformation :  scale, rotation and shift
+     */
+    constructor(transformation = undefined) {
         if (transformation === undefined) {
             transformation = {
-                scale: {x: 1., y:1., z:1., radius:1.},
-                rotation: {xy: 0., yz:0.},
-                shift: {x: 0., y:0., z:0.}
-              }
+                scale: {
+                    x: 1.,
+                    y: 1.,
+                    z: 1.,
+                    radius: 1.
+                },
+                rotation: {
+                    xy: 0.,
+                    yz: 0.
+                },
+                shift: {
+                    x: 0.,
+                    y: 0.,
+                    z: 0.
+                }
+            };
         }
         this.transformation = transformation;
         this.boundingBox = {
-            'maxY': -100000, 'minY': 100000, 'maxX': -100000,
-            'minX': 100000, 'maxZ': -100000, 'minZ': 100000 };
+            'maxY': -100000,
+            'minY': 100000,
+            'maxX': -100000,
+            'minX': 100000,
+            'maxZ': -100000,
+            'minZ': 100000
+        };
         this.pinned = false;
         this.type = 'morphology_json';
     }
 
     /** Register rid of rendered Object3D, and compute position
-    *
-    * @param {*} rid :  rid for raycaster
-    */
+     *
+     * @param {*} rid :  rid for raycaster
+     */
     registerProperties(rid) {
         this.threeObj.rid = rid;
-        if (this.position === undefined){
+        if (this.position === undefined) {
             this.position = new Vector3(
                 0.5 * (this.boundingBox.minX + this.boundingBox.maxX),
                 0.5 * (this.boundingBox.minY + this.boundingBox.maxY),
@@ -112,37 +141,37 @@ export class RenderObj {
     }
 
     /** create 3d object
-    *
-    * @param {*} color: color of the object
-    * @param {bool} color: if object is in background
-    * @param {*} setting: neu3dSettings
-    * @param {Vector2} render_size: size of the rendered scene
-    */
+     *
+     * @param {*} color: color of the object
+     * @param {bool} color: if object is in background
+     * @param {*} setting: neu3dSettings
+     * @param {Vector2} render_size: size of the rendered scene
+     */
     createObject(color, background, setting, render_size = undefined) {
         throw new Error('createObject not Implemented');
     };
 
     /** update the visibiilty of the object
-    *
-    * @param {bool} visibility
-    */
+     *
+     * @param {bool} visibility
+     */
     updateVisibility(visibility) {
         this.visibility = visibility;
         this.threeObj.visible = visibility;
     }
 
     /** toggle the visibiilty of the object
-    */
+     */
     toggleVis() {
         this.updateVisibility(!this.visibility);
     }
 
     /** update the bounding box
-    *
-    * @param {*} x
-    * @param {*} y
-    * @param {*} z
-    */
+     *
+     * @param {*} x
+     * @param {*} y
+     * @param {*} z
+     */
     updateBoundingBox(x, y, z) {
         if (x < this.boundingBox.minX)
             this.boundingBox.minX = x;
@@ -159,9 +188,9 @@ export class RenderObj {
     }
 
     /** update opacity of the object;
-    *
-    * @param {*} opacity : 0-1 value of opacity
-    */
+     *
+     * @param {*} opacity : 0-1 value of opacity
+     */
     updateOpacity(opacity) {
         this.opacity = opacity;
         for (var child of this.threeObj.children) {
@@ -170,32 +199,32 @@ export class RenderObj {
     }
 
     /** update if depthTest will be checked
-    *
-    * @param {bool} depth
-    */
+     *
+     * @param {bool} depth
+     */
     updateDepthTest(depth) {
-        for (var child of this.threeObj.children){
+        for (var child of this.threeObj.children) {
             child.material.depthTest = depth;
         }
         this.depthTest = depth;
     }
 
     /** get depthTest value
-    */
+     */
     getDepthTest() {
         return this.depthTest;
     }
 
     /** set color of the object;
-    *
-    * @param {*} color
-    */
+     *
+     * @param {*} color
+     */
     setColor(color) {
         if (Array.isArray(color)) {
             color = new Color().fromArray(color);
-          } else {
+        } else {
             color = new Color(color);
-          }
+        }
         for (var child of this.threeObj.children) {
             child.material.color.set(color);
         }
@@ -203,13 +232,13 @@ export class RenderObj {
     }
 
     /** get color of the object;
-    */
+     */
     getColor() {
         return this.color;
     }
 
     /** dispose threejs object
-    */
+     */
     dispose() {
         for (let i = 0; i < this.threeObj.children.length; i++) {
             this.threeObj.children[i].geometry.dispose();
@@ -218,12 +247,12 @@ export class RenderObj {
     }
 
     /** transforms coordinate according to the transformation
-    *
-    * @param {*} x
-    * @param {*} y
-    * @param {*} z
-    * @param {*} r
-    */
+     *
+     * @param {*} x
+     * @param {*} y
+     * @param {*} z
+     * @param {*} r
+     */
     transform(x, y, z, r = undefined) {
         var x_put = x * this.transformation.scale.x;
         var y_put = y * this.transformation.scale.y;
@@ -240,7 +269,7 @@ export class RenderObj {
         y_f = y_f + this.transformation.shift.y;
         z_f = z_f + this.transformation.shift.z;
 
-        if (r === undefined){
+        if (r === undefined) {
             return [x_f, y_f, z_f];
         } else {
             return [x_f, y_f, z_f, r * this.transformation.scale.radius];
@@ -249,11 +278,11 @@ export class RenderObj {
 }
 
 
-export class MeshObj extends RenderObj{
-    constructor(data, type, transformation=undefined) {
+export class MeshObj extends RenderObj {
+    constructor(data, type, transformation = undefined) {
         super(transformation);
         let mesh = null;
-        if (typeof data === 'string' || data instanceof String){
+        if (typeof data === 'string' || data instanceof String) {
             if (type === 'json') {
                 mesh = this.parseMeshFile(data);
             } else {
@@ -272,12 +301,12 @@ export class MeshObj extends RenderObj{
     }
 
     /** create 3d object
-    *
-    * @param {*} color: color of the object
-    * @param {bool} color: if object is in background
-    * @param {*} setting: neu3dSettings
-    * @param {Vector2} render_size: size of the rendered scene
-    */
+     *
+     * @param {*} color: color of the object
+     * @param {bool} color: if object is in background
+     * @param {*} setting: neu3dSettings
+     * @param {Vector2} render_size: size of the rendered scene
+     */
     createObject(color, background, neu3dSettings, renderer_size = undefined) {
         this.color = new Color(color);
         if (background === undefined) {
@@ -291,7 +320,7 @@ export class MeshObj extends RenderObj{
         var idx = this.faces;
 
         for (var j = 0; j < vtx.length / 3; j++) {
-            this.updateBoundingBox(vtx[3*j+0],vtx[3*j+1],vtx[3*j+2]);
+            this.updateBoundingBox(vtx[3 * j + 0], vtx[3 * j + 1], vtx[3 * j + 2]);
         }
 
         let geometry = new BufferGeometry();
@@ -310,8 +339,18 @@ export class MeshObj extends RenderObj{
         this.opacity = opacity1;
         this.WireframeOpacity = opacity2;
         let materials = [
-            new MeshLambertMaterial({ color: color, transparent: true, side: 2, opacity: opacity1}),
-            new MeshBasicMaterial({ color: color, wireframe: true, transparent: true, opacity: opacity2})
+            new MeshLambertMaterial({
+                color: color,
+                transparent: true,
+                side: 2,
+                opacity: opacity1
+            }),
+            new MeshBasicMaterial({
+                color: color,
+                wireframe: true,
+                transparent: true,
+                opacity: opacity2
+            })
         ];
 
         let object = createMultiMaterialObject(geometry, materials);
@@ -322,19 +361,19 @@ export class MeshObj extends RenderObj{
     }
 
     /**
-    * Update opacity
-    * @param {*} op1 : opacity of faces
-    */
+     * Update opacity
+     * @param {*} op1 : opacity of faces
+     */
     updateOpacity(op1) {
         this.opacity = op1;
         this.threeObj.children[0].material.opacity = op1;
     }
 
     /**
-    * Update background opacity
-    * @param {*} op1 : opacity of faces
-    * @param {*} op2 : opacity of wireframe
-    */
+     * Update background opacity
+     * @param {*} op1 : opacity of faces
+     * @param {*} op2 : opacity of wireframe
+     */
     updateBackgroundOpacity(op1, op2) {
         this.opacity = op1;
         this.WireframeOpacity = op2;
@@ -353,17 +392,17 @@ export class MeshObj extends RenderObj{
     }
 
     /**
-    * Convert input json to mesh json
-    *
-    * @param {*} unit
-    * @returns mesh json with vertices and faces
-    */
+     * Convert input json to mesh json
+     *
+     * @param {*} unit
+     * @returns mesh json with vertices and faces
+     */
     parseMeshDict(unit) {
         let vtx = unit['vertices'];
         let idx = unit['faces'];
         const vertices = [];
         // check if vertics and indices match dimensionality
-        if (Math.max(...idx) >= (vtx.length/3)){
+        if (Math.max(...idx) >= (vtx.length / 3)) {
             let err = `[Neu3D] Mesh ${unit} has face index ${Math.max(...idx)} that exceeds maximum number of vertices ${vtx.length/3}.`;
             if (Math.min(...idx) !== 0) {
                 err = `${err} The face index also start from ${Math.min(...idx)}, maybe the face indices should be shifted by 1.`;
@@ -376,10 +415,13 @@ export class MeshObj extends RenderObj{
             let x = parseFloat(vtx[3 * j + 0]);
             let y = parseFloat(vtx[3 * j + 1]);
             let z = parseFloat(vtx[3 * j + 2]);
-            var xyz = this.transform(x,y,z);
+            var xyz = this.transform(x, y, z);
             vertices.push(xyz[0], xyz[1], xyz[2]);
         }
-        return {'vertices': vertices, 'faces': idx};
+        return {
+            'vertices': vertices,
+            'faces': idx
+        };
     }
 
     parseMeshFile(meshString) {
@@ -389,12 +431,12 @@ export class MeshObj extends RenderObj{
     }
 }
 
-export class NeuronSkeleton extends RenderObj{
-    constructor(data, type, transformation=undefined) {
+export class NeuronSkeleton extends RenderObj {
+    constructor(data, type, transformation = undefined) {
         super(transformation);
         let skeleton = null;
-        if (typeof data === 'string' || data instanceof String){
-            if (type === 'swc'){
+        if (typeof data === 'string' || data instanceof String) {
+            if (type === 'swc') {
                 skeleton = this.parseSWCFile(data);
             } else if (type === 'ns') {
                 skeleton = this.parseNSFile(data);
@@ -420,12 +462,12 @@ export class NeuronSkeleton extends RenderObj{
     }
 
     /** create 3d object
-    *
-    * @param {*} color: color of the object
-    * @param {bool} color: if object is in background
-    * @param {*} setting: neu3dSettings
-    * @param {Vector2} render_size: size of the rendered scene
-    */
+     *
+     * @param {*} color: color of the object
+     * @param {bool} color: if object is in background
+     * @param {*} setting: neu3dSettings
+     * @param {Vector2} render_size: size of the rendered scene
+     */
     createObject(color, background, neu3dSettings, renderer_size = undefined, mode = undefined) {
         this.color = new Color(color);
         if (background === undefined) {
@@ -436,11 +478,11 @@ export class NeuronSkeleton extends RenderObj{
         if (mode === undefined) {
             this.mode = neu3dSettings.neuron3dMode;
         } else {
-            if ([0,1,2,3,4,5,6].indexOf(mode) > -1) {
+            if ([0, 1, 2, 3, 4, 5, 6].indexOf(mode) > -1) {
                 this.mode = mode;
             } else {
-                console.log("Supplied mode must be an integer between 0 and 6.")
-                return
+                console.error("Supplied mode must be an integer between 0 and 6.");
+                return;
             }
         }
         var opacity;
@@ -474,51 +516,100 @@ export class NeuronSkeleton extends RenderObj{
         let defaultRadiusNodes = [];
         let defaultSomaRadiusNodes = [];
 
-        if (this.mode == 0){
+        if (this.mode == 0) {
             var matrix = new Matrix4();
-            var materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
+            var materialSphere = new MeshLambertMaterial({
+                color: color,
+                transparent: true,
+                opacity: opacity
+            });
             geometrySphere = new SphereGeometry(1.0, 8, 8);
 
             var sphere_params = [];
             var n_spheres = 0;
-            var vs = {1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [], 10: [],
-              11: [], 12: [], 13: [], 14: [], 15: [], 16: [], 17: [], 18: [], 19: [], 20: [],
-              21: [], 22: [], 23: [], 24: [], 25: [], 26: [], 27: [], 28: [], 29: [], 30: [],
-              31: [], 32: [], 33: [], 34: [], 35: [], 36: [], 37: [], 38: [], 39: [], 40: [],
-              41: [], 42: [], 43: [], 44: [], 45: [], 46: [], 47: [], 48: [], 49: []
+            var vs = {
+                1: [],
+                2: [],
+                3: [],
+                4: [],
+                5: [],
+                6: [],
+                7: [],
+                8: [],
+                9: [],
+                10: [],
+                11: [],
+                12: [],
+                13: [],
+                14: [],
+                15: [],
+                16: [],
+                17: [],
+                18: [],
+                19: [],
+                20: [],
+                21: [],
+                22: [],
+                23: [],
+                24: [],
+                25: [],
+                26: [],
+                27: [],
+                28: [],
+                29: [],
+                30: [],
+                31: [],
+                32: [],
+                33: [],
+                34: [],
+                35: [],
+                36: [],
+                37: [],
+                38: [],
+                39: [],
+                40: [],
+                41: [],
+                42: [],
+                43: [],
+                44: [],
+                45: [],
+                46: [],
+                47: [],
+                48: [],
+                49: []
             };
 
             var bin, defaultBin;
 
             if (neu3dSettings.defaultRadius <= 1) {
-                defaultBin = Math.max(Math.ceil(Math.log10(neu3dSettings.defaultRadius)/0.05)+40, 1);
+                defaultBin = Math.max(Math.ceil(Math.log10(neu3dSettings.defaultRadius) / 0.05) + 40, 1);
             } else {
                 defaultBin = Math.floor(neu3dSettings.defaultRadius);
             }
-            if (defaultBin > 48){
+            if (defaultBin > 48) {
                 defaultBin = 49;
             }
 
             let j = 0;
             for (let [idx, c] of Object.entries(vertices)) {
-                if(c.type == 1){
-                    if (c.radius > 0){
+                if (c.type == 1) {
+                    if (c.radius > 0) {
                         scale = clip(c.radius, neu3dSettings.minSomaRadius, neu3dSettings.maxSomaRadius);
                     } else {
                         scale = neu3dSettings.defaultSomaRadius;
                         defaultSomaRadiusNodes.push(j);
                     }
-                    sphere_params.push([c.x, c.y, c.z, scale])
+                    sphere_params.push([c.x, c.y, c.z, scale]);
                     j += 1;
                     n_spheres += 1;
                 } else {
                     if (c.radius) {
                         if (c.radius > 1.0) {
-                            bin = Math.floor(c.radius)+40;
-                            if (bin > 48){
+                            bin = Math.floor(c.radius) + 40;
+                            if (bin > 48) {
                                 bin = 49;
                             }
-                            scale = bin-40+0.5;
+                            scale = bin - 40 + 0.5;
                             sphere_params.push([c.x, c.y, c.z, scale]);
                             n_spheres += 1;
                         }
@@ -526,18 +617,18 @@ export class NeuronSkeleton extends RenderObj{
                 }
             }
 
-            for (let [idx, value] of Object.entries(segments) ) {
+            for (let [idx, value] of Object.entries(segments)) {
                 let c = vertices[value['start']];
                 let p = vertices[value['end']];
 
                 if (c.type != 1 && p.type != 1) {
                     if (c.radius) {
                         if (c.radius <= 1) {
-                            bin = Math.max(Math.ceil(Math.log10(c.radius)/0.05)+40, 1);
+                            bin = Math.max(Math.ceil(Math.log10(c.radius) / 0.05) + 40, 1);
                         } else {
-                            bin = Math.floor(c.radius)+40;
+                            bin = Math.floor(c.radius) + 40;
                         }
-                        if (bin > 48){
+                        if (bin > 48) {
                             bin = 49;
                         }
                     } else {
@@ -546,17 +637,17 @@ export class NeuronSkeleton extends RenderObj{
                     vs[bin.toString()].push(c.x);
                     vs[bin.toString()].push(c.y);
                     vs[bin.toString()].push(c.z);
-                    vs[bin.toString()].push( (c.x+p.x)/2 );
-                    vs[bin.toString()].push( (c.y+p.y)/2 );
-                    vs[bin.toString()].push( (c.z+p.z)/2 );
+                    vs[bin.toString()].push((c.x + p.x) / 2);
+                    vs[bin.toString()].push((c.y + p.y) / 2);
+                    vs[bin.toString()].push((c.z + p.z) / 2);
 
                     if (p.radius) {
                         if (p.radius <= 1) {
-                            bin = Math.max(Math.ceil(Math.log10(p.radius)/0.05)+40, 1);
+                            bin = Math.max(Math.ceil(Math.log10(p.radius) / 0.05) + 40, 1);
                         } else {
-                            bin = Math.floor(p.radius)+40;
+                            bin = Math.floor(p.radius) + 40;
                         }
-                        if (bin > 48){
+                        if (bin > 48) {
                             bin = 49;
                         }
                     } else {
@@ -565,36 +656,45 @@ export class NeuronSkeleton extends RenderObj{
                     vs[bin.toString()].push(p.x);
                     vs[bin.toString()].push(p.y);
                     vs[bin.toString()].push(p.z);
-                    vs[bin.toString()].push( (c.x+p.x)/2 );
-                    vs[bin.toString()].push( (c.y+p.y)/2 );
-                    vs[bin.toString()].push( (c.z+p.z)/2 );
+                    vs[bin.toString()].push((c.x + p.x) / 2);
+                    vs[bin.toString()].push((c.y + p.y) / 2);
+                    vs[bin.toString()].push((c.z + p.z) / 2);
                 }
             }
-            spheres = new InstancedMesh( geometrySphere, materialSphere, n_spheres );
-            for (const [j, n] of sphere_params.entries()){
+            spheres = new InstancedMesh(geometrySphere, materialSphere, n_spheres);
+            for (const [j, n] of sphere_params.entries()) {
                 matrix.makeScale(n[3], n[3], n[3]);
-                matrix.setPosition( n[0], n[1], n[2] );
-                spheres.setMatrixAt( j, matrix );
+                matrix.setPosition(n[0], n[1], n[2]);
+                spheres.setMatrixAt(j, matrix);
             }
             object.add(spheres);
 
             var width;
-            for (var i = 1; i <= 49; i++){
+            for (var i = 1; i <= 49; i++) {
                 if (i <= 40) {
-                    width = Math.pow(10, (i-40)*0.05);
+                    width = Math.pow(10, (i - 40) * 0.05);
                 } else {
-                    width = i-40+0.5;
+                    width = i - 40 + 0.5;
                 }
-                if (vs[i.toString()].length){
+                if (vs[i.toString()].length) {
                     geometry = new LineSegmentsGeometry();
                     geometry.setPositions(vs[i.toString()]);
-                    var material_lines = new LineMaterial({ transparent: true, linewidth: width*2, color: color.getHex(), dashed: false, worldUnits: true, opacity: opacity, resolution: renderer_size, alphaToCoverage: false});
+                    var material_lines = new LineMaterial({
+                        transparent: true,
+                        linewidth: width * 2,
+                        color: color.getHex(),
+                        dashed: false,
+                        worldUnits: true,
+                        opacity: opacity,
+                        resolution: renderer_size,
+                        alphaToCoverage: false
+                    });
                     var lines = new LineSegments2(geometry, material_lines);
                     lines.computeLineDistances();
                     object.add(lines);
                 }
             }
-        } else if (this.mode == 6){
+        } else if (this.mode == 6) {
             var swcObj = {};
             for (const [nodeIndex, c] of Object.entries(vertices)) {
                 swcObj[nodeIndex] = {
@@ -611,10 +711,10 @@ export class NeuronSkeleton extends RenderObj{
                 swcObj[nodeIndex].parent = -1;
             }
             var start, end;
-            for (const [segmentId, c] of Object.entries(segments)){
+            for (const [segmentId, c] of Object.entries(segments)) {
                 start = c['start'];
                 end = c['end'];
-                if (start in swcObj && end in swcObj){
+                if (start in swcObj && end in swcObj) {
                     swcObj[end].parent = start;
                     swcObj[start].children.push(end);
                 }
@@ -627,14 +727,14 @@ export class NeuronSkeleton extends RenderObj{
             }
 
             let widths = new Set();
-            for (let node of Object.values(swcObj)){
-                if (node.type !== 1){
+            for (let node of Object.values(swcObj)) {
+                if (node.type !== 1) {
                     widths.add(node.radius);
                 }
             }
             const hasVariableWidth = widths.size > 1;
 
-            if (!hasVariableWidth){
+            if (!hasVariableWidth) {
                 const radius = Array.from(widths)[0] == 0 ? neu3dSettings.defaultRadius : clip(Array.from(widths)[0], neu3dSettings.minRadius, neu3dSettings.maxRadius);
 
                 for (const [head, branches] of Object.entries(all_branches)) {
@@ -643,12 +743,14 @@ export class NeuronSkeleton extends RenderObj{
                             // this should only happen for soma when soma is directly connected to multiple branches
                             continue;
                         }
-                        const branch3D = branch.map((node)=>{return new Vector3(node.x, node.y, node.z)})
+                        const branch3D = branch.map((node) => {
+                            return new Vector3(node.x, node.y, node.z);
+                        });
                         const path = new CatmullRomCurve3(branch3D, false);
                         geometryToMerge.push(new TubeGeometry(path, Math.min(30, branch3D.length), radius, 8, false));
                     }
                 }
-            } else{
+            } else {
                 for (const [head, branches] of Object.entries(all_branches)) {
                     for (let branch of branches) {
                         for (let start_idx in branch.slice(0, -1)) {
@@ -665,7 +767,7 @@ export class NeuronSkeleton extends RenderObj{
                             segment.translate(next.x, next.y, next.z);
                             geometryToMerge.push(segment);
                             if (start_idx > 0) {
-                                const prev = branch[start_idx-1];
+                                const prev = branch[start_idx - 1];
                                 let a = new Vector3(0.9 * curr.x + 0.1 * prev.x, 0.9 * curr.y + 0.1 * prev.y, 0.9 * curr.z + 0.1 * prev.z);
                                 let b = new Vector3(0.9 * curr.x + 0.1 * next.x, 0.9 * curr.y + 0.1 * next.y, 0.9 * curr.z + 0.1 * next.z);
                                 let curve = new QuadraticBezierCurve3(a, new Vector3(curr.x, curr.y, curr.z), b);
@@ -676,9 +778,13 @@ export class NeuronSkeleton extends RenderObj{
                     }
                 }
             }
-            materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
+            materialSphere = new MeshLambertMaterial({
+                color: color,
+                transparent: true,
+                opacity: opacity
+            });
             geometrySphere = new SphereGeometry(1.0, 8, 8);
-            spheres = new InstancedMesh( geometrySphere, materialSphere, somalen);
+            spheres = new InstancedMesh(geometrySphere, materialSphere, somalen);
             var scale;
             matrix = new Matrix4();
             var j = 0;
@@ -692,51 +798,61 @@ export class NeuronSkeleton extends RenderObj{
                     }
 
                     matrix.makeScale(scale, scale, scale);
-                    matrix.setPosition( c.x, c.y, c.z );
-                    spheres.setMatrixAt( j, matrix );
+                    matrix.setPosition(c.x, c.y, c.z);
+                    spheres.setMatrixAt(j, matrix);
                     j += 1;
                 }
             }
             object.add(spheres);
 
             const mergedGeometry = mergeBufferGeometries(geometryToMerge, false);
-            var material_merge = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
+            var material_merge = new MeshLambertMaterial({
+                color: color,
+                transparent: true,
+                opacity: opacity
+            });
             object.add(new Mesh(mergedGeometry, material_merge));
         } else {
             // setup sphere geometry. Mode 3 and 5 requires a sphere for each node.
             // Other modes requires a sphere for each soma node.
             if (this.mode == 5 || this.mode == 3) {
-                materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
+                materialSphere = new MeshLambertMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: opacity
+                });
                 geometrySphere = new SphereGeometry(1.0, 8, 8);
-                spheres = new InstancedMesh( geometrySphere, materialSphere, len);
+                spheres = new InstancedMesh(geometrySphere, materialSphere, len);
             } else { // 1, 2, 4
-                materialSphere = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
+                materialSphere = new MeshLambertMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: opacity
+                });
                 geometrySphere = new SphereGeometry(1.0, 8, 8);
-                spheres = new InstancedMesh( geometrySphere, materialSphere, somalen);
+                spheres = new InstancedMesh(geometrySphere, materialSphere, somalen);
             }
 
             if (this.mode > 3) { // create cylinders
-                for (var [idx, value] of Object.entries(segments) ) {
+                for (var [idx, value] of Object.entries(segments)) {
                     let c = vertices[value['start']];
                     let p = vertices[value['end']];
                     let d = new Vector3((p.x - c.x), (p.y - c.y), (p.z - c.z));
                     let cRadius, pRadius;
-                    if(c.radius > 0)
-                    {
+                    if (c.radius > 0) {
                         cRadius = clip(c.radius, neu3dSettings.minRadius, neu3dSettings.maxRadius);
                     } else {
                         cRadius = neu3dSettings.defaultRadius;
                     }
 
-                    if(p.radius > 0)
-                    {
+                    if (p.radius > 0) {
                         pRadius = clip(p.radius, neu3dSettings.minRadius, neu3dSettings.maxRadius);
                     } else {
                         pRadius = neu3dSettings.defaultRadius;
                     }
 
                     if (c.type == 1) {
-                        if(p.type != 1) {
+                        if (p.type != 1) {
                             cRadius = pRadius;
                         } else {
                             if (c.radius > 0) {
@@ -760,8 +876,8 @@ export class NeuronSkeleton extends RenderObj{
                     }
 
                     geometry = new CylinderGeometry(pRadius, cRadius, d.length(), 8, 1, 0);
-                    geometry.translate(0, 0.5*d.length(),0);
-                    geometry.applyMatrix4( new Matrix4().makeRotationX( Math.PI / 2 ) );
+                    geometry.translate(0, 0.5 * d.length(), 0);
+                    geometry.applyMatrix4(new Matrix4().makeRotationX(Math.PI / 2));
                     geometry.lookAt(d.clone());
                     geometry.translate(c.x, c.y, c.z);
 
@@ -770,19 +886,19 @@ export class NeuronSkeleton extends RenderObj{
             }
 
             j = 0;
-            if (this.mode == 5 || this.mode == 3 ) {
+            if (this.mode == 5 || this.mode == 3) {
                 // render spheres for sphere mode or sphere+cylinder mode
                 scale;
                 matrix = new Matrix4();
                 for (const [idx, c] of Object.entries(vertices)) {
-                    if(c.radius > 0) {
+                    if (c.radius > 0) {
                         if (c.type == 1) {
                             scale = clip(c.radius, neu3dSettings.minSomaRadius, neu3dSettings.maxSomaRadius);
                         } else {
                             scale = clip(c.radius, neu3dSettings.minRadius, neu3dSettings.maxRadius);
                         }
                     } else {
-                        if(c.type == 1) {
+                        if (c.type == 1) {
                             scale = neu3dSettings.defaultSomaRadius;
                             defaultSomaRadiusNodes.push(j);
                         } else {
@@ -791,8 +907,8 @@ export class NeuronSkeleton extends RenderObj{
                         }
                     }
                     matrix.makeScale(scale, scale, scale);
-                    matrix.setPosition( c.x, c.y, c.z );
-                    spheres.setMatrixAt( j, matrix );
+                    matrix.setPosition(c.x, c.y, c.z);
+                    spheres.setMatrixAt(j, matrix);
                     j += 1;
                 }
             } else { // mode 1, 2, 4
@@ -808,22 +924,26 @@ export class NeuronSkeleton extends RenderObj{
                         }
 
                         matrix.makeScale(scale, scale, scale);
-                        matrix.setPosition( c.x, c.y, c.z );
-                        spheres.setMatrixAt( j, matrix );
+                        matrix.setPosition(c.x, c.y, c.z);
+                        spheres.setMatrixAt(j, matrix);
                         j += 1;
                     }
                 }
             }
 
 
-            if(spheres)
+            if (spheres)
                 object.add(spheres);
-            if(geometryToMerge.length) {
+            if (geometryToMerge.length) {
                 mergedGeometry = mergeBufferGeometries(geometryToMerge, false);
                 for (var n of geometryToMerge) {
                     n.dispose();
                 }
-                material_merge = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
+                material_merge = new MeshLambertMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: opacity
+                });
                 object.add(new Mesh(mergedGeometry, material_merge));
             }
 
@@ -831,7 +951,7 @@ export class NeuronSkeleton extends RenderObj{
             // add line segments
             if (this.mode <= 3) {
                 vs = [];
-                for (const [idx, value] of Object.entries(segments) ) {
+                for (const [idx, value] of Object.entries(segments)) {
                     let c = vertices[value.start];
                     let p = vertices[value.end];
                     vs.push(c.x);
@@ -843,16 +963,28 @@ export class NeuronSkeleton extends RenderObj{
                 }
 
                 if (this.mode == 2) {
-                    geometry = new LineSegmentsGeometry()
+                    geometry = new LineSegmentsGeometry();
                     geometry.setPositions(vs);
-                    material_lines = new LineMaterial({ transparent: true, linewidth: neu3dSettings.defaultRadius*2, color: color.getHex(), dashed: false, worldUnits: true, opacity: opacity, resolution: renderer_size});
-                    lines = new LineSegments2(geometry, material_lines)
-                    lines.computeLineDistances()
+                    material_lines = new LineMaterial({
+                        transparent: true,
+                        linewidth: neu3dSettings.defaultRadius * 2,
+                        color: color.getHex(),
+                        dashed: false,
+                        worldUnits: true,
+                        opacity: opacity,
+                        resolution: renderer_size
+                    });
+                    lines = new LineSegments2(geometry, material_lines);
+                    lines.computeLineDistances();
                 } else {
                     geometry = new BufferGeometry();
                     geometry.setAttribute('position', new Float32BufferAttribute(vs, 3));
-                    material_lines = new LineBasicMaterial({ transparent: true, color: color, opacity: opacity});
-                    lines = new LineSegments(geometry, material_lines)
+                    material_lines = new LineBasicMaterial({
+                        transparent: true,
+                        color: color,
+                        opacity: opacity
+                    });
+                    lines = new LineSegments(geometry, material_lines);
                 }
                 object.add(lines);
             }
@@ -863,18 +995,18 @@ export class NeuronSkeleton extends RenderObj{
     }
 
     /**
-    * Update the radius of the rendered skeleton if they are rendered with default radius
-    *
-    * @param {*} unit
-    * @returns skeleton json with vertices and segments
-    */
+     * Update the radius of the rendered skeleton if they are rendered with default radius
+     *
+     * @param {*} unit
+     * @returns skeleton json with vertices and segments
+     */
     updateDefaultRadius(radius) {
         if (this.mode == 0) {
             // do nothing
         } else if (this.mode == 2) {
             for (var child of this.threeObj.children) {
-                if (child.material.type == 'LineMaterial'){
-                    child.material.linewidth = radius*2;
+                if (child.material.type == 'LineMaterial') {
+                    child.material.linewidth = radius * 2;
                 }
             }
         } else if (this.mode == 3) {
@@ -886,7 +1018,7 @@ export class NeuronSkeleton extends RenderObj{
                         matrix.makeScale(radius, radius, radius);
                         child.getMatrixAt(j, old_matrix);
                         matrix.copyPosition(old_matrix);
-                        child.setMatrixAt( j, matrix);
+                        child.setMatrixAt(j, matrix);
                     }
                     child.instanceMatrix.needsUpdate = true;
                 }
@@ -903,7 +1035,7 @@ export class NeuronSkeleton extends RenderObj{
                     matrix.makeScale(radius, radius, radius);
                     child.getMatrixAt(j, old_matrix);
                     matrix.copyPosition(old_matrix);
-                    child.setMatrixAt( j, matrix);
+                    child.setMatrixAt(j, matrix);
                 }
                 child.instanceMatrix.needsUpdate = true;
             }
@@ -917,10 +1049,10 @@ export class NeuronSkeleton extends RenderObj{
     }
 
     /**
-    * Convert input json to skeleton
-    * @param {*} unit
-    * @returns skeleton json with vertices and segments
-    */
+     * Convert input json to skeleton
+     * @param {*} unit
+     * @returns skeleton json with vertices and segments
+     */
     parseSWCDict(unit) {
         var vertices = {};
         var segments = {};
@@ -962,17 +1094,19 @@ export class NeuronSkeleton extends RenderObj{
                 heads.push(nodeIndex);
             }
         }
-        var skeleton = {'vertices': vertices,
-                        'segments': segments,
-                        'heads': heads};
+        var skeleton = {
+            'vertices': vertices,
+            'segments': segments,
+            'heads': heads
+        };
         return skeleton;
     }
 
     /**
-    * Convert string of SWC to json object
-    * @param {String} swcString
-    * @returns vertices and segments
-    */
+     * Convert string of SWC to json object
+     * @param {String} swcString
+     * @returns vertices and segments
+     */
     parseSWCFile(swcString) {
         var vertices = {};
         var segments = {};
@@ -990,7 +1124,7 @@ export class NeuronSkeleton extends RenderObj{
                 seg = seg.slice(1);
             }
 
-            if (seg.length !== 7)  {
+            if (seg.length !== 7) {
                 return
             }
 
@@ -1009,7 +1143,7 @@ export class NeuronSkeleton extends RenderObj{
                 'x': xyzr[0],
                 'y': xyzr[1],
                 'z': xyzr[2],
-                'radius':  xyzr[3]
+                'radius': xyzr[3]
             };
 
             if (parentIndex !== -1) {
@@ -1021,20 +1155,22 @@ export class NeuronSkeleton extends RenderObj{
                 heads.push(nodeIndex);
             }
         });
-        var skeleton = {'vertices': vertices,
-                        'segments': segments,
-                        'heads': heads};
+        var skeleton = {
+            'vertices': vertices,
+            'segments': segments,
+            'heads': heads
+        };
         return skeleton;
     }
 }
 
 
-export class Synapses extends RenderObj{
-    constructor(data, type, transformation=undefined) {
+export class Synapses extends RenderObj {
+    constructor(data, type, transformation = undefined) {
         super(transformation);
         let locations = null;
-        if (typeof data === 'string' || data instanceof String){
-            if (type === 'syn'){
+        if (typeof data === 'string' || data instanceof String) {
+            if (type === 'syn') {
                 locations = this.parseSynFile(data);
             } else {
                 console.error("[Neu3D] Synapse unknown type.");
@@ -1051,12 +1187,12 @@ export class Synapses extends RenderObj{
     }
 
     /** create 3d object
-    *
-    * @param {*} color: color of the object
-    * @param {bool} color: if object is in background
-    * @param {*} setting: neu3dSettings
-    * @param {Vector2} render_size: size of the rendered scene
-    */
+     *
+     * @param {*} color: color of the object
+     * @param {bool} color: if object is in background
+     * @param {*} setting: neu3dSettings
+     * @param {Vector2} render_size: size of the rendered scene
+     */
     createObject(color, background, neu3dSettings) {
         this.color = new Color(color);
         if (background === undefined) {
@@ -1075,7 +1211,7 @@ export class Synapses extends RenderObj{
 
         var object = new Object3D();
 
-        var locations = this.locations
+        var locations = this.locations;
         var len = locations.length;
 
         for (var c of locations) {
@@ -1083,13 +1219,17 @@ export class Synapses extends RenderObj{
         }
         // var total_seg = Object.keys(segments).length;
 
-        var material_synapse = new MeshLambertMaterial( {color: color, transparent: true, opacity: opacity});
+        var material_synapse = new MeshLambertMaterial({
+            color: color,
+            transparent: true,
+            opacity: opacity
+        });
 
         var matrix = new Matrix4();
-        var geometrySphere = new SphereGeometry( 1.0, 8, 8 );
+        var geometrySphere = new SphereGeometry(1.0, 8, 8);
         // var geometrySphere = new THREE.IcosahedronGeometry( 1.0, 1 );
         // var geometrySphere = new THREE.OctahedronGeometry(1.0, 0);
-        var spheres = new InstancedMesh( geometrySphere, material_synapse, len*2);
+        var spheres = new InstancedMesh(geometrySphere, material_synapse, len * 2);
         var geometry = new BufferGeometry();
         var vertices = [];
 
@@ -1102,8 +1242,8 @@ export class Synapses extends RenderObj{
                 scale = neu3dSettings.defaultSynapseRadius;
             }
             matrix.makeScale(scale, scale, scale);
-            matrix.setPosition( c.pre_x, c.pre_y, c.pre_z );
-            spheres.setMatrixAt( i, matrix );
+            matrix.setPosition(c.pre_x, c.pre_y, c.pre_z);
+            spheres.setMatrixAt(i, matrix);
             i += 1;
 
             if (c.post_x !== undefined) {
@@ -1113,55 +1253,59 @@ export class Synapses extends RenderObj{
                     scale = neu3dSettings.defaultSynapseRadius / 2;
                 }
                 matrix.makeScale(scale, scale, scale);
-                matrix.setPosition( c.post_x, c.post_y, c.post_z );
-                spheres.setMatrixAt( i, matrix );
+                matrix.setPosition(c.post_x, c.post_y, c.post_z);
+                spheres.setMatrixAt(i, matrix);
                 i += 1;
                 vertices.push(c.pre_x, c.pre_y, c.pre_z);
                 vertices.push(c.post_x, c.post_y, c.post_z);
             }
         }
         this.overallScale = neu3dSettings.defaultSynapseRadius;
-        object.add( spheres );
+        object.add(spheres);
 
         geometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
-        var material_lines = new LineBasicMaterial({ transparent: true, color: color, opacity: opacity});
+        var material_lines = new LineBasicMaterial({
+            transparent: true,
+            color: color,
+            opacity: opacity
+        });
         object.add(new LineSegments(geometry, material_lines));
 
         this.threeObj = object;
     }
 
     /** update radius of the synapses
-    *
-    * @param {*} radius: new radius value
-    */
+     *
+     * @param {*} radius: new radius value
+     */
     updateRadius(radius) {
         var matrix = new Matrix4();
         var new_matrix = new Matrix4();
         var scale_vec = new Vector3();
         var overallScale;
         for (var child of this.threeObj.children) {
-            if ( child.type === 'Mesh' ){
+            if (child.type === 'Mesh') {
                 overallScale = this.overallScale;
-                for(var j = 0; j < child.count; j++){
+                for (var j = 0; j < child.count; j++) {
                     child.getMatrixAt(j, matrix);
                     scale_vec.setFromMatrixScale(matrix);
-                    new_matrix.makeScale(scale_vec.x/overallScale*radius, scale_vec.y/overallScale*radius, scale_vec.z/overallScale*radius);
+                    new_matrix.makeScale(scale_vec.x / overallScale * radius, scale_vec.y / overallScale * radius, scale_vec.z / overallScale * radius);
                     new_matrix.copyPosition(matrix);
-                    child.setMatrixAt( j, new_matrix );
+                    child.setMatrixAt(j, new_matrix);
                 }
-                child.instanceMatrix.needsUpdate=true;
+                child.instanceMatrix.needsUpdate = true;
                 this.overallScale = radius;
             }
         }
     }
 
     /**
-    * Convert string of synapse locations to json object
-    * Expect input file is csv like file with 4 columns or 8 columns.
-    * pre_x, pre_y, pre_z, pre_r(, post_x, post_y, post_z, post_r).
-    * @param {String} synString
-    * @returns Array of dict
-    */
+     * Convert string of synapse locations to json object
+     * Expect input file is csv like file with 4 columns or 8 columns.
+     * pre_x, pre_y, pre_z, pre_r(, post_x, post_y, post_z, post_r).
+     * @param {String} synString
+     * @returns Array of dict
+     */
     parseSynFile(synString) {
         var locations = [];
         synString = synString.replace(/\r\n/g, "\n");
@@ -1171,7 +1315,7 @@ export class Synapses extends RenderObj{
             if (seg.length === 1) {
                 seg = e.split(',');
             }
-            if (seg.length != 4 && seg.length != 8)  {
+            if (seg.length != 4 && seg.length != 8) {
                 return
             }
             // only process if have the right length
@@ -1213,11 +1357,11 @@ export class Synapses extends RenderObj{
 
 
     /**
-    * Convert SWC json to locations
-    * expected unit has keys x, y, z, r/radius, identifier, parent, sample.
-    * @param {*} unit
-    * @returns Array of dict
-    */
+     * Convert SWC json to locations
+     * expected unit has keys x, y, z, r/radius, identifier, parent, sample.
+     * @param {*} unit
+     * @returns Array of dict
+     */
     parseSWCDict(unit) {
         var locations = [];
         var locdict = {};
@@ -1251,7 +1395,7 @@ export class Synapses extends RenderObj{
                 locdict[parentIndex]['post_radius'] = xyzr[3];
             }
         }
-        for (const [k, v] of Object.entries(locdict)){
+        for (const [k, v] of Object.entries(locdict)) {
             locations.push(v);
         }
 
@@ -1260,18 +1404,18 @@ export class Synapses extends RenderObj{
 }
 
 
-export class GLTFObj extends RenderObj{
-    constructor(data, type, transformation=undefined) {
+export class GLTFObj extends RenderObj {
+    constructor(data, type, transformation = undefined) {
         super(transformation);
         var object = undefined;
-        if (type === 'gltf'){
-            for (var child of data.scene.children[0].children){
-                if (child instanceof Mesh){
+        if (type === 'gltf') {
+            for (var child of data.scene.children[0].children) {
+                if (child instanceof Mesh) {
                     var object = child;
                 }
-            }  
-        } 
-        
+            }
+        }
+
         if (object === undefined) {
             console.error("[Neu3D] file unknown type.");
         }
@@ -1294,7 +1438,7 @@ export class GLTFObj extends RenderObj{
             opacity = neu3dSettings.defaultOpacity;
         }
         this.opacity = opacity;
-        
+
         var object = new Object3D();
         var mesh = this.threeObj;
         mesh.material.transparent = true;
