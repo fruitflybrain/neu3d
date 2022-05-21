@@ -1,48 +1,55 @@
 <!doctype html>
 <html>
-  <head>
+
+<head>
     <title>Neu3d Test</title>
     <script type="text/javascript" src=" https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="../lib/neu3d.min.js"> </script>
-  </head>
-  <body>
+</head>
+
+<body>
     <div id="vis-3d" class="vis-3d" style="width: 100%; height: 100%;"></div>
     <script>
-      const parentDiv = document.getElementById('vis-3d');
-      let options = {
-        'stats': false,
-        'datGUI': {
-          autoPlace: false,
-          resizable: false,
-          closed: true,
-          hideable: true
+        const parentDiv = document.getElementById('vis-3d');
+        let options = {
+            'stats': false,
+            'datGUI': {
+                autoPlace: false,
+                resizable: false,
+                closed: true,
+                hideable: true
+            }
         }
-      }
-      var neu3d = new Neu3D(parentDiv,
-                               undefined,
-                               { "globalCenter": { 'x': 0, 'y': -250, 'z': 0 } },
-                               options);
+        var neu3d = new Neu3D(parentDiv,
+            undefined, {
+                "globalCenter": {
+                    'x': 0,
+                    'y': -250,
+                    'z': 0
+                }
+            },
+            options);
 
-      window.neu3d = neu3d;
+        window.neu3d = neu3d;
 
-
-
-
-
-      $.getJSON("../data/data.json", function (json) {
-        neu3d.addJson({
-          ffbo_json: json,
-          showAfterLoadAll: true
+        $.getJSON("../data/adult_mesh.json", function(json) {
+            neu3d.addJson({
+                ffbo_json: json,
+                showAfterLoadAll: true
+            });
+            var activityData = {
+                'al_r': [0.5, 0.1, 0.8],
+                'mb_r': [0.1, 0.8, 0.5]
+            };
+            neu3d.animateActivity(activityData, 0, 1000, 5);
         });
-        var activityData = {'al_r': [0.5,0.1,0.8], 'mb_r': [0.1,0.8,0.5]};
-        neu3d.animateActivity(activityData, 0, 1000, 5);
-      });
 
 
-      $(document).ready(() => {
-        neu3d.onWindowResize();
-        document.getElementById('neu3d-file-upload').click();
-      });
+        $(document).ready(() => {
+            neu3d.onWindowResize();
+            document.getElementById('neu3d-file-upload').click();
+        });
     </script>
-  </body>
+</body>
+
 </html>

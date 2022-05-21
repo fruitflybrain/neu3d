@@ -249,7 +249,6 @@ export class Neu3D {
         let controlPanelDiv = document.createElement('div');
         controlPanelDiv.className = 'vis-3d-settings';
 
-        // this.controlPanel = this.initControlPanel({container: controlPanelDiv, ...options['datGUI']});
         this.controlPanel = this.initControlPanel(options['datGUI']);
         controlPanelDiv.appendChild(this.controlPanel.domElement);
         this._addedDOMElements.push(controlPanelDiv);
@@ -525,33 +524,34 @@ export class Neu3D {
 
     /** Animate Activity Data */
     animateActivity(activityData, t_i, interval, interpolation_interval) {
-        let ffbomesh = this;
-
         this.activityData = activityData;
         let t = t_i || 0;
         let t_max = activityData[Object.keys(activityData)[0]].length;
         let interp = 0;
-        this.it1 = setInterval(frame, interval);
-        this.it2 = setInterval(intFrame, interpolation_interval);
-
-        function intFrame() {
-            interp += interpolation_interval / interval;
-            let t_current = t;
-            let t_next = t + 1;
-            if (t_next == t_max)
-                t_next = 0;
-            for (let key in activityData) {
-                ffbomesh.meshDict[key]['opacity'] = activityData[key][t_current] * (1 - interp) + activityData[key][t_next] * (interp);
-            }
-            ffbomesh.resetOpacity();
-        }
-
-        function frame() {
-            interp = 0;
-            t = t + 1;
-            if (t == t_max)
-                t = 0;
-        }
+        this.it1 = setInterval(
+            () => {
+                interp = 0;
+                t = t + 1;
+                if (t == t_max)
+                    t = 0;
+            },
+            interval
+        );
+        this.it2 = setInterval(
+            () => {
+                interp += interpolation_interval / interval;
+                let t_current = t;
+                let t_next = t + 1;
+                if (t_next == t_max) {
+                    t_next = 0;
+                }
+                for (let key of Object.keys(activityData)) {
+                    this.meshDict[key]['opacity'] = activityData[key][t_current] * (1 - interp) + activityData[key][t_next] * (interp);
+                }
+                this.resetOpacity();
+            },
+            interpolation_interval
+        );
     }
 
     /** Initialize WebGL Renderer */
@@ -1899,19 +1899,24 @@ export class Neu3D {
         for (const key of Object.keys(this.meshDict)) {
             var val = this.meshDict[key];
             if (!val.background) {
-                if (val.class = "Neuron") { //renderObj instanceof NeuronSkeleton) {
+                if (val.class === "Neuron") { //renderObj instanceof NeuronSkeleton) {
                     val.renderObj.updateOpacity(this.settings.defaultOpacity);
                     val.renderObj.updateDepthTest(true);
                 } else if (val.renderObj instanceof Synapses) {
                     val.renderObj.updateOpacity(this.settings.synapseOpacity);
                     val.renderObj.updateDepthTest(true);
                 } else if (val.renderObj instanceof MeshObj) {
-                    val.renderObj.updateBackgroundOpacity(this.settings.defaultOpacity, this.settings.backgroundWireframeOpacity);
+                    val.renderObj.updateBackgroundOpacity(
+                        this.settings.defaultOpacity,
+                        this.settings.backgroundWireframeOpacity
+                    );
                     val.renderObj.updateDepthTest(true);
                 }
             } else {
-                val.renderObj.updateBackgroundOpacity(this.settings.backgroundOpacity,
-                    this.settings.backgroundWireframeOpacity);
+                val.renderObj.updateBackgroundOpacity(
+                    this.settings.backgroundOpacity,
+                    this.settings.backgroundWireframeOpacity
+                );
                 val.renderObj.updateDepthTest(true);
             }
         }
