@@ -320,16 +320,19 @@ export class Neu3D {
         };
         backgroundColor: number[];
     };
+    export_state(): void;
+    import_state(state_metadata: any): void;
+    import_settings(settings: any): void;
     /**
      * show individual object
      * @param {string} id
      */
-    show(id: string): void;
+    show(id: string[] | string): void;
     /**
      * Hide individual object
      * @param {string} id
      */
-    hide(id: string): void;
+    hide(id: string[] | string): void;
     /**
      * callback for when mesh is added
      * @param {event} e
@@ -356,7 +359,7 @@ export class Neu3D {
      * @param {*} d
      * @param {*} updatePos
      */
-    highlight(d: any, updatePos: any): void;
+    highlight(d?: any, updatePos?: any): void;
     /** TODO: Add Comment
      *
      * @param {event} e
@@ -396,12 +399,12 @@ export class Neu3D {
      * pin an object in workspace
      * @param {string} id
      */
-    pin(id: string): void;
+    pin(id: string[] | string): void;
     /**
      * Unpin an object in workspace
      * @param {string} id
      */
-    unpin(id: string): void;
+    unpin(id: string[] | string): void;
     /**
      * Get pinned objects
      */
