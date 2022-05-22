@@ -496,15 +496,15 @@ interface INeu3DOptions {
 }
 
 interface IMetadata {
-    colormap: string
-    maxColorNum: Number,
-    allowPin: boolean,
-    allowHighlight: boolean,
-    enablePositionReset: boolean,
-    resetPosition: ICoords,
-    upVector: ICoords,
-    cameraTarget: ICoords,
-    upSign: Number
+    colormap?: string
+    maxColorNum?: Number,
+    allowPin?: boolean,
+    allowHighlight?: boolean,
+    enablePositionReset?: boolean,
+    resetPosition?: ICoords,
+    upVector?: ICoords,
+    cameraTarget?: ICoords,
+    upSign?: Number
 }
 
 interface ICoords {
