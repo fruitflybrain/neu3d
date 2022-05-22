@@ -14,8 +14,7 @@ import {
     LoadingManager,
     PerspectiveCamera,
     Color,
-    FileLoader,
-    GammaEncoding
+    FileLoader
 } from 'three';
 import {
     Lut
@@ -547,7 +546,7 @@ export class Neu3D {
                 }
                 for (let key of Object.keys(activityData)) {
                     try {
-                        this.meshDict[key]['opacity'] = activityData[key][t_current] * (1 - interp) + activityData[key][t_next] * (interp);
+                        this.meshDict[key].updateOpacity(activityData[key][t_current] * (1 - interp) + activityData[key][t_next] * (interp));
                     } catch (e) {
                         console.error(`Cannot Animate for some reaason: ${e}`);
                     }
