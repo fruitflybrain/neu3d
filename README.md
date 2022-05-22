@@ -124,10 +124,14 @@ To call `ffbomesh.addJson`, the json input should be of the following format:
 
 This library is developed and maintained by:
 
-* [Tingkai Liu]()
-* [Mehmet Turkcan]()
-* [Nikul Ukani]()
-* [Chung-Heng Yeh]()
+* [Tingkai Liu](https://github.com/TK-21st)
+* [Mehmet Turkcan](https://github.com/mkturkcan)
+* [Yiyin Zhou](https://github.com/yiyin)
+
+Developer Emeriti:
+* [Nikul Ukani](https://github.com/nikulukani)
+* [Chung-Heng Yeh](https://github.com/chungheng)
+
 
 ## Acknowledgements
 
