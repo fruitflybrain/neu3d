@@ -14,8 +14,7 @@ import {
     LoadingManager,
     PerspectiveCamera,
     Color,
-    FileLoader,
-    GammaEncoding
+    FileLoader
 } from 'three';
 import {
     Lut
@@ -547,7 +546,7 @@ export class Neu3D {
                 }
                 for (let key of Object.keys(activityData)) {
                     try {
-                        this.meshDict[key]['opacity'] = activityData[key][t_current] * (1 - interp) + activityData[key][t_next] * (interp);
+                        this.meshDict[key].updateOpacity(activityData[key][t_current] * (1 - interp) + activityData[key][t_next] * (interp));
                     } catch (e) {
                         console.error(`Cannot Animate for some reaason: ${e}`);
                     }
@@ -597,7 +596,7 @@ export class Neu3D {
         renderer.setSize(this.container.clientWidth, this.container.clientHeight);
         renderer.setClearColor(0x000000, 0);
         renderer.autoClear = false;
-        renderer.outputEncoding = GammaEncoding;
+        //renderer.outputEncoding = GammaEncoding;
         this.container.appendChild(renderer.domElement);
         return renderer;
     }
@@ -715,7 +714,7 @@ export class Neu3D {
 
         // this.renderer.gammaInput = true;
         // this.renderer.gammaOutput = true;
-        this.renderer.outputEncoding = GammaEncoding;
+        //this.renderer.outputEncoding = GammaEncoding;
 
         this.composer = new EffectComposer(this.renderer);
         this.composer.addPass(this.backrenderScene);
