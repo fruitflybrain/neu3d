@@ -596,7 +596,7 @@ export class Neu3D {
         renderer.setSize(this.container.clientWidth, this.container.clientHeight);
         renderer.setClearColor(0x000000, 0);
         renderer.autoClear = false;
-        renderer.outputEncoding = GammaEncoding;
+        //renderer.outputEncoding = GammaEncoding;
         this.container.appendChild(renderer.domElement);
         return renderer;
     }
@@ -714,7 +714,7 @@ export class Neu3D {
 
         // this.renderer.gammaInput = true;
         // this.renderer.gammaOutput = true;
-        this.renderer.outputEncoding = GammaEncoding;
+        //this.renderer.outputEncoding = GammaEncoding;
 
         this.composer = new EffectComposer(this.renderer);
         this.composer.addPass(this.backrenderScene);
