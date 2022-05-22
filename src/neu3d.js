@@ -1345,7 +1345,6 @@ export class Neu3D {
 
     /** Main animation loop */
     animate() {
-        console.debug("[Neu3D] animate()");
         if (this.stats) {
             this.stats.begin();
         }
@@ -1552,7 +1551,6 @@ export class Neu3D {
      * Render
      */
     render() {
-        console.debug("[Neu3D] render()");
         if (this.states.highlight) {
             // do nothing
         } else {
