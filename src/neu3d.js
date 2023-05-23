@@ -215,7 +215,8 @@ export class Neu3D {
             currentIntersected: undefined,
             cursorPosition: new Vector2(-100000, -100000),
             meshNum: 0,
-            frontNum: 0,
+            neuronNum: 0,
+            synapseNum: 0,
             backNum: 0,
             tooltip: undefined,
             selected: undefined
@@ -234,6 +235,7 @@ export class Neu3D {
             this._addedDOMElements.push(this.stats.dom);
             this.container.appendChild(this.stats.dom);
         }
+        this.mousedown = false;
         this.camera = this.initCamera();
         this.renderer = this.initRenderer();
         this.groups = {
@@ -310,7 +312,10 @@ export class Neu3D {
                 this.meshDict.on('change', func, 'visibility');
             }),
             'num': ((func) => {
-                this.uiVars.on('change', func, 'frontNum');
+                this.uiVars.on('change', func, 'neuronNum');
+            }),
+            'synapsenum':((func) => {
+                this.uiVars.on('change', func, 'synapseNum');
             }),
             'highlight': ((func) => {
                 this.states.on('change', func, 'highlight');
@@ -880,7 +885,8 @@ export class Neu3D {
             meshobj = null;
             delete this.meshDict[key];
         }
-        this.uiVars.frontNum = 0;
+        this.uiVars.neuronNum = 0;
+        this.uiVars.synapseNum = 0;
         this.states.highlight = false;
         if (resetBackground) {
             this.controls.target0.set(0, 0, 0);
@@ -932,6 +938,12 @@ export class Neu3D {
         let func_10 = this.onWindowResize.bind(this);
         this.container.addEventListener('resize', func_10, false);
         this._containerEventListener['resize'] = func_10;
+        let func_11 = this.onDocumentMouseDown.bind(this);
+        this.container.addEventListener('mousedown', func_11, false);
+        this._containerEventListener['mousedown'] = func_11;
+        let func_12 = this.onDocumentMouseUp.bind(this);
+        this.container.addEventListener('mouseup', func_12, false);
+        this._containerEventListener['mouseup'] = func_12;
     }
 
     removeContainerEventListener() {
@@ -1417,6 +1429,28 @@ export class Neu3D {
     }
 
     /**
+     * Mouse Down Event
+     * @param {*} event
+     */
+    onDocumentMouseDown(event) {
+        if (event !== undefined) {
+            event.preventDefault();
+        }
+        this.mousedown = true;
+    }
+
+    /**
+     * Mouse Up Event
+     * @param {*} event
+     */
+    onDocumentMouseUp(event) {
+        if (event !== undefined) {
+            event.preventDefault();
+        }
+        this.mousedown = false;
+    }
+
+    /**
      * Mouse Click Event
      * @param {*} event
      */
@@ -1581,7 +1615,7 @@ export class Neu3D {
         /*
          * show label of mesh object when it intersects with cursor
          */
-        if (this.states.mouseOver) {
+        if (this.states.mouseOver && !this.mousedown) {
             let intersected = this.getIntersection([this.groups.front, this.groups.back]);
             if (this.uiVars.currentIntersected || intersected) {
                 this.uiVars.currentIntersected = intersected;
@@ -1731,14 +1765,27 @@ export class Neu3D {
         }
     }
 
+    toggleStats(d) {
+        if (this.statsMode) {
+          this.stats.showPanel();
+          this.statsMode = false;
+        } else {
+          this.stats.showPanel(0);
+          this.statsMode = true;
+        }
+    }
+
     /**
      * callback for when mesh is added
      * @param {event} e
      */
     onAddMesh(e) {
         if (!e.value['background']) {
-            if (e.value['class'] === 'Neuron')
-                ++this.uiVars.frontNum;
+            if(e.value['class'] === 'Neuron' || e.value['class'] === 'NeuronFragment'){
+                ++this.uiVars.neuronNum;
+            } else if(e.value['class'] === 'Synapse') {
+                 this.uiVars.synapseNum += e.value['N']
+            }
             this.groups.front.add(e.value.renderObj.threeObj);
         } else {
             this.groups.back.add(e.value.renderObj.threeObj);
@@ -1762,8 +1809,11 @@ export class Neu3D {
         let meshobj = e.value.renderObj;
         meshobj.dispose();
         if (!e.value['background']) {
-            if (e.value['class'] === 'Neuron')
-                --this.uiVars.frontNum;
+            if(e.value['class'] === 'Neuron' || e.value['class'] === 'NeuronFragment') {
+                --this.uiVars.neuronNum;
+            } else if (e.value['class'] === 'Synapse') {
+                this.uiVars.synapseNum -= e.value['N'];
+            }
             this.groups.front.remove(meshobj.threeObj);
         } else {
             this.groups.back.remove(meshobj.threeObj);

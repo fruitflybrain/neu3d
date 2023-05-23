@@ -53,9 +53,14 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
     controlPanel.remember(this.settings.backrenderSSAO);
     controlPanel.__closeButton.style.visibility = 'hidden';
     this._controlPanelBtnIds = [];
-    let neuronNum = controlPanel.add(this.uiVars, 'frontNum').name('# Neurons: ');
+    let neuronNum = controlPanel.add(this.uiVars, 'neuronNum').name('# Neurons: ');
     neuronNum.domElement.style["pointerEvents"] = "None";
     neuronNum.domElement.parentNode.parentNode.classList.add('noneurons');
+    let synapseNum = controlPanel.add(this.uiVars, 'synapseNum').name('# Synapses: ');
+    synapseNum.domElement.style["pointerEvents"] = "None";
+    synapseNum.domElement.parentNode.parentNode.classList.add('nosynapses');
+    
+
     if (GUIOptions['createButtons']) {
         let btnId = '';
         btnId = _createBtn(controlPanel, "uploadFile", "fa fa-upload", {}, "Upload SWC File", () => {
@@ -208,7 +213,7 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
     }), ['enabled']);
     this.uiVars.on('change', (() => {
         controlPanel.updateDisplay();
-    }), ['frontNum']);
+    }), ['neuronNum', 'synapseNum']);
 
     controlPanel.open();
     return controlPanel;
