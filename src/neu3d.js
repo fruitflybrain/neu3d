@@ -1429,28 +1429,6 @@ export class Neu3D {
     }
 
     /**
-     * Mouse Down Event
-     * @param {*} event
-     */
-    onDocumentMouseDown(event) {
-        if (event !== undefined) {
-            event.preventDefault();
-        }
-        this.mousedown = true;
-    }
-
-    /**
-     * Mouse Up Event
-     * @param {*} event
-     */
-    onDocumentMouseUp(event) {
-        if (event !== undefined) {
-            event.preventDefault();
-        }
-        this.mousedown = false;
-    }
-
-    /**
      * Mouse Click Event
      * @param {*} event
      */
@@ -1475,6 +1453,21 @@ export class Neu3D {
     }
 
 
+    /**
+     * Mouse Down Event
+     * @param {*} event
+     */
+    onDocumentMouseDown(event) {
+        this.mousedown = true;
+    }
+
+    /**
+     * Mouse Up Event
+     * @param {*} event
+     */
+    onDocumentMouseUp(event) {
+        this.mousedown = false;
+    }
 
     /**
      * Double Click callback

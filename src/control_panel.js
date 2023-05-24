@@ -93,7 +93,7 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
             this.removeUnpinned();
         });
         this._controlPanelBtnIds.push(btnId);
-        btnId = _createBtn(controlPanel, "removeUnpin", "fa fa-map-upin", {}, "Unpin All", () => {
+        btnId = _createBtn(controlPanel, "UnpinAll", "fa fa-map-upin", {}, "Unpin All", () => {
             this.unpinAll();
         });
         this._controlPanelBtnIds.push(btnId);
