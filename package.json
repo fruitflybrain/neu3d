@@ -24,23 +24,23 @@
   "homepage": "https://github.com/fruitflybrain/neu3d#readme",
   "dependencies": {
     "@fortawesome/fontawesome-free": "5.12.0",
-    "bootstrap": "^4.5.0",
-    "dat.gui": "^0.7.7",
+    "bootstrap": "^4.6.2",
+    "dat.gui": "^0.7.9",
     "exports-loader": "^4.0.0",
     "imports-loader": "^4.0.1",
-    "jquery": "^3.5.1",
-    "lodash": "^4.17.20",
+    "jquery": "^3.7.0",
+    "lodash": "^4.17.21",
     "popper.js": "^1.16.1",
     "stats.js": "^0.17.0",
-    "three": "^0.139.2"
+    "three": "^0.151.3"
   },
   "devDependencies": {
-    "css-loader": "^6.7.3",
-    "eslint": "^8.14.0",
+    "css-loader": "^6.7.4",
+    "eslint": "^8.41.0",
     "rimraf": "^3.0.2",
-    "style-loader": "^3.3.1",
-    "typescript": "^4.6.4",
-    "webpack": "^5.72.0",
-    "webpack-cli": "^5.0.1"
+    "style-loader": "^3.3.3",
+    "typescript": "^5.0.4",
+    "webpack": "^5.83.1",
+    "webpack-cli": "^5.1.1"
   }
 }

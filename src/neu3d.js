@@ -180,7 +180,7 @@ export class Neu3D {
             neuron3dMode: 0, // 0-6
             neuron3dApp: true, // apply change to neuron3dMode immediately to the workspace
             meshWireframe: true,
-            backgroundColor: new Color("#260226"),
+            backgroundColor: new Color("#500250"),
             sceneBackgroundColor: new Color('#030305'),
             render_resolution: 1.0,
             adaptive_resolution: options["adaptive"] ? true : false

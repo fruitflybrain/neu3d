@@ -1,6 +1,6 @@
 {
   "al_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/al_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/al_l.json",
     "label": "Left AL",
     "highlight": false,
     "background": true,
@@ -11,7 +11,7 @@
     ]
   },
   "al_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/al_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/al_r.json",
     "label": "Right AL",
     "highlight": false,
     "background": true,
@@ -22,7 +22,7 @@
     ]
   },
   "ammc_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/ammc_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/ammc_l.json",
     "label": "Left AMMC",
     "highlight": false,
     "background": true,
@@ -33,7 +33,7 @@
     ]
   },
   "ammc_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/ammc_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/ammc_r.json",
     "label": "Right AMMC",
     "highlight": false,
     "background": true,
@@ -44,7 +44,7 @@
     ]
   },
   "cal_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/cal_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/cal_l.json",
     "label": "Left CAL",
     "highlight": false,
     "background": true,
@@ -55,7 +55,7 @@
     ]
   },
   "cal_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/cal_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/cal_r.json",
     "label": "Right CAL",
     "highlight": false,
     "background": true,
@@ -66,7 +66,7 @@
     ]
   },
   "ccp_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/ccp_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/ccp_l.json",
     "label": "Left CCP",
     "highlight": false,
     "background": true,
@@ -77,7 +77,7 @@
     ]
   },
   "ccp_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/ccp_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/ccp_r.json",
     "label": "Right CCP",
     "highlight": false,
     "background": true,
@@ -88,7 +88,7 @@
     ]
   },
   "cmp_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/cmp_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/cmp_l.json",
     "label": "Left CMP",
     "highlight": false,
     "background": true,
@@ -99,7 +99,7 @@
     ]
   },
   "cmp_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/cmp_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/cmp_r.json",
     "label": "Right CMP",
     "highlight": false,
     "background": true,
@@ -110,7 +110,7 @@
     ]
   },
   "cvlp_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/cvlp_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/cvlp_l.json",
     "label": "Left CVLP",
     "highlight": false,
     "background": true,
@@ -121,7 +121,7 @@
     ]
   },
   "cvlp_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/cvlp_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/cvlp_r.json",
     "label": "Right CVLP",
     "highlight": false,
     "background": true,
@@ -132,7 +132,7 @@
     ]
   },
   "dlp_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/dlp_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/dlp_l.json",
     "label": "Left DLP",
     "highlight": false,
     "background": true,
@@ -143,7 +143,7 @@
     ]
   },
   "dlp_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/dlp_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/dlp_r.json",
     "label": "Right DLP",
     "highlight": false,
     "background": true,
@@ -154,7 +154,7 @@
     ]
   },
   "dmp_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/dmp_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/dmp_l.json",
     "label": "Left DMP",
     "highlight": false,
     "background": true,
@@ -165,7 +165,7 @@
     ]
   },
   "dmp_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/dmp_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/dmp_r.json",
     "label": "Right DMP",
     "highlight": false,
     "background": true,
@@ -176,7 +176,7 @@
     ]
   },
   "eb": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/eb.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/eb.json",
     "label": "EB",
     "highlight": false,
     "background": true,
@@ -187,7 +187,7 @@
     ]
   },
   "fb": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/fb.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/fb.json",
     "label": "FB",
     "highlight": false,
     "background": true,
@@ -198,7 +198,7 @@
     ]
   },
   "fspp_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/fspp_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/fspp_l.json",
     "label": "Left FSPP",
     "highlight": false,
     "background": true,
@@ -209,7 +209,7 @@
     ]
   },
   "fspp_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/fspp_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/fspp_r.json",
     "label": "Right FSPP",
     "highlight": false,
     "background": true,
@@ -220,7 +220,7 @@
     ]
   },
   "idfp_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/idfp_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/idfp_l.json",
     "label": "Left IDFP",
     "highlight": false,
     "background": true,
@@ -231,7 +231,7 @@
     ]
   },
   "idfp_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/idfp_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/idfp_r.json",
     "label": "Right IDFP",
     "highlight": false,
     "background": true,
@@ -242,7 +242,7 @@
     ]
   },
   "idlp_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/idlp_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/idlp_l.json",
     "label": "Left IDLP",
     "highlight": false,
     "background": true,
@@ -253,7 +253,7 @@
     ]
   },
   "idlp_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/idlp_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/idlp_r.json",
     "label": "Right IDLP",
     "highlight": false,
     "background": true,
@@ -264,7 +264,7 @@
     ]
   },
   "lat_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/lat_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/lat_l.json",
     "label": "Left LAT",
     "highlight": false,
     "background": true,
@@ -275,7 +275,7 @@
     ]
   },
   "lat_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/lat_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/lat_r.json",
     "label": "Right LAT",
     "highlight": false,
     "background": true,
@@ -286,7 +286,7 @@
     ]
   },
   "lh_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/lh_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/lh_l.json",
     "label": "Left LH",
     "highlight": false,
     "background": true,
@@ -297,7 +297,7 @@
     ]
   },
   "lh_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/lh_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/lh_r.json",
     "label": "Right LH",
     "highlight": false,
     "background": true,
@@ -308,7 +308,7 @@
     ]
   },
   "lob_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/lob_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/lob_l.json",
     "label": "Left LOB",
     "highlight": false,
     "background": true,
@@ -319,7 +319,7 @@
     ]
   },
   "lob_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/lob_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/lob_r.json",
     "label": "Right LOB",
     "highlight": false,
     "background": true,
@@ -330,7 +330,7 @@
     ]
   },
   "lop_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/lop_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/lop_l.json",
     "label": "Left LOP",
     "highlight": false,
     "background": true,
@@ -341,7 +341,7 @@
     ]
   },
   "lop_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/lop_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/lop_r.json",
     "label": "Right LOP",
     "highlight": false,
     "background": true,
@@ -352,7 +352,7 @@
     ]
   },
   "mb_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/mb_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/mb_l.json",
     "label": "Left MB",
     "highlight": false,
     "background": true,
@@ -363,7 +363,7 @@
     ]
   },
   "mb_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/mb_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/mb_r.json",
     "label": "Right MB",
     "highlight": false,
     "background": true,
@@ -374,7 +374,7 @@
     ]
   },
   "med_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/med_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/med_l.json",
     "label": "Left MED",
     "highlight": false,
     "background": true,
@@ -385,7 +385,7 @@
     ]
   },
   "med_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/med_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/med_r.json",
     "label": "Right MED",
     "highlight": false,
     "background": true,
@@ -396,7 +396,7 @@
     ]
   },
   "nod_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/nod_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/nod_l.json",
     "label": "Left NOD",
     "highlight": false,
     "background": true,
@@ -407,7 +407,7 @@
     ]
   },
   "nod_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/nod_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/nod_r.json",
     "label": "Right NOD",
     "highlight": false,
     "background": true,
@@ -418,7 +418,7 @@
     ]
   },
   "og_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/og_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/og_l.json",
     "label": "Left OG",
     "highlight": false,
     "background": true,
@@ -429,7 +429,7 @@
     ]
   },
   "og_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/og_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/og_r.json",
     "label": "Right OG",
     "highlight": false,
     "background": true,
@@ -440,7 +440,7 @@
     ]
   },
   "optu_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/optu_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/optu_l.json",
     "label": "Left OPTU",
     "highlight": false,
     "background": true,
@@ -451,7 +451,7 @@
     ]
   },
   "optu_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/optu_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/optu_r.json",
     "label": "Right OPTU",
     "highlight": false,
     "background": true,
@@ -462,7 +462,7 @@
     ]
   },
   "pan_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/pan_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/pan_l.json",
     "label": "Left PAN",
     "highlight": false,
     "background": true,
@@ -473,7 +473,7 @@
     ]
   },
   "pan_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/pan_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/pan_r.json",
     "label": "Right PAN",
     "highlight": false,
     "background": true,
@@ -484,7 +484,7 @@
     ]
   },
   "pb": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/pb.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/pb.json",
     "label": "PB",
     "highlight": false,
     "background": true,
@@ -495,7 +495,7 @@
     ]
   },
   "sdfp_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/sdfp_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/sdfp_l.json",
     "label": "Left SDFP",
     "highlight": false,
     "background": true,
@@ -506,7 +506,7 @@
     ]
   },
   "sdfp_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/sdfp_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/sdfp_r.json",
     "label": "Right SDFP",
     "highlight": false,
     "background": true,
@@ -517,7 +517,7 @@
     ]
   },
   "sog_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/sog_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/sog_l.json",
     "label": "Left SOG",
     "highlight": false,
     "background": true,
@@ -528,7 +528,7 @@
     ]
   },
   "sog_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/sog_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/sog_r.json",
     "label": "Right SOG",
     "highlight": false,
     "background": true,
@@ -539,7 +539,7 @@
     ]
   },
   "spp_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/spp_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/spp_l.json",
     "label": "Left SPP",
     "highlight": false,
     "background": true,
@@ -550,7 +550,7 @@
     ]
   },
   "spp_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/spp_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/spp_r.json",
     "label": "Right SPP",
     "highlight": false,
     "background": true,
@@ -561,7 +561,7 @@
     ]
   },
   "vlp_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/vlp_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/vlp_l.json",
     "label": "Left VLP",
     "highlight": false,
     "background": true,
@@ -572,7 +572,7 @@
     ]
   },
   "vlp_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/vlp_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/vlp_r.json",
     "label": "Right VLP",
     "highlight": false,
     "background": true,
@@ -583,7 +583,7 @@
     ]
   },
   "vmp_l": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/vmp_l.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/vmp_l.json",
     "label": "Left VMP",
     "highlight": false,
     "background": true,
@@ -594,7 +594,7 @@
     ]
   },
   "vmp_r": {
-    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/vmp_r.json",
+    "filename": "https://cdn.rawgit.com/fruitflybrain/ffbo.lib/master/mesh/flycircuit/vmp_r.json",
     "label": "Right VMP",
     "highlight": false,
     "background": true,
