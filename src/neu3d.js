@@ -226,7 +226,7 @@ export class Neu3D {
         this._labelToRid = {};
         // Mesh.raycast = acceleratedRaycast;
         this.raycaster = new Raycaster();
-        this.raycaster.params.Line.threshold = 3;
+        this.raycaster.params.Line.threshold = 0.1;
         if (options['stats']) {
             this.stats = STATS.Stats();
             this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
