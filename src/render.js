@@ -1416,7 +1416,7 @@ export class GLTFObj extends RenderObj {
         super(transformation);
         var object = undefined;
         if (type === 'gltf') {
-            for (var child of data.scene.children[0].children) {
+            for (var child of data.scene.children) {
                 if (child instanceof Mesh) {
                     var object = child;
                 }
