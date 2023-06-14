@@ -1235,7 +1235,6 @@ export class Synapses extends RenderObj {
                 nspheres += 1;
             }
         }
-        console.log('nspheres: ' + nspheres);
         var spheres = new InstancedMesh(geometrySphere, material_synapse, nspheres);
         var geometry = new BufferGeometry();
         var vertices = [];
