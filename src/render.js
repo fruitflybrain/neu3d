@@ -23,7 +23,7 @@ import {
     createMultiMaterialObject
 } from 'three/examples/jsm/utils/SceneUtils';
 import {
-    mergeBufferGeometries
+    mergeGeometries
 } from 'three/examples/jsm/utils/BufferGeometryUtils';
 import {
     LineSegmentsGeometry
@@ -805,7 +805,7 @@ export class NeuronSkeleton extends RenderObj {
             }
             object.add(spheres);
 
-            const mergedGeometry = mergeBufferGeometries(geometryToMerge, false);
+            const mergedGeometry = mergeGeometries(geometryToMerge, false);
             var material_merge = new MeshLambertMaterial({
                 color: color,
                 transparent: true,
@@ -935,7 +935,7 @@ export class NeuronSkeleton extends RenderObj {
             if (spheres)
                 object.add(spheres);
             if (geometryToMerge.length) {
-                mergedGeometry = mergeBufferGeometries(geometryToMerge, false);
+                mergedGeometry = mergeGeometries(geometryToMerge, false);
                 for (var n of geometryToMerge) {
                     n.dispose();
                 }
@@ -1229,7 +1229,14 @@ export class Synapses extends RenderObj {
         var geometrySphere = new SphereGeometry(1.0, 8, 8);
         // var geometrySphere = new THREE.IcosahedronGeometry( 1.0, 1 );
         // var geometrySphere = new THREE.OctahedronGeometry(1.0, 0);
-        var spheres = new InstancedMesh(geometrySphere, material_synapse, len * 2);
+        var nspheres = len;
+        for (const c of locations) {
+            if(c.post_x !== undefined) {
+                nspheres += 1;
+            }
+        }
+        console.log('nspheres: ' + nspheres);
+        var spheres = new InstancedMesh(geometrySphere, material_synapse, nspheres);
         var geometry = new BufferGeometry();
         var vertices = [];
 
