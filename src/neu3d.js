@@ -1219,7 +1219,6 @@ export class Neu3D {
                         }
                     }
                 } else if (metadata.type === "obj") {
-                    console.log('obj detected');
                     this.loadObjCallBack(key, unit, metadata.visibility).bind(this)();
                 } else if (('dataStr' in unit) && ('filename' in unit)) {
                     console.warn(`[Neu3D] mesh object ${key} has both dataStr and filename, should only have one. Skipped`);
@@ -1256,10 +1255,15 @@ export class Neu3D {
                         unit['class'] = 'Neuron';
                         unit['morph_type'] = 'gltf';
                         this.loadGltfCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
+                    } else if (unit['filetype'] == "obj") {
+                        unit['class'] = 'Neuron';
+                        unit['morph_type'] = 'obj';
+                        this.loadObjCallBack(key, unit, metadata.visibility).bind(this)(unit['dataStr']);
                     } else {
                         console.warn(`[Neu3D] mesh object ${key} has unrecognized data format, skipped`);
                         continue;
                     }
+                    delete unit['dataStr'];
                 } else {
                     console.warn(`[Neu3D] mesh object ${key} has neither dataStr nor filename, skipped`);
                     continue;
