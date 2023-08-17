@@ -17,7 +17,8 @@ import {
     NeuronSkeleton,
     Synapses,
     MeshObj,
-    GLTFObj
+    GLTFObj,
+    ObjectObj
 } from './render';
 
 /** Clip value in between min/max
@@ -133,7 +134,7 @@ Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
  * @returns
  */
 Neu3D.prototype.loadObjCallBack = function(key, unit, visibility) {
-    return () => {
+    return (data, transformation = undefined) => {
         // instantiate a loader
         var loader = new OBJLoader();
         var _this = this;
@@ -152,16 +153,13 @@ Neu3D.prototype.loadObjCallBack = function(key, unit, visibility) {
         loader.load(
             '', unit['dataStr'],
             function(object) {
-                object.visible = visibility;
-                _this._registerObject(key, unit, object);
-                delete unit['identifier'];
-                delete unit['x'];
-                delete unit['y'];
-                delete unit['z'];
-                delete unit['r'];
-                delete unit['parent'];
-                delete unit['sample'];
-                delete unit['type'];
+                let obj = new ObjectObj(object, 'obj', transformation);
+                obj.createObject(unit['color'], unit['background'], _this.settings);
+                obj.updateVisibility(visibility);
+                _this._registerObject(key, unit, obj);
+                if ('dataStr' in unit) {
+                    delete unit['dataStr'];
+                }
             },
             function(xhr) {
                 console.debug(`[Neu3D] loading Object: ${(xhr.loaded / xhr.total * 100)}% loaded`);
@@ -205,6 +203,9 @@ Neu3D.prototype.loadGltfCallBack = function(key, unit, visibility) {
                 obj.createObject(unit['color'], unit['background'], _this.settings);
                 obj.updateVisibility(visibility);
                 _this._registerObject(key, unit, obj);
+                if ('dataStr' in unit) {
+                    delete unit['dataStr'];
+                }
             },
             function(xhr) {
                 console.debug(`[Neu3D] loading Object: ${(xhr.loaded / xhr.total * 100)}% loaded`);

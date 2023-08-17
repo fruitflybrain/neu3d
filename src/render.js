@@ -402,10 +402,12 @@ export class MeshObj extends RenderObj {
         let idx = unit['faces'];
         const vertices = [];
         // check if vertics and indices match dimensionality
-        if (Math.max(...idx) >= (vtx.length / 3)) {
-            let err = `[Neu3D] Mesh ${unit} has face index ${Math.max(...idx)} that exceeds maximum number of vertices ${vtx.length/3}.`;
-            if (Math.min(...idx) !== 0) {
-                err = `${err} The face index also start from ${Math.min(...idx)}, maybe the face indices should be shifted by 1.`;
+        const maxIdx = idx.reduce((m, e) => e > m ? e : m);
+        if (maxIdx >= (vtx.length / 3)) {
+            let err = `[Neu3D] Mesh ${unit} has face index ${maxIdx} that exceeds maximum number of vertices ${vtx.length/3}.`;
+            const minIdx = idx.reduce((m, e) => e < m ? e : m);
+            if (minIdx !== 0) {
+                err = `${err} The face index also start from ${minIdx}, maybe the face indices should be shifted by 1.`;
             }
             console.error(err);
             return;
@@ -1450,7 +1452,56 @@ export class GLTFObj extends RenderObj {
         mesh.material.transparent = true;
         mesh.material.color = color;
         mesh.material.opacity = opacity;
-        mesh.geometry.scale(0.008, 0.008, 0.008);
+        // mesh.geometry.scale(0.008, 0.008, 0.008);
+        mesh.geometry.computeBoundingBox();
+        object.add(mesh);
+
+        this.threeObj = object;
+        delete this.object;
+    }
+}
+
+
+export class ObjectObj extends RenderObj {
+    constructor(data, type, transformation = undefined) {
+        super(transformation);
+        var object = undefined;
+        if (type === 'obj') {
+            for (var child of data.children) {
+                if (child instanceof Mesh) {
+                    var object = child;
+                }
+            }
+        }
+        if (object === undefined) {
+            console.error("[Neu3D] file unknown type.");
+        }
+        this.threeObj = object;
+        this.morph_type = 'obj';
+    }
+
+    createObject(color, background, neu3dSettings) {
+        this.color = new Color(color);
+        if (background === undefined) {
+            this.background = false;
+        } else {
+            this.background = background;
+        }
+
+        var opacity;
+        if (this.background) {
+            opacity = neu3dSettings.backgroundOpacity;
+        } else {
+            opacity = neu3dSettings.defaultOpacity;
+        }
+        this.opacity = opacity;
+
+        var object = new Object3D();
+        var mesh = this.threeObj;
+        mesh.material.transparent = true;
+        mesh.material.color = color;
+        mesh.material.opacity = opacity;
+        //mesh.geometry.scale(0.008, 0.008, 0.008);
         mesh.geometry.computeBoundingBox();
         object.add(mesh);
 
