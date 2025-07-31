@@ -1174,6 +1174,8 @@ export class Neu3D {
                 );
                 setAttrIfNotDefined(unit, 'name', getAttr(unit, 'uname', key));
                 setAttrIfNotDefined(unit, 'label', unit.uname);
+                setAttrIfNotDefined(unit, 'htmllabel', getAttr(unit, 'uname', getAttr(unit, 'label', key)).replaceAll('<', '&lt').replaceAll('>', '&gt'));
+
                 setAttrIfNotDefined(unit, 'highlight', (unit.background) ? false : true);
                 if (unit.background) {
                     setAttrIfNotDefined(unit, 'opacity', this.settings.backgroundOpacity);
@@ -1441,6 +1443,10 @@ export class Neu3D {
             event.preventDefault();
         }
 
+        if (this.isDragging) {
+            return;
+        }
+
         let intersected = this.getIntersection([this.groups.front]);
         if (intersected != undefined && intersected['highlight']) {
             this.select(intersected.rid);
@@ -1463,6 +1469,8 @@ export class Neu3D {
      */
     onDocumentMouseDown(event) {
         this.mousedown = true;
+        this.mouseDownPosition = { x: event.clientX, y: event.clientY };
+        this.isDragging = false;
     }
 
     /**
@@ -1471,6 +1479,17 @@ export class Neu3D {
      */
     onDocumentMouseUp(event) {
         this.mousedown = false;
+
+        const mouseUpPosition = { x: event.clientX, y: event.clientY };
+        const distance = Math.sqrt(
+            Math.pow(mouseUpPosition.x - this.mouseDownPosition.x, 2) +
+            Math.pow(mouseUpPosition.y - this.mouseDownPosition.y, 2)
+        );
+
+        const dragThreshold = 1;
+        if (distance > dragThreshold) {
+            this.isDragging = true;
+        }
     }
 
     /**
@@ -1481,6 +1500,7 @@ export class Neu3D {
         if (event !== undefined) {
             event.preventDefault();
         }
+        
         let intersected = this.getIntersection([this.groups.front]);
         if (intersected != undefined) {
             if (!intersected['highlight']) {
@@ -1615,8 +1635,27 @@ export class Neu3D {
         if (this.states.mouseOver && !this.mousedown) {
             let intersected = this.getIntersection([this.groups.front, this.groups.back]);
             if (this.uiVars.currentIntersected || intersected) {
+                // make sure when hovering over a neuron transits to hovering on neuropil the highlight state is reset.
+                if (this.uiVars.currentIntersected !== undefined && intersected !== undefined){
+                    if (this.uiVars.currentIntersected['rid'] != intersected['rid']) {
+                        this.highlight();
+                    }
+                }
                 this.uiVars.currentIntersected = intersected;
-                this.highlight(intersected);
+                // The goal here is to make background highlightable only when using the Neuropil menu.
+                // Hovering on neuropil can still show the tooltip, but not highllight it.
+                if (intersected !== undefined) {
+                    if (intersected['background']){
+                        var pos = this.getNeuronScreenPosition(intersected['rid']);
+                        this.uiVars.toolTipPosition.x = pos.x;
+                        this.uiVars.toolTipPosition.y = pos.y;
+                        this.show3dToolTip(intersected['htmllabel']);
+                    } else {
+                        this.highlight(intersected);
+                    }
+                } else { // if intersected is undefined and currentIntersected is defined, must be moving out of highlight
+                    this.highlight();
+                }
             }
         }
 
@@ -1640,15 +1679,20 @@ export class Neu3D {
         let val = undefined;
         let object = undefined;
         this.raycaster.setFromCamera(this.uiVars.cursorPosition, this.camera);
+
+        var quit = false;
         for (const group of groups) {
-            let intersects = this.raycaster.intersectObjects(group.children, true);
-            if (intersects.length > 0) {
-                object = intersects[0].object.parent;
-                if (Object.prototype.hasOwnProperty.call(object, 'rid') && object.rid in this.meshDict) {
-                    val = this.meshDict[object.rid];
+            var intersects = this.raycaster.intersectObjects(group.children, true);
+
+            for (const ob of intersects) {
+                object = ob.object.parent;
+                if (Object.prototype.hasOwnProperty.call(object, 'rid') && object.rid in this.meshDict && object.visible) {
+                    val =  this.meshDict[object.rid];
+                    quit = true;
                     break;
                 }
             }
+            if (quit) break;
         }
         return val;
     }
@@ -1851,8 +1895,58 @@ export class Neu3D {
             return;
         }
 
-        if (typeof(d) === 'string' && (d in this.meshDict)) {
-            d = this.meshDict[d];
+        if (Array.isArray(d)) { // only support an array of rids
+            rids = [];
+            
+            for (const rid of d) {
+                var v = undefined;
+                if (typeof(rid) === 'string' && (rid in this.meshDict)) {
+                    v = this.meshDict[rid];
+                } else {
+                    if (rid in this._labelToRid) {
+                        v = this.meshDict[this._labelToRid[rid]];
+                    } else {
+                        if (typeof(rid) === 'string' && !d.includes('#')) {
+                            for (var key in this.meshDict) {
+                                if (key.includes('#')) {
+                                    if (rid === this.meshDict[key].referenceId)
+                                    {
+                                        v = this.meshDict[key];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (v !== undefined && v['highlight'] !== false) {
+                    rids.push(v['rid']);
+                }
+            }
+    
+            if (rids.length === 0) {
+                this.states.highlight = false;
+            } else {
+                this.states.highlight = rids;
+            }
+        } else {
+            if (typeof(d) === 'string' && (d in this.meshDict)) {
+                d = this.meshDict[d];
+            } else {
+                if (d in this._labelToRid) {
+                    d = this.meshDict[this._labelToRid[d]];
+                } else {
+                    if (typeof(d) === 'string' && !d.includes('#')) {
+                        for (var key in this.meshDict) {
+                            if (key.includes('#')) {
+                                if (d == this.meshDict[key].referenceId)
+                                {
+                                    d = this.meshDict[key];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         if ((d['highlight']) !== false) {
@@ -1866,7 +1960,7 @@ export class Neu3D {
             this.uiVars.toolTipPosition.x = pos.x;
             this.uiVars.toolTipPosition.y = pos.y;
         }
-        this.show3dToolTip(d['label']);
+        this.show3dToolTip(d['htmllabel']);
     }
 
     /** TODO: Add Comment
@@ -1875,13 +1969,25 @@ export class Neu3D {
      */
     onUpdateHighlight(e) {
         if (e.old_value) {
-            this.meshDict[e.old_value].renderObj.updateVisibility(this.meshDict[e.old_value].visibility);
+            if ( Array.isArray(e.old_value) ) {
+                for (const rid of e.old_value ) {
+                    this.meshDict[rid]['object']['visible'] = this.meshDict[rid]['visibility'];
+                }
+            } else {
+                this.meshDict[e.old_value].renderObj.updateVisibility(this.meshDict[e.old_value].visibility);
+            }
         }
         if (e.value === false) {
             this.renderer.domElement.style.cursor = "auto";
         } else {
             this.renderer.domElement.style.cursor = "pointer";
-            this.meshDict[e.value].renderObj.updateVisibility(true);
+            if (Array.isArray(e.value) ) {
+                for (const rid of e.value) {
+                    this.meshDict[rid]['object']['visible'] = true;
+                }
+            } else {
+                this.meshDict[e.value].renderObj.updateVisibility(true);
+            }
         }
     }
 
@@ -1891,7 +1997,18 @@ export class Neu3D {
      */
     updateOpacity(e) {
         if (e.prop == 'highlight' && this.states.highlight) {
-            let list = ((e !== undefined) && e.old_value) ? [e.old_value] : Object.keys(this.meshDict);
+            //let list = ((e !== undefined) && e.old_value) ? [e.old_value] : Object.keys(this.meshDict);
+
+            if ((e !== undefined) && e.old_value) {
+                if (Array.isArray(e.old_value)) {
+                    var list = e.old_value;
+                } else {
+                    var list = [e.old_value];
+                }
+            } else {
+                var list = Object.keys(this.meshDict);
+            }
+
             for (const key of list) {
                 let val = this.meshDict[key];
                 let opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
@@ -1901,17 +2018,24 @@ export class Neu3D {
                     opacity = this.settings.pinOpacity;
                     depthTest = true;
                 }
+                val.renderObj.updateDepthTest(depthTest);
+            }
+
+            if (Array.isArray(this.states.highlight) ) {
+                var list = this.states.highlight;
+            } else {
+                var list = [this.states.highlight];
+            }
+
+            for (const rid of list){
+                var val = this.meshDict[rid];
                 if (val['background']) {
                     val.renderObj.updateBackgroundOpacity(opacity * this.settings.backgroundOpacity, opacity * this.settings.backgroundWireframeOpacity);
                 } else {
-                    val.renderObj.updateOpacity(opacity);
+                    val.renderObj.updateOpacity(this.settings.highlightedObjectOpacity);
+                    val.renderObj.updateDepthTest(false);
                 }
-
-                val.renderObj.updateDepthTest(depthTest);
             }
-            let val = this.meshDict[this.states.highlight];
-            val.renderObj.updateOpacity(this.settings.highlightedObjectOpacity);
-            val.renderObj.updateDepthTest(false);
         } else if (this.states.highlight) {
             return;
             // Either entering pinned mode or pinned mode settings changing
