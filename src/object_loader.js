@@ -8,10 +8,10 @@ import {
 
 import {
     OBJLoader
-} from 'three/examples/jsm/loaders/OBJLoader';
+} from 'three/examples/jsm/loaders/OBJLoader.js';
 import {
     GLTFLoader
-} from 'three/examples/jsm/loaders/GLTFLoader';
+} from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 import {
     NeuronSkeleton,

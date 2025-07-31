@@ -1,6 +1,6 @@
 import {
     Lut
-} from 'three/examples/jsm/math/Lut';
+} from 'three/examples/jsm/math/Lut.js';
 
 export const datGuiPresets = {
     "preset": "Default",

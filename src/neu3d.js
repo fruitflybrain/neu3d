@@ -1,9 +1,9 @@
 import {
     PropertyManager
-} from './propertymanager';
+} from './propertymanager.js';
 import {
     FFBOLightsHelper
-} from './lightshelper';
+} from './lightshelper.js';
 import {
     Vector2,
     Raycaster,
@@ -18,32 +18,32 @@ import {
 } from 'three';
 import {
     Lut
-} from 'three/examples/jsm/math/Lut';
+} from 'three/examples/jsm/math/Lut.js';
 // import { AdaptiveToneMappingPass } from 'three/examples/jsm/postprocessing/AdaptiveToneMappingPass';
 import {
     EffectComposer
-} from 'three/examples/jsm/postprocessing/EffectComposer';
+} from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import {
     RenderPass
-} from 'three/examples/jsm/postprocessing/RenderPass';
+} from 'three/examples/jsm/postprocessing/RenderPass.js';
 import {
     ShaderPass
-} from 'three/examples/jsm/postprocessing/ShaderPass';
+} from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import {
     SSAOPass
-} from 'three/examples/jsm/postprocessing/SSAOPass';
+} from 'three/examples/jsm/postprocessing/SSAOPass.js';
 import {
     UnrealBloomPass
-} from 'three/examples/jsm/postprocessing/UnrealBloomPass';
+} from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import {
     TrackballControls
-} from 'three/examples/jsm/controls/TrackballControls';
+} from 'three/examples/jsm/controls/TrackballControls.js';
 import {
     FXAAShader
-} from 'three/examples/jsm/shaders/FXAAShader';
+} from 'three/examples/jsm/shaders/FXAAShader.js';
 import {
     CopyShader
-} from 'three/examples/jsm/shaders/CopyShader';
+} from 'three/examples/jsm/shaders/CopyShader.js';
 // add FontAwesome
 import '@fortawesome/fontawesome-free/js/all.js';
 

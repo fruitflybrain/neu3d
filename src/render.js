@@ -21,19 +21,19 @@ import {
 
 import {
     createMultiMaterialObject
-} from 'three/examples/jsm/utils/SceneUtils';
+} from 'three/examples/jsm/utils/SceneUtils.js';
 import {
     mergeGeometries
-} from 'three/examples/jsm/utils/BufferGeometryUtils';
+} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {
     LineSegmentsGeometry
-} from 'three/examples/jsm/lines/LineSegmentsGeometry';
+} from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import {
     LineSegments2
-} from 'three/examples/jsm/lines/LineSegments2';
+} from 'three/examples/jsm/lines/LineSegments2.js';
 import {
     LineMaterial
-} from 'three/examples/jsm/lines/LineMaterial';
+} from 'three/examples/jsm/lines/LineMaterial.js';
 
 
 /** Clip value in between min/max
@@ -762,7 +762,7 @@ export class NeuronSkeleton extends RenderObj {
                             let d = new Vector3((curr.x - next.x), (curr.y - next.y), (curr.z - next.z));
                             curr.w = clip(curr.w, neu3dSettings.minRadius, neu3dSettings.maxRadius);
                             next.w = clip(next.w, neu3dSettings.minRadius, neu3dSettings.maxRadius);
-                            let segment = new CylinderGeometry(curr.w, next.w, d.length(), 8, 1, 0);
+                            let segment = new CylinderGeometry(curr.w, next.w, d.length(), 8, 1, 1);
                             segment.translate(0, 0.5 * d.length(), 0);
                             segment.applyMatrix4(new Matrix4().makeRotationX(Math.PI / 2));
                             segment.lookAt(d.clone());
@@ -877,7 +877,7 @@ export class NeuronSkeleton extends RenderObj {
                         }
                     }
 
-                    geometry = new CylinderGeometry(pRadius, cRadius, d.length(), 8, 1, 0);
+                    geometry = new CylinderGeometry(pRadius, cRadius, d.length(), 8, 1, 1);
                     geometry.translate(0, 0.5 * d.length(), 0);
                     geometry.applyMatrix4(new Matrix4().makeRotationX(Math.PI / 2));
                     geometry.lookAt(d.clone());
