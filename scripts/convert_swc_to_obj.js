@@ -2,7 +2,7 @@
 
 import fs from 'fs';
 import { JSDOM } from 'jsdom';
-import { NeuronSkeleton } from './render.js';
+import { NeuronSkeleton } from '../src/render.js';
 import { OBJExporter } from 'three/examples/jsm/exporters/OBJExporter.js';
 import { Color, Vector2 } from 'three';
 
