@@ -54,7 +54,7 @@ import {
 } from './render';
 
 import '../style/neu3d.css';
-const STATS = require('../etc/stats');
+import * as STATS from '../etc/stats';
 // const Detector = require("three/examples/js/WEBGL");
 
 var isOnMobile = checkOnMobile();
@@ -129,8 +129,8 @@ export class Neu3D {
         this._addedDOMElements = [];
         /* default metadata */
         this._metadata = {
-            colormap: "rainbow",
-            maxColorNum: 1747591,
+            colormap: "noPurpleExpanded",
+            maxColorNum: 40000,
             allowPin: true,
             allowHighlight: true,
             enablePositionReset: false,
@@ -158,12 +158,12 @@ export class Neu3D {
                 }
             }
         this.settings = new PropertyManager({
-            defaultOpacity: 0.7, // opacity of neurons
+            defaultOpacity: 1.0, // opacity of neurons
             synapseOpacity: 1.0, // opacity of synapses
             meshOscAmp: 0.0, // mesh blinking amplitude
             nonHighlightableOpacity: 0.1, // ratio of opacity of objects with highlight = false when something else is highlighted
             lowOpacity: 0.05, // opacity of objects with highlight = true when something else is highlighted
-            pinOpacity: 0.9, // opacity of pinned object
+            pinOpacity: 1.0, // opacity of pinned object
             pinLowOpacity: 0.1, // opacity of unpinned object under pinned mode
             highlightedObjectOpacity: 1.0, // opacity of object being highlighted
             defaultRadius: 1.0,
@@ -175,7 +175,7 @@ export class Neu3D {
             maxRadius: 10.0,
             maxSomaRadius: 20.0,
             maxSynapseRadius: 5.0,
-            backgroundOpacity: 0.5, // opacity of items in the background.
+            backgroundOpacity: 1.0, // opacity of items in the background.
             backgroundWireframeOpacity: 0.07, // opacity of all wireframes, whether in background or not.
             neuron3dMode: 0, // 0-6
             neuron3dApp: true, // apply change to neuron3dMode immediately to the workspace
@@ -246,6 +246,10 @@ export class Neu3D {
         this.controls = this.initControls();
         this.lightsHelper = this.initLights();
         this.lut = this.initLut();
+        // Separate, smaller, brighter LUT for synapses so they pop against
+        // neurons (which now use the noPurpleExpanded palette). Ported from
+        // ffbo.lib develop @ 4ac0f7c.
+        this.synapseLut = this.initSynapseLut();
         this.loadingManager = this.initLoadingManager();
         let controlPanelDiv = document.createElement('div');
         controlPanelDiv.className = 'vis-3d-settings';
@@ -763,6 +767,13 @@ export class Neu3D {
         return lut;
     }
 
+    initSynapseLut() {
+        let lut = new Lut("rainbow_gist", 256);
+        lut.setMin(0);
+        lut.setMax(1);
+        return lut;
+    }
+
     /** Initialize FFBOLightsHelper */
     initLights() {
         let lightsHelper = new FFBOLightsHelper(this.camera, this.controls, this.scenes.front);
@@ -773,7 +784,7 @@ export class Neu3D {
         });
 
         lightsHelper.addAmbientLight({
-            intensity: 0.4,
+            intensity: 0.2,
             scene: this.scenes.back,
             key: 'backAmbient'
         });
@@ -785,7 +796,7 @@ export class Neu3D {
         });
 
         lightsHelper.addDirectionalLight({
-            intensity: 0.55,
+            intensity: 0.2,
             position: new Vector3(0, 5000, 0),
             scene: this.scenes.back,
             key: 'backDirectional_1'
@@ -798,7 +809,7 @@ export class Neu3D {
         });
 
         lightsHelper.addDirectionalLight({
-            intensity: 0.55,
+            intensity: 0.2,
             position: new Vector3(0, -5000, 0),
             scene: this.scenes.back,
             key: 'backDirectional_2'
@@ -807,29 +818,29 @@ export class Neu3D {
         lightsHelper.addSpotLight({
             posAngle1: 0,
             posAngle2: 0,
-            intensity: 2.0,
+            intensity: 1.5,
             key: 'frontSpot_1'
         });
 
         lightsHelper.addSpotLight({
-            posAngle1: 80,
-            posAngle2: 80,
-            intensity: 5.5,
+            posAngle1: 67,
+            posAngle2: 67,
+            intensity: 3.0,
             scene: this.scenes.back,
             key: 'backSpot_1'
         });
 
         lightsHelper.addSpotLight({
-            posAngle1: 0,
-            posAngle2: 0,
-            intensity: 0.0,
+            posAngle1: 90,
+            posAngle2: 90,
+            intensity: 0.5,
             key: 'frontSpot_2'
         });
 
         lightsHelper.addSpotLight({
-            posAngle1: -80,
-            posAngle2: 80,
-            intensity: 5.5,
+            posAngle1: -67,
+            posAngle2: 0,
+            intensity: 3.0,
             scene: this.scenes.back,
             key: 'backSpot_2'
         });
@@ -1184,7 +1195,11 @@ export class Neu3D {
                 }
                 setAttrIfNotDefined(unit, 'visibility', true);
                 setAttrIfNotDefined(unit, 'color',
-                    (unit.background) ? this.settings.backgroundColor : lut.getColor(id2float(i))
+                    unit.background
+                        ? this.settings.backgroundColor
+                        : (unit['class'] === 'Synapse'
+                            ? this.synapseLut.getColor(id2float(i))
+                            : lut.getColor(id2float(i)))
                 );
                 setAttrIfNotDefined(unit, 'radius_scale', 1.);
                 setAttrIfNotDefined(unit, 'x_shift', 0.);
@@ -1896,8 +1911,8 @@ export class Neu3D {
         }
 
         if (Array.isArray(d)) { // only support an array of rids
-            rids = [];
-            
+            const rids = [];
+
             for (const rid of d) {
                 var v = undefined;
                 if (typeof(rid) === 'string' && (rid in this.meshDict)) {
@@ -1928,6 +1943,9 @@ export class Neu3D {
             } else {
                 this.states.highlight = rids;
             }
+            // Array path is done; the post-block tooltip/position code below
+            // would try to read d['rid'] on the array and crash.
+            return;
         } else {
             if (typeof(d) === 'string' && (d in this.meshDict)) {
                 d = this.meshDict[d];
@@ -1969,24 +1987,25 @@ export class Neu3D {
      */
     onUpdateHighlight(e) {
         if (e.old_value) {
-            if ( Array.isArray(e.old_value) ) {
-                for (const rid of e.old_value ) {
-                    this.meshDict[rid]['object']['visible'] = this.meshDict[rid]['visibility'];
+            // ffbo.lib used `meshDict[rid].object.visible = ...` because mesh3d
+            // exposed a Three.js Object3D under .object. neu3d uses RenderObj
+            // wrappers — call renderObj.updateVisibility instead.
+            const oldRids = Array.isArray(e.old_value) ? e.old_value : [e.old_value];
+            for (const rid of oldRids) {
+                if (rid in this.meshDict) {
+                    this.meshDict[rid].renderObj.updateVisibility(this.meshDict[rid].visibility);
                 }
-            } else {
-                this.meshDict[e.old_value].renderObj.updateVisibility(this.meshDict[e.old_value].visibility);
             }
         }
         if (e.value === false) {
             this.renderer.domElement.style.cursor = "auto";
         } else {
             this.renderer.domElement.style.cursor = "pointer";
-            if (Array.isArray(e.value) ) {
-                for (const rid of e.value) {
-                    this.meshDict[rid]['object']['visible'] = true;
+            const newRids = Array.isArray(e.value) ? e.value : [e.value];
+            for (const rid of newRids) {
+                if (rid in this.meshDict) {
+                    this.meshDict[rid].renderObj.updateVisibility(true);
                 }
-            } else {
-                this.meshDict[e.value].renderObj.updateVisibility(true);
             }
         }
     }
@@ -2018,23 +2037,20 @@ export class Neu3D {
                     opacity = this.settings.pinOpacity;
                     depthTest = true;
                 }
-                val.renderObj.updateDepthTest(depthTest);
-            }
-
-            if (Array.isArray(this.states.highlight) ) {
-                var list = this.states.highlight;
-            } else {
-                var list = [this.states.highlight];
-            }
-
-            for (const rid of list){
-                var val = this.meshDict[rid];
                 if (val['background']) {
                     val.renderObj.updateBackgroundOpacity(opacity * this.settings.backgroundOpacity, opacity * this.settings.backgroundWireframeOpacity);
                 } else {
-                    val.renderObj.updateOpacity(this.settings.highlightedObjectOpacity);
-                    val.renderObj.updateDepthTest(false);
+                    val.renderObj.updateOpacity(opacity);
                 }
+                val.renderObj.updateDepthTest(depthTest);
+            }
+
+            const highlightedRids = Array.isArray(this.states.highlight) ? this.states.highlight : [this.states.highlight];
+            for (const rid of highlightedRids) {
+                const val = this.meshDict[rid];
+                if (!val) continue;
+                val.renderObj.updateOpacity(this.settings.highlightedObjectOpacity);
+                val.renderObj.updateDepthTest(false);
             }
         } else if (this.states.highlight) {
             return;

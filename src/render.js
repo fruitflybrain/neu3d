@@ -5,6 +5,7 @@ import {
     Mesh,
     Vector4,
     MeshLambertMaterial,
+    MeshStandardMaterial,
     MeshBasicMaterial,
     LineBasicMaterial,
     BufferGeometry,
@@ -339,7 +340,7 @@ export class MeshObj extends RenderObj {
         this.opacity = opacity1;
         this.WireframeOpacity = opacity2;
         let materials = [
-            new MeshLambertMaterial({
+            new MeshStandardMaterial({ roughness: 1.0, metalness: 0.0,
                 color: color,
                 transparent: true,
                 side: 2,
@@ -520,7 +521,7 @@ export class NeuronSkeleton extends RenderObj {
 
         if (this.mode == 0) {
             var matrix = new Matrix4();
-            var materialSphere = new MeshLambertMaterial({
+            var materialSphere = new MeshStandardMaterial({ roughness: 1.0, metalness: 0.0,
                 color: color,
                 transparent: true,
                 opacity: opacity
@@ -780,7 +781,7 @@ export class NeuronSkeleton extends RenderObj {
                     }
                 }
             }
-            materialSphere = new MeshLambertMaterial({
+            materialSphere = new MeshStandardMaterial({ roughness: 1.0, metalness: 0.0,
                 color: color,
                 transparent: true,
                 opacity: opacity
@@ -808,7 +809,7 @@ export class NeuronSkeleton extends RenderObj {
             object.add(spheres);
 
             const mergedGeometry = mergeGeometries(geometryToMerge, false);
-            var material_merge = new MeshLambertMaterial({
+            var material_merge = new MeshStandardMaterial({ roughness: 1.0, metalness: 0.0,
                 color: color,
                 transparent: true,
                 opacity: opacity
@@ -818,7 +819,7 @@ export class NeuronSkeleton extends RenderObj {
             // setup sphere geometry. Mode 3 and 5 requires a sphere for each node.
             // Other modes requires a sphere for each soma node.
             if (this.mode == 5 || this.mode == 3) {
-                materialSphere = new MeshLambertMaterial({
+                materialSphere = new MeshStandardMaterial({ roughness: 1.0, metalness: 0.0,
                     color: color,
                     transparent: true,
                     opacity: opacity
@@ -826,7 +827,7 @@ export class NeuronSkeleton extends RenderObj {
                 geometrySphere = new SphereGeometry(1.0, 8, 8);
                 spheres = new InstancedMesh(geometrySphere, materialSphere, len);
             } else { // 1, 2, 4
-                materialSphere = new MeshLambertMaterial({
+                materialSphere = new MeshStandardMaterial({ roughness: 1.0, metalness: 0.0,
                     color: color,
                     transparent: true,
                     opacity: opacity
@@ -941,7 +942,7 @@ export class NeuronSkeleton extends RenderObj {
                 for (var n of geometryToMerge) {
                     n.dispose();
                 }
-                material_merge = new MeshLambertMaterial({
+                material_merge = new MeshStandardMaterial({ roughness: 1.0, metalness: 0.0,
                     color: color,
                     transparent: true,
                     opacity: opacity
@@ -1221,7 +1222,7 @@ export class Synapses extends RenderObj {
         }
         // var total_seg = Object.keys(segments).length;
 
-        var material_synapse = new MeshLambertMaterial({
+        var material_synapse = new MeshStandardMaterial({ roughness: 1.0, metalness: 0.0,
             color: color,
             transparent: true,
             opacity: opacity
@@ -1241,13 +1242,22 @@ export class Synapses extends RenderObj {
         var geometry = new BufferGeometry();
         var vertices = [];
 
+        // Clip to SynapseRadiusRange so synapse spheres don't render
+        // dimensionless. Mesh3D had the same clip; without it, small SWC radii
+        // produce sub-pixel spheres that look dark and disappear.
+        const clip = (v) => {
+            const range = neu3dSettings.SynapseRadiusRange;
+            if (!range) return v;
+            return Math.max(range[0], Math.min(v, range[1]));
+        };
+
         var scale;
         var i = 0;
         for (const c of locations) {
             if (c.pre_radius) {
-                scale = c.pre_radius * neu3dSettings.defaultSynapseRadius;
+                scale = clip(c.pre_radius * neu3dSettings.defaultSynapseRadius);
             } else {
-                scale = neu3dSettings.defaultSynapseRadius;
+                scale = clip(neu3dSettings.defaultSynapseRadius);
             }
             matrix.makeScale(scale, scale, scale);
             matrix.setPosition(c.pre_x, c.pre_y, c.pre_z);
@@ -1256,9 +1266,9 @@ export class Synapses extends RenderObj {
 
             if (c.post_x !== undefined) {
                 if (c.post_radius) {
-                    scale = c.post_radius * neu3dSettings.defaultSynapseRadius;
+                    scale = clip(c.post_radius * neu3dSettings.defaultSynapseRadius);
                 } else {
-                    scale = neu3dSettings.defaultSynapseRadius / 2;
+                    scale = clip(neu3dSettings.defaultSynapseRadius / 2);
                 }
                 matrix.makeScale(scale, scale, scale);
                 matrix.setPosition(c.post_x, c.post_y, c.post_z);
