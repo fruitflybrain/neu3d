@@ -558,13 +558,26 @@ export class Neu3D {
                     t_next = 0;
                 }
                 for (let key of Object.keys(activityData)) {
+                    if (!(key in this.meshDict)) continue;
+                    // ffbo.lib 4a4f65d: don't drive neuropil opacity from the
+                    // activity timeseries. Backgrounds keep their
+                    // backgroundOpacity (and meshOscAmp oscillation in render()
+                    // if enabled); only neurons / synapses blink with activity.
+                    if (this.meshDict[key].background) continue;
                     try {
-                        this.meshDict[key].updateOpacity(activityData[key][t_current] * (1 - interp) + activityData[key][t_next] * (interp));
+                        const op =
+                            activityData[key][t_current] * (1 - interp) +
+                            activityData[key][t_next] * (interp);
+                        // meshDict entries don't expose updateOpacity directly;
+                        // the per-object method lives on the RenderObj wrapper.
+                        this.meshDict[key].renderObj.updateOpacity(op);
                     } catch (e) {
-                        console.error(`Cannot Animate for some reaason: ${e}`);
+                        console.error(`Cannot Animate: ${e}`);
                     }
                 }
-                this.resetOpacity();
+                // The previous version called this.resetOpacity() here, which
+                // immediately reset every entry back to defaultOpacity and
+                // erased the per-rid update above. Removed.
             },
             interpolation_interval
         );
