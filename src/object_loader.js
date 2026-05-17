@@ -48,6 +48,12 @@ Neu3D.prototype._registerObject = function(key, unit, object) {
     try {
         object.registerProperties(key);
         this.updateBoundingBox(object.boundingBox);
+        // Default renderOrder = 1 (matches ffbo.lib 563f003). updateOpacity's
+        // pin/highlight logic uses 0 and 2 as below / above relative to this
+        // baseline, so transparent objects sort cleanly during those states.
+        if (typeof object.updateRenderOrder === 'function') {
+            object.updateRenderOrder(1);
+        }
     } catch (e) {
         console.error(`[Neu3D] A new type of object lacks a superclass with registerProperties()`);
     }

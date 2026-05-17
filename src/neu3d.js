@@ -2256,29 +2256,58 @@ export class Neu3D {
                 var list = Object.keys(this.meshDict);
             }
 
+            // First loop: non-highlighted (and pinned) items.
+            // renderOrder logic ported from ffbo.lib 563f003. Higher renderOrder
+            // draws later (on top). The expression
+            //   pinned -> (pinOpacity+0.1 > pinLowOpacity ? +(op==0) : 2-(op==0))
+            // sorts pinned-bright objects above the fading rest, but sinks
+            // pinned items that are fully invisible (opacity==0) below
+            // everything so they don't punch holes via depth tests.
             for (const key of list) {
-                let val = this.meshDict[key];
-                let opacity = val['highlight'] ? this.settings.lowOpacity : this.settings.nonHighlightableOpacity;
-
-                let depthTest = true;
-                if (val['pinned']) {
-                    opacity = this.settings.pinOpacity;
-                    depthTest = true;
-                }
+                const val = this.meshDict[key];
+                const opacity = val['pinned']
+                    ? this.settings.pinOpacity
+                    : (val['highlight']
+                        ? this.settings.lowOpacity
+                        : this.settings.nonHighlightableOpacity);
+                const depthTest = opacity > 0;
+                const renderOrder = val['pinned']
+                    ? (this.settings.pinOpacity + 0.1 > this.settings.pinLowOpacity
+                        ? +(opacity == 0)
+                        : 2 - (opacity == 0))
+                    : 1;
                 if (val['background']) {
                     val.renderObj.updateBackgroundOpacity(opacity * this.settings.backgroundOpacity, opacity * this.settings.backgroundWireframeOpacity);
                 } else {
                     val.renderObj.updateOpacity(opacity);
                 }
                 val.renderObj.updateDepthTest(depthTest);
+                val.renderObj.updateRenderOrder(renderOrder);
             }
 
+            // Second loop: highlighted items.
             const highlightedRids = Array.isArray(this.states.highlight) ? this.states.highlight : [this.states.highlight];
             for (const rid of highlightedRids) {
                 const val = this.meshDict[rid];
                 if (!val) continue;
-                val.renderObj.updateOpacity(this.settings.highlightedObjectOpacity);
-                val.renderObj.updateDepthTest(false);
+                if (val['background']) {
+                    // Backgrounds: full background opacity, sink below (renderOrder 0)
+                    // so highlighted neurons still draw on top.
+                    val.renderObj.updateBackgroundOpacity(
+                        this.settings.backgroundOpacity,
+                        this.settings.backgroundWireframeOpacity
+                    );
+                    val.renderObj.updateRenderOrder(0);
+                } else {
+                    const opacity = this.settings.highlightedObjectOpacity;
+                    const depthTest = opacity > 0;
+                    const renderOrder = this.settings.highlightedObjectOpacity + 0.1 > this.settings.lowOpacity
+                        ? +(opacity == 0)
+                        : 2 - (opacity == 0);
+                    val.renderObj.updateOpacity(opacity);
+                    val.renderObj.updateDepthTest(depthTest);
+                    val.renderObj.updateRenderOrder(renderOrder);
+                }
             }
         } else if (this.states.highlight) {
             return;
@@ -2286,21 +2315,38 @@ export class Neu3D {
         } else if ((e.prop == 'highlight' && this.states.pinned) ||
             (e.prop == 'pinned' && e.value && this.uiVars.pinnedObjects.size == 1) ||
             (((e.prop == 'pinLowOpacity') || (e.prop == 'pinOpacity')) && this.states.pinned)) {
+            // Entering pinned mode (or pinned-opacity setting changed). Pinned
+            // objects render bright + sort above; unpinned go dim + below.
+            // depthTest = opacity > 0 stops fully-invisible meshes from punching
+            // depth holes through pinned ones. Ported from ffbo.lib 563f003.
             for (const key of Object.keys(this.meshDict)) {
-                var val = this.meshDict[key];
+                const val = this.meshDict[key];
                 if (!val['background']) {
-                    let opacity = this.meshDict[key]['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
-                    let depthTest = !this.meshDict[key]['pinned'];
+                    const opacity = val['pinned'] ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+                    const depthTest = opacity > 0;
+                    const renderOrder = val['pinned']
+                        ? (this.settings.pinOpacity + 0.1 > this.settings.pinLowOpacity
+                            ? +(opacity == 0)
+                            : 2 - (opacity == 0))
+                        : 1;
                     val.renderObj.updateOpacity(opacity);
                     val.renderObj.updateDepthTest(depthTest);
+                    val.renderObj.updateRenderOrder(renderOrder);
                 } else {
                     val.renderObj.updateBackgroundOpacity(this.settings.backgroundOpacity, this.settings.backgroundWireframeOpacity);
                 }
             }
         } else if (e.prop == 'pinned' && this.states.pinned) { // New object being pinned while already in pinned mode
-            let opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
+            const opacity = (e.value) ? this.settings.pinOpacity : this.settings.pinLowOpacity;
             e.obj.renderObj.updateOpacity(opacity);
-            e.obj.renderObj.updateDepthTest(!e.value);
+            e.obj.renderObj.updateDepthTest(opacity > 0);
+            e.obj.renderObj.updateRenderOrder(
+                e.value
+                    ? (this.settings.pinOpacity + 0.1 > this.settings.pinLowOpacity
+                        ? +(opacity == 0)
+                        : 2 - (opacity == 0))
+                    : 1
+            );
         } else if (!this.states.pinned || e.prop == 'highlight') { // Default opacity value change in upinned mode or exiting highlight mode
             this.resetOpacity();
         } else if (this.states.pinned && (e.prop == 'backgroundOpacity' || e.prop == 'backgroundWireframeOpacity')) {
@@ -2314,23 +2360,32 @@ export class Neu3D {
     }
 
 
-    /** Reset Opacity of all objects in workspace */
+    /** Reset Opacity of all objects in workspace.
+     *  ffbo.lib 563f003: depthTest follows opacity > 0 (hidden = no depth
+     *  punch); renderOrder = 1 is the default layer (highlights/pins use
+     *  0 and 2 to sort below/above).
+     */
     resetOpacity() {
         for (const key of Object.keys(this.meshDict)) {
-            var val = this.meshDict[key];
+            const val = this.meshDict[key];
             if (!val.background) {
-                if (val.class === "Neuron") { //renderObj instanceof NeuronSkeleton) {
-                    val.renderObj.updateOpacity(this.settings.defaultOpacity);
-                    val.renderObj.updateDepthTest(true);
+                if (val.class === "Neuron" || val.class === "NeuronFragment") {
+                    const op = this.settings.defaultOpacity;
+                    val.renderObj.updateOpacity(op);
+                    val.renderObj.updateDepthTest(op > 0);
+                    val.renderObj.updateRenderOrder(1);
                 } else if (val.renderObj instanceof Synapses) {
-                    val.renderObj.updateOpacity(this.settings.synapseOpacity);
-                    val.renderObj.updateDepthTest(true);
+                    const op = this.settings.synapseOpacity;
+                    val.renderObj.updateOpacity(op);
+                    val.renderObj.updateDepthTest(op > 0);
+                    val.renderObj.updateRenderOrder(1);
                 } else if (val.renderObj instanceof MeshObj) {
                     val.renderObj.updateBackgroundOpacity(
                         this.settings.defaultOpacity,
                         this.settings.backgroundWireframeOpacity
                     );
                     val.renderObj.updateDepthTest(true);
+                    val.renderObj.updateRenderOrder(1);
                 }
             } else {
                 val.renderObj.updateBackgroundOpacity(
@@ -2338,6 +2393,7 @@ export class Neu3D {
                     this.settings.backgroundWireframeOpacity
                 );
                 val.renderObj.updateDepthTest(true);
+                val.renderObj.updateRenderOrder(1);
             }
         }
     }
@@ -2580,6 +2636,14 @@ export class Neu3D {
      */
     resetVisibleView() {
         this.computeVisibleBoundingBox();
+        // Capture current camera→target direction BEFORE shifting the target,
+        // same as resetViewOn — otherwise neu3d's TrackballControls reads cam_dir
+        // off the post-shift state and tips the view orientation.
+        const cam_dir = new Vector3();
+        cam_dir.subVectors(this.camera.position, this.controls.target);
+        const prevDist = cam_dir.length();
+        cam_dir.normalize();
+
         this.controls.target.x = 0.5 * (this.visibleBoundingBox.minX + this.visibleBoundingBox.maxX);
         this.controls.target.y = 0.5 * (this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY);
         this.controls.target.z = 0.5 * (this.visibleBoundingBox.minZ + this.visibleBoundingBox.maxZ);
@@ -2603,10 +2667,6 @@ export class Neu3D {
                 targetFov = Math.max(targetFov, angle);
             }
             let currentFov = Math.PI * this.fov / 2 / 180;
-            let cam_dir = new Vector3();
-            cam_dir.subVectors(this.camera.position, this.controls.target);
-            let prevDist = cam_dir.length();
-            cam_dir.normalize();
             let dist = prevDist * Math.tan(targetFov) / Math.tan(currentFov);
             let aspect = this.camera.aspect;
             let targetHfov = 2 * Math.atan(Math.tan(targetFov / 2) * aspect);

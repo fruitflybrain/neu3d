@@ -210,6 +210,21 @@ export class RenderObj {
         this.depthTest = depth;
     }
 
+    /** update three.js renderOrder on every child mesh
+     *
+     * Higher renderOrder draws later (on top). Used by updateOpacity to
+     * keep pinned / highlighted transparent objects from flickering through
+     * unpinned ones (Z-fighting workaround for transparency).
+     *
+     * @param {number} order
+     */
+    updateRenderOrder(order) {
+        for (var child of this.threeObj.children) {
+            child.renderOrder = order;
+        }
+        this.renderOrder = order;
+    }
+
     /** get depthTest value
      */
     getDepthTest() {
