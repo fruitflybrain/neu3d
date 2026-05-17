@@ -1427,11 +1427,14 @@ export class GLTFObj extends RenderObj {
         super(transformation);
         var object = undefined;
         if (type === 'gltf') {
-            for (var child of data.scene.children) {
-                if (child instanceof Mesh) {
-                    var object = child;
+            // Walk the whole scene tree — some exporters (and draco-compressed
+            // .glb files in particular) put the Mesh under intermediate Group
+            // nodes rather than directly under scene.children.
+            data.scene.traverse((child) => {
+                if (object === undefined && child instanceof Mesh) {
+                    object = child;
                 }
-            }
+            });
         }
 
         if (object === undefined) {
@@ -1459,11 +1462,31 @@ export class GLTFObj extends RenderObj {
 
         var object = new Object3D();
         var mesh = this.threeObj;
+
+        // Replace the GLTF-provided material with a fresh MeshStandardMaterial
+        // so PBR shading + our lighting setup give consistent results regardless
+        // of what the .glb file shipped. Matches mesh3d's approach.
+        const prevMaterial = mesh.material;
+        mesh.material = new MeshStandardMaterial({ roughness: 1.0, metalness: 0.0 });
+        MeshBasicMaterial.prototype.copy.call(mesh.material, prevMaterial);
         mesh.material.transparent = true;
-        mesh.material.color = color;
+        mesh.material.color = this.color;
         mesh.material.opacity = opacity;
-        // mesh.geometry.scale(0.008, 0.008, 0.008);
+
+        if (mesh.geometry.attributes.normal === undefined) {
+            mesh.geometry.computeVertexNormals();
+        }
         mesh.geometry.computeBoundingBox();
+
+        // Propagate the mesh's geometry bbox to this RenderObj's boundingBox
+        // so the scene-level bbox tracker (used by resetView / "center & zoom"
+        // buttons) sees something realistic instead of the ±100000 sentinel.
+        const bb = mesh.geometry.boundingBox;
+        if (bb) {
+            this.updateBoundingBox(bb.max.x, bb.max.y, bb.max.z);
+            this.updateBoundingBox(bb.min.x, bb.min.y, bb.min.z);
+        }
+
         object.add(mesh);
 
         this.threeObj = object;

@@ -12,6 +12,9 @@ import {
 import {
     GLTFLoader
 } from 'three/examples/jsm/loaders/GLTFLoader';
+import {
+    DRACOLoader
+} from 'three/examples/jsm/loaders/DRACOLoader';
 
 import {
     NeuronSkeleton,
@@ -179,8 +182,64 @@ Neu3D.prototype.loadObjCallBack = function(key, unit, visibility) {
  * @param {*} visibility
  * @returns
  */
+/**
+ * Lazily build a GLTFLoader with a DRACOLoader attached. Used for URL-based
+ * neuron-mesh loading (where the .glb files are draco-compressed). The
+ * decoder is fetched from gstatic.
+ */
+Neu3D.prototype._getSharedGLTFLoader = function() {
+    if (!this._sharedGltfLoader) {
+        const loader = new GLTFLoader();
+        const draco = new DRACOLoader();
+        draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+        loader.setDRACOLoader(draco);
+        this._sharedGltfLoader = loader;
+    }
+    return this._sharedGltfLoader;
+};
+
 Neu3D.prototype.loadGltfCallBack = function(key, unit, visibility) {
     return (data, transformation = undefined) => {
+        var _this = this;
+
+        // URL-based loading path (set by callers like ffbo.neuronlp main.js when
+        // neuron3dMode picks up a `neuron_mesh` entry). Uses the shared GLTFLoader
+        // with DRACOLoader so draco-compressed .glb files decode correctly.
+        if (unit['url']) {
+            const loader = this._getSharedGLTFLoader();
+            loader.load(
+                unit['url'],
+                function(gltf) {
+                    let obj = new GLTFObj(gltf, 'gltf', transformation);
+                    obj.createObject(unit['color'], unit['background'], _this.settings);
+                    if (unit['doubleside']) {
+                        // Walk the loaded scene and flip every material to DoubleSide.
+                        // gstatic decoder strips back-face culling, but the gltf default
+                        // is FrontSide which makes thin meshes (e.g. neurite shells)
+                        // disappear when viewed from one side.
+                        const setDoubleSide = (o) => {
+                            if (o.material) {
+                                const mats = Array.isArray(o.material) ? o.material : [o.material];
+                                mats.forEach(m => { m.side = 2; }); // THREE.DoubleSide
+                            }
+                            if (o.children) o.children.forEach(setDoubleSide);
+                        };
+                        setDoubleSide(obj.threeObj);
+                    }
+                    obj.updateVisibility(visibility);
+                    _this._registerObject(key, unit, obj);
+                },
+                function(xhr) {
+                    // progress
+                },
+                function(error) {
+                    console.error(`[Neu3D] loadGltfCallBack URL load error for ${unit.url}:`, error);
+                }
+            );
+            return;
+        }
+
+        // In-memory dataStr path (existing behavior).
         var loader = new GLTFLoader();
         loader.load = function load(url, localtext, onLoad, onProgress, onError) {
             var scope = this;
@@ -195,7 +254,6 @@ Neu3D.prototype.loadGltfCallBack = function(key, unit, visibility) {
             }, onProgress, onError);
         };
 
-        var _this = this;
         loader.load(
             '', unit['dataStr'],
             function(gltf) {

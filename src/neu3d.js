@@ -150,6 +150,9 @@ export class Neu3D {
                 'z': 0.
             },
             upSign: 1., // Deprecated
+            neuron_mesh: {}, // mapping of mode-name -> { base, doubleside, ... }
+                              // for URL-based gltf neuron meshes. Mode 7+ in
+                              // neuron3dMode picks entries from here in order.
         };
         if (metadata !== undefined)
             for (let key in this._metadata) {
@@ -275,6 +278,7 @@ export class Neu3D {
         this.createToolTip();
         this._take_screenshot = false;
         this.initPostProcessing();
+        this.initContextMenu();
 
         this.dispatch = {
             click: undefined,
@@ -925,9 +929,15 @@ export class Neu3D {
         if (isOnMobile) {
             let func_2 = this.onDocumentMouseDBLClickMobile.bind(this);
             this.container.addEventListener('taphold', func_2);
-            document.body.addEventListener('contextmenu', this.blockContextMenu);
             this._containerEventListener['taphold'] = func_2;
         }
+        // Block the browser's default contextmenu so our custom one can show.
+        // mesh3d-style: prevent on document.body, then attach our own contextmenu
+        // listener on the container to drive build*ContextMenu().
+        document.body.addEventListener('contextmenu', this.blockContextMenu);
+        let func_13 = this.onDocumentMouseRightClick.bind(this);
+        this.container.addEventListener('contextmenu', func_13, false);
+        this._containerEventListener['contextmenu'] = func_13;
         let func_4 = this.onDocumentMouseEnter.bind(this);
         this.container.addEventListener('mouseenter', func_4, false);
         this._containerEventListener['mouseenter'] = func_4;
@@ -1237,6 +1247,13 @@ export class Neu3D {
                     }
                 } else if (metadata.type === "obj") {
                     this.loadObjCallBack(key, unit, metadata.visibility).bind(this)();
+                } else if (metadata.type === "gltf") {
+                    // URL-based gltf loading. Caller (e.g. ffbo.neuronlp main.js)
+                    // populates `unit.url` per item (and optionally `unit.doubleside`)
+                    // when neuron3dMode selects a `neuron_mesh` entry. The shared
+                    // DRACOLoader-equipped GLTFLoader inside loadGltfCallBack handles
+                    // draco-compressed .glb decoding.
+                    this.loadGltfCallBack(key, unit, metadata.visibility).bind(this)(unit);
                 } else if (('dataStr' in unit) && ('filename' in unit)) {
                     console.warn(`[Neu3D] mesh object ${key} has both dataStr and filename, should only have one. Skipped`);
                     continue;
@@ -1458,6 +1475,12 @@ export class Neu3D {
             event.preventDefault();
         }
 
+        // Any click closes the context menu (and we don't dispatch select).
+        if (this.contextMenu && this.contextMenu.style.display !== 'none') {
+            this.contextMenu.style.display = 'none';
+            return;
+        }
+
         if (this.isDragging) {
             return;
         }
@@ -1475,6 +1498,207 @@ export class Neu3D {
 
     blockContextMenu() {
         return false;
+    }
+
+    /**
+     * Create the floating right-click context-menu DOM and CSS once at construction.
+     * The element is appended to document.body; positioned with clientX/clientY on
+     * each right-click. Styles use the `.context-menu` class (matches the rules in
+     * ffbo.lib's ffbo.Mesh3D.css for visual continuity, but injected here so neu3d
+     * is standalone). Tracked in _addedDOMElements for dispose() cleanup.
+     */
+    initContextMenu() {
+        const cm = document.createElement('div');
+        cm.id = 'neu3d-context-menu';
+        cm.className = 'context-menu';
+        cm.style.cssText = 'position: fixed; display: none; left: 0; top: 0;';
+        cm.innerHTML = '<ul></ul>';
+        document.body.appendChild(cm);
+        this.contextMenu = cm;
+        this._addedDOMElements.push(cm);
+
+        // Inject styles once. Idempotent via the id check.
+        if (!document.getElementById('neu3d-context-menu-styles')) {
+            const style = document.createElement('style');
+            style.id = 'neu3d-context-menu-styles';
+            style.textContent = `
+.context-menu { background: #222; border: 1px solid #ccc; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 4px; z-index: 1000; padding: 0; }
+.context-menu ul { list-style: none; margin: 0; padding: 0; color: #aaa; }
+.context-menu ul li { padding: 4px 12px; cursor: pointer; }
+.context-menu ul li:hover { background: #000; }
+`;
+            document.head.appendChild(style);
+        }
+    }
+
+    /**
+     * Right-click handler. Raycasts including the back (neuropil) group, then
+     * dispatches to the appropriate build*ContextMenu builder based on what was
+     * hit. Positions the menu at the click location.
+     */
+    onDocumentMouseRightClick(event) {
+        if (event !== undefined) event.preventDefault();
+
+        // Treat a drag-release as "no menu" (avoids the menu popping after a
+        // pan/orbit with the right mouse button).
+        if (this.isDragging) {
+            if (this.contextMenu.style.display !== 'none') {
+                this.contextMenu.style.display = 'none';
+            }
+            return;
+        }
+
+        // Capture the world-space hit point for "Copy click position".
+        // getIntersection only returns the meshDict entry, not the geometry hit
+        // point, so we re-raycast here. Same camera and cursor state are reused.
+        this.raycaster.setFromCamera(this.uiVars.cursorPosition, this.camera);
+        let hitPoint = null;
+        for (const group of [this.groups.front, this.groups.back]) {
+            const hits = this.raycaster.intersectObjects(group.children, true);
+            if (hits.length > 0) { hitPoint = hits[0].point.clone(); break; }
+        }
+
+        const intersected = this.getIntersection([this.groups.front, this.groups.back]);
+        if (intersected === undefined) {
+            this.buildEmptyContextMenu();
+            this.contextMenu.style.display = 'none';
+            return;
+        }
+
+        if (intersected['background']) {
+            this.buildNeuropilContextMenu(intersected, hitPoint);
+        } else if (intersected['class'] === 'Neuron' || intersected['class'] === 'NeuronFragment') {
+            this.buildNeuronContextMenu(intersected, hitPoint);
+        } else if (intersected['class'] === 'Synapse') {
+            this.buildSynapseContextMenu(intersected, hitPoint);
+        } else {
+            this.buildNeuronContextMenu(intersected, hitPoint);
+        }
+        this.contextMenu.style.left = `${event.clientX}px`;
+        this.contextMenu.style.top = `${event.clientY}px`;
+        this.contextMenu.style.display = 'block';
+    }
+
+    /** Small helper: clears the menu and appends a {label, action} item. */
+    _appendMenuItem(menuList, label, action) {
+        const li = document.createElement('li');
+        li.textContent = label;
+        li.addEventListener('click', () => {
+            this.contextMenu.style.display = 'none';
+            this.contextMenu.innerHTML = '<ul></ul>';
+            action();
+        });
+        menuList.appendChild(li);
+    }
+
+    buildEmptyContextMenu() {
+        // No items when right-clicking empty space; matches ffbo.lib behavior.
+    }
+
+    buildNeuropilContextMenu(obj, hitPoint) {
+        this.contextMenu.innerHTML = '<ul></ul>';
+        const menuList = this.contextMenu.querySelector('ul');
+        const rid = obj.rid;
+        const label = obj.htmllabel || obj.label || rid;
+        this._appendMenuItem(menuList, `Hide ${label}`, () => this.hide(rid));
+        this._appendMenuItem(menuList, `Center view on ${label}`, () => this.resetViewOn(rid));
+    }
+
+    buildNeuronContextMenu(obj, hitPoint) {
+        this.contextMenu.innerHTML = '<ul></ul>';
+        const menuList = this.contextMenu.querySelector('ul');
+        const rid = obj.rid;
+        const label = obj.htmllabel || obj.label || rid;
+        if (obj.pinned) {
+            this._appendMenuItem(menuList, `Unpin ${label}`, () => this.unpin(rid));
+        } else {
+            this._appendMenuItem(menuList, `Pin ${label}`, () => this.pin(rid));
+        }
+        this._appendMenuItem(menuList, `Get info for ${label}`, () => this.select(rid));
+        this._appendMenuItem(menuList, `Remove ${label}`, () => this.remove(rid));
+        this._appendMenuItem(menuList, `Hide ${label}`, () => this.hide(rid));
+        this._appendMenuItem(menuList, `Center view on ${label}`, () => this.resetViewOn(rid));
+        if (hitPoint) {
+            this._appendMenuItem(menuList, `Copy click position to clipboard`, () => {
+                navigator.clipboard.writeText(`${hitPoint.x}, ${hitPoint.y}, ${hitPoint.z}`);
+            });
+        }
+    }
+
+    buildSynapseContextMenu(obj, hitPoint) {
+        // Synapses get the same actions as neurons currently; mesh3d had subtle
+        // differences but for now we share the implementation.
+        this.buildNeuronContextMenu(obj, hitPoint);
+    }
+
+    /**
+     * Center the camera on the union bbox of the given rid(s). Uses each
+     * renderObj's boundingBox (which createObject populates per RenderObj
+     * subclass). Logic mirrors mesh3d's resetViewOn (Stack-Overflow camera-fit
+     * formula at https://stackoverflow.com/a/11771236).
+     */
+    resetViewOn(rids) {
+        const boundingBox = Object.assign({}, this.defaultBoundingBox);
+        let updated = false;
+        if (!Array.isArray(rids)) rids = [rids];
+        for (const rid of rids) {
+            const entry = this.meshDict[rid];
+            if (!entry || !entry.renderObj || !entry.renderObj.boundingBox) continue;
+            const bb = entry.renderObj.boundingBox;
+            updated = true;
+            if (bb.minX < boundingBox.minX) boundingBox.minX = bb.minX;
+            if (bb.maxX > boundingBox.maxX) boundingBox.maxX = bb.maxX;
+            if (bb.minY < boundingBox.minY) boundingBox.minY = bb.minY;
+            if (bb.maxY > boundingBox.maxY) boundingBox.maxY = bb.maxY;
+            if (bb.minZ < boundingBox.minZ) boundingBox.minZ = bb.minZ;
+            if (bb.maxZ > boundingBox.maxZ) boundingBox.maxZ = bb.maxZ;
+        }
+        if (!updated) return;
+
+        // Capture the current camera→target direction BEFORE shifting the target.
+        // mesh3d's resetViewOn computed cam_dir after the target shift, which (in
+        // neu3d's TrackballControls) reads as a different direction and visually
+        // tips the orientation. By caching cam_dir first we preserve the user's
+        // current view orientation; only target and zoom distance change.
+        const cam_dir = new Vector3();
+        cam_dir.subVectors(this.camera.position, this.controls.target);
+        const prevDist = cam_dir.length();
+        cam_dir.normalize();
+
+        this.controls.target.x = 0.5 * (boundingBox.minX + boundingBox.maxX);
+        this.controls.target.y = 0.5 * (boundingBox.minY + boundingBox.maxY);
+        this.controls.target.z = 0.5 * (boundingBox.minZ + boundingBox.maxZ);
+        this.camera.updateProjectionMatrix();
+        setTimeout(() => {
+            const positions = [
+                new Vector3(boundingBox.minX, boundingBox.minY, boundingBox.minZ),
+                new Vector3(boundingBox.minX, boundingBox.minY, boundingBox.maxZ),
+                new Vector3(boundingBox.minX, boundingBox.maxY, boundingBox.minZ),
+                new Vector3(boundingBox.minX, boundingBox.maxY, boundingBox.maxZ),
+                new Vector3(boundingBox.maxX, boundingBox.minY, boundingBox.minZ),
+                new Vector3(boundingBox.maxX, boundingBox.minY, boundingBox.maxZ),
+                new Vector3(boundingBox.maxX, boundingBox.maxY, boundingBox.minZ),
+                new Vector3(boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ),
+            ];
+            let targetFov = 0.0;
+            for (let i = 0; i < 8; i++) {
+                const proj2d = positions[i].applyMatrix4(this.camera.matrixWorldInverse);
+                const angle = Math.max(
+                    Math.abs(Math.atan(proj2d.x / proj2d.z) / this.camera.aspect),
+                    Math.abs(Math.atan(proj2d.y / proj2d.z))
+                );
+                targetFov = Math.max(targetFov, angle);
+            }
+            const currentFov = Math.PI * this.fov / 2 / 180;
+            let dist = prevDist * Math.tan(targetFov) / Math.tan(currentFov);
+            const aspect = this.camera.aspect;
+            const targetHfov = 2 * Math.atan(Math.tan(targetFov / 2) * aspect);
+            const currentHfov = 2 * Math.atan(Math.tan(currentFov / 2) * aspect);
+            dist = Math.max(prevDist * Math.tan(targetHfov) / Math.tan(currentHfov), dist);
+            this.camera.position.copy(this.controls.target);
+            this.camera.position.addScaledVector(cam_dir, dist);
+            this.camera.updateProjectionMatrix();
+        }, 400);
     }
 
 
@@ -1648,7 +1872,11 @@ export class Neu3D {
          * show label of mesh object when it intersects with cursor
          */
         if (this.states.mouseOver && !this.mousedown) {
-            let intersected = this.getIntersection([this.groups.front, this.groups.back]);
+            // Hover-raycast should only consider front objects (neurons/synapses).
+            // mesh3d behaved the same way; intersecting `back` here makes
+            // neuropils flash on mouse-over. The right-click handler still
+            // raycasts both groups so the context menu can target a neuropil.
+            let intersected = this.getIntersection([this.groups.front]);
             if (this.uiVars.currentIntersected || intersected) {
                 // make sure when hovering over a neuron transits to hovering on neuropil the highlight state is reset.
                 if (this.uiVars.currentIntersected !== undefined && intersected !== undefined){
