@@ -9,6 +9,7 @@ import {
     Raycaster,
     Group,
     WebGLRenderer,
+    ColorManagement,
     Scene,
     Vector3,
     LoadingManager,
@@ -613,6 +614,12 @@ export class Neu3D {
 
     /** Initialize WebGL Renderer */
     initRenderer() {
+        // r152 flipped THREE.ColorManagement.enabled to true by default, which
+        // changes how hex/numeric color inputs are interpreted (sRGB -> linear
+        // conversion before sampling, sRGB output on the way back). Keep the
+        // r151 unmanaged colour pipeline for now so the existing config hex
+        // values render the same as before. Migrate properly in a later step.
+        ColorManagement.enabled = false;
         let renderer = new WebGLRenderer({
             'logarithmicDepthBuffer': true,
             'alpha': false,
@@ -622,7 +629,13 @@ export class Neu3D {
         renderer.setSize(this.container.clientWidth, this.container.clientHeight);
         renderer.setClearColor(0x000000, 0);
         renderer.autoClear = false;
-        //renderer.outputEncoding = GammaEncoding;
+        // r155 flipped the default of useLegacyLights to false, which makes
+        // every lit material render ~PI times darker than r151 baseline that
+        // our light intensities in config.json were tuned against. Keep the
+        // legacy multiplier for now -- this flag stays available up to r164
+        // before removal, after which we'll have to multiply each light's
+        // intensity by Math.PI in lightshelper / config to compensate.
+        renderer.useLegacyLights = true;
         this.container.appendChild(renderer.domElement);
         return renderer;
     }
