@@ -31,7 +31,7 @@
     "jquery": "^3.7.0",
     "lodash": "^4.17.21",
     "stats.js": "^0.17.0",
-    "three": "^0.163.0"
+    "three": "^0.170.0"
   },
   "devDependencies": {
     "css-loader": "^6.7.4",

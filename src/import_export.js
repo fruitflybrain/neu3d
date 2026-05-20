@@ -39,13 +39,16 @@ Neu3D.prototype.import_settings = function(settings) {
         }
     }
 
-    if ('backgroundColor' in settings) {
-        let bg = settings.backgroundColor;
-        setTimeout(() => {
-            this.setBackgroundColor(bg);
-        }, 4000);
-        delete settings.backgroundColor;
-    }
+    // r170: ColorManagement is enabled by default, so new Color(hex) applies
+    // an sRGB->linear conversion. The previous setTimeout(4000) re-applied
+    // backgroundColor after a 4s delay, causing a visible single-frame
+    // dimming of the brain when the converted (linear) values replaced the
+    // initial (unconverted) ones. Let backgroundColor flow through the same
+    // path as the other settings -- Object.assign triggers the
+    // PropertyManager change handler, which calls setBackgroundColor
+    // immediately. If no meshes have loaded yet, the iteration is a no-op
+    // and meshes added later pick up the new settings.backgroundColor
+    // value at creation time, with the conversion happening exactly once.
     Object.assign(this.settings, settings);
 };
 

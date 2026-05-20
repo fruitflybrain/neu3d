@@ -8,6 +8,15 @@ import {
     SpotLight
 } from 'three';
 
+// Pre-r155 three.js multiplied light intensities by PI internally (the
+// "legacy lights" multiplier); r155 deprecated and a later release removed
+// the useLegacyLights renderer flag. We pass light.intensity through
+// untouched -- with ColorManagement on (r152+ default) and spot lights
+// running with decay=0/distance=0 (no attenuation), the bare intensity
+// scale gives the 0-1 sliders meaningful dynamic range without saturating
+// mid-tone diffuse colours.
+const LEGACY_LIGHT_MULTIPLIER = 1.0;
+
 function guidGenerator() {
     var S4 = function() {
         return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
@@ -32,7 +41,7 @@ export class FFBOLightsHelper {
         lh.on('change', function(e) {
             let light = this[e['path'][0]];
             if (e['value']) {
-                light._object.intensity = light.intensity;
+                light._object.intensity = light.intensity * LEGACY_LIGHT_MULTIPLIER;
             } else {
                 light._object.intensity = 0;
             }
@@ -135,7 +144,7 @@ export class FFBOLightsHelper {
         let intensity = getProperty(properties, 'intensity', 1.0);
         let key = getProperty(properties, 'key', guidGenerator());
         this[key] = new PropertyManager({
-            _object: new AmbientLight(color, intensity),
+            _object: new AmbientLight(color, intensity * LEGACY_LIGHT_MULTIPLIER),
             color: color,
             intensity: intensity,
             enabled: true
@@ -144,7 +153,7 @@ export class FFBOLightsHelper {
             this[key].enabled = properties.enabled;
         this[key].on("change", function(e) {
             if (e.prop == "intensity")
-                e.obj.enabled ? (e.obj._object.intensity = e.value) : undefined;
+                e.obj.enabled ? (e.obj._object.intensity = e.value * LEGACY_LIGHT_MULTIPLIER) : undefined;
             else if (e.prop == "color")
                 e.obj._object.color.set(e.value);
             else
@@ -163,7 +172,7 @@ export class FFBOLightsHelper {
         let target = getProperty(properties, 'target', new Vector3(0, 0, 0));
         let key = getProperty(properties, 'key', guidGenerator());
         this[key] = new PropertyManager({
-            _object: new DirectionalLight(color, intensity),
+            _object: new DirectionalLight(color, intensity * LEGACY_LIGHT_MULTIPLIER),
             color: color,
             intensity: intensity,
             position: position,
@@ -176,7 +185,7 @@ export class FFBOLightsHelper {
             this[key].enabled = properties.enabled;
         this[key].on("change", function(e) {
             if (e.prop == "intensity")
-                e.obj.enabled ? (e.obj._object.intensity = e.value) : undefined;
+                e.obj.enabled ? (e.obj._object.intensity = e.value * LEGACY_LIGHT_MULTIPLIER) : undefined;
             else if (e.prop == "color")
                 e.obj._object.color.set(e.value);
             else if (e.prop == "position")
@@ -198,11 +207,18 @@ export class FFBOLightsHelper {
         let mul = light.posAngle1 < 0 ? -1 : 1;
         position.applyAxisAngle(this.camera.up.clone(), light.posAngle1 * (Math.PI / 180));
         position.applyAxisAngle(dir, mul * light.posAngle2 * (Math.PI / 180));
-        let distance = position.length() * light.distanceFactor;
         position.add(target);
         light._object.position.copy(position);
         light._object.target.position.copy(target);
-        light._object.distance = distance;
+        // r155+ default SpotLight decay=2 with the new physically-correct
+        // lighting model: 1/lightDistance^2 attenuation zeroes spot lights
+        // out almost completely at brain-scale distances (~2600 units).
+        // distance=0 also disables the cutoff smoothstep that previously
+        // killed contribution at the lightDistance == cutoffDistance edge.
+        // Together they let the spot-light intensity sliders have visible
+        // effect again -- matches the r151 visual baseline.
+        light._object.decay = 0;
+        light._object.distance = 0;
     }
     addSpotLight(properties = {}) {
         // if (properties == undefined)
@@ -218,7 +234,7 @@ export class FFBOLightsHelper {
         let track = getProperty(properties, 'track', true);
         let key = getProperty(properties, 'key', guidGenerator());
         this[key] = new PropertyManager({
-            _object: new SpotLight(color, intensity),
+            _object: new SpotLight(color, intensity * LEGACY_LIGHT_MULTIPLIER),
             color: color,
             intensity: intensity,
             angle: angle,
@@ -234,7 +250,7 @@ export class FFBOLightsHelper {
         this[key].on("change", function(e) {
             if (e.prop == "intensity"){
                 if (e.obj.enabled) {
-                    e.obj._object.intensity = e.value;
+                    e.obj._object.intensity = e.value * LEGACY_LIGHT_MULTIPLIER;
                 }
             } else if (e.prop == "color") {
                 e.obj._object.color.set(e.value);

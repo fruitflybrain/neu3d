@@ -9,7 +9,6 @@ import {
     Raycaster,
     Group,
     WebGLRenderer,
-    ColorManagement,
     Scene,
     Vector3,
     LoadingManager,
@@ -45,6 +44,9 @@ import {
 import {
     CopyShader
 } from 'three/examples/jsm/shaders/CopyShader';
+import {
+    OutputPass
+} from 'three/examples/jsm/postprocessing/OutputPass';
 // add FontAwesome
 import '@fortawesome/fontawesome-free/js/all.js';
 
@@ -233,8 +235,12 @@ export class Neu3D {
         this.raycaster.params.Line.threshold = 0.1;
         if (options['stats']) {
             this.stats = STATS.Stats();
-            this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-            this.stats.dom.style.position = "relative";
+            // stats.js sets style.cssText with `position:fixed;top:0;left:0;...`
+            // in its constructor; replace the whole cssText so our absolute
+            // bottom-left positioning isn't fighting the top:0 / left:0 the
+            // library wrote first. z-index keeps it on top of the axis HUD.
+            this.stats.dom.style.cssText =
+                'position:absolute;bottom:60px;left:5px;cursor:pointer;opacity:0.9;z-index:10000;display:none;';
             this.stats.dom.className += ' vis-3d-stats';
             this._addedDOMElements.push(this.stats.dom);
             this.container.appendChild(this.stats.dom);
@@ -614,12 +620,6 @@ export class Neu3D {
 
     /** Initialize WebGL Renderer */
     initRenderer() {
-        // r152 flipped THREE.ColorManagement.enabled to true by default, which
-        // changes how hex/numeric color inputs are interpreted (sRGB -> linear
-        // conversion before sampling, sRGB output on the way back). Keep the
-        // r151 unmanaged colour pipeline for now so the existing config hex
-        // values render the same as before. Migrate properly in a later step.
-        ColorManagement.enabled = false;
         let renderer = new WebGLRenderer({
             'logarithmicDepthBuffer': true,
             'alpha': false,
@@ -629,13 +629,16 @@ export class Neu3D {
         renderer.setSize(this.container.clientWidth, this.container.clientHeight);
         renderer.setClearColor(0x000000, 0);
         renderer.autoClear = false;
-        // r155 flipped the default of useLegacyLights to false, which makes
-        // every lit material render ~PI times darker than r151 baseline that
-        // our light intensities in config.json were tuned against. Keep the
-        // legacy multiplier for now -- this flag stays available up to r164
-        // before removal, after which we'll have to multiply each light's
-        // intensity by Math.PI in lightshelper / config to compensate.
-        renderer.useLegacyLights = true;
+        // r155 deprecated and a later release removed the useLegacyLights
+        // renderer flag. The PI multiplier that flag used to apply is now
+        // baked into lightshelper.js's addAmbient/Directional/Spot helpers
+        // via LEGACY_LIGHT_MULTIPLIER so the public intensity API stays
+        // unchanged for callers. ColorManagement defaults to enabled in
+        // r152+ and outputColorSpace defaults to SRGBColorSpace -- both
+        // left at three.js defaults. Tone mapping deliberately left at
+        // NoToneMapping so unlit materials (LineBasicMaterial mode 0)
+        // aren't over-brightened by an exposure boost; all brightness
+        // compensation happens inside the lighting multiplier.
         this.container.appendChild(renderer.domElement);
         return renderer;
     }
@@ -697,16 +700,16 @@ export class Neu3D {
 
     /** Update controller's positions based on metadata */
     updateControls() {
-        this.controls.position0.x = this._metadata.resetPosition.x;
-        this.controls.position0.y = this._metadata.resetPosition.y;
-        this.controls.position0.z = this._metadata.resetPosition.z;
-        this.controls.up0.x = this._metadata.upVector.x;
-        this.controls.up0.y = this._metadata.upVector.y;
-        this.controls.up0.z = this._metadata.upVector.z;
-        this.controls.target0.x = this._metadata.cameraTarget.x;
-        this.controls.target0.y = this._metadata.cameraTarget.y;
-        this.controls.target0.z = this._metadata.cameraTarget.z;
-        // this.controls.up0.y = this._metadata.upSign;
+        this.controls._position0.x = this._metadata.resetPosition.x;
+        this.controls._position0.y = this._metadata.resetPosition.y;
+        this.controls._position0.z = this._metadata.resetPosition.z;
+        this.controls._up0.x = this._metadata.upVector.x;
+        this.controls._up0.y = this._metadata.upVector.y;
+        this.controls._up0.z = this._metadata.upVector.z;
+        this.controls._target0.x = this._metadata.cameraTarget.x;
+        this.controls._target0.y = this._metadata.cameraTarget.y;
+        this.controls._target0.z = this._metadata.cameraTarget.z;
+        // this.controls._up0.y = this._metadata.upSign;
     }
 
     /** Initialize Post Processing */
@@ -746,7 +749,14 @@ export class Neu3D {
         this.EffectComposerPasses['bloomPass'] = this.bloomPass;
         this.bloomPass.renderToScreen = true; //
 
-        this.effectCopy = new ShaderPass(CopyShader);
+        // EffectComposer renders into a linear HalfFloat render target by
+        // default. With ColorManagement on (r152+ default), material colors
+        // get sRGB->linear at sampling but the final write to screen needs
+        // linear->sRGB encoding -- the bare CopyShader pass we used pre-r152
+        // wrote linear straight to screen, producing a muffled/dim look.
+        // OutputPass handles the sRGB encode (and tone mapping if enabled)
+        // so the composer output matches the renderer's outputColorSpace.
+        this.effectCopy = new OutputPass();
         this.effectCopy.renderToScreen = true;
         // this.toneMappingPass = new AdaptiveToneMappingPass(true, nextPow2(width));
         // this.toneMappingPass.setMinLuminance(1. - this.settings.toneMappingPass.brightness);
@@ -886,8 +896,8 @@ export class Neu3D {
     initLoadingManager() {
         let loadingManager = new LoadingManager();
         loadingManager.onLoad = () => {
-            this.controls.target0.x = 0.5 * (this.boundingBox.minX + this.boundingBox.maxX);
-            this.controls.target0.y = 0.5 * (this.boundingBox.minY + this.boundingBox.maxY);
+            this.controls._target0.x = 0.5 * (this.boundingBox.minX + this.boundingBox.maxX);
+            this.controls._target0.y = 0.5 * (this.boundingBox.minY + this.boundingBox.maxY);
             // this.controls.reset();
             this.groups.front.visible = true;
         };
@@ -930,7 +940,7 @@ export class Neu3D {
         this.uiVars.synapseNum = 0;
         this.states.highlight = false;
         if (resetBackground) {
-            this.controls.target0.set(0, 0, 0);
+            this.controls._target0.set(0, 0, 0);
             this.boundingBox = {
                 'maxY': -100000,
                 'minY': 100000,
@@ -2076,12 +2086,14 @@ export class Neu3D {
     }
 
     toggleStats(d) {
+        if (!this.stats) return;
         if (this.statsMode) {
-          this.stats.showPanel();
-          this.statsMode = false;
+            this.stats.dom.style.display = 'none';
+            this.statsMode = false;
         } else {
-          this.stats.showPanel(0);
-          this.statsMode = true;
+            this.stats.dom.style.display = '';
+            this.stats.showPanel(0);
+            this.statsMode = true;
         }
     }
 
@@ -2641,8 +2653,8 @@ export class Neu3D {
      * Reset camera and control position
      */
     resetView() {
-        this.controls.target0.x = 0.5 * (this.boundingBox.minX + this.boundingBox.maxX);
-        this.controls.target0.y = 0.5 * (this.boundingBox.minY + this.boundingBox.maxY);
+        this.controls._target0.x = 0.5 * (this.boundingBox.minX + this.boundingBox.maxX);
+        this.controls._target0.y = 0.5 * (this.boundingBox.minY + this.boundingBox.maxY);
         this.controls.reset();
         if (this._metadata.enablePositionReset == true) {
             this.camera.position.z = this._metadata.resetPosition.z;
