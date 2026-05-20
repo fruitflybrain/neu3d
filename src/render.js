@@ -687,6 +687,11 @@ export class NeuronSkeleton extends RenderObj {
             }
             object.add(spheres);
 
+            // Same dim factor as the mode-1/2 line path below: with managed
+            // colour the unlit line colour reads brighter than the lit
+            // sphere/cylinder modes, so scale it down to align perceived
+            // brightness across rendering modes.
+            const lineHex = color.clone().multiplyScalar(0.4).getHex();
             var width;
             for (var i = 1; i <= 49; i++) {
                 if (i <= 40) {
@@ -700,7 +705,7 @@ export class NeuronSkeleton extends RenderObj {
                     var material_lines = new LineMaterial({
                         transparent: true,
                         linewidth: width * 2,
-                        color: color.getHex(),
+                        color: lineHex,
                         dashed: false,
                         worldUnits: true,
                         opacity: opacity,
@@ -980,13 +985,21 @@ export class NeuronSkeleton extends RenderObj {
                     vs.push(p.z);
                 }
 
+                // r184 / managed pipeline: LineBasic/LineMaterial are unlit
+                // so their hex colours pass straight through to the display
+                // sRGB roundtrip, while every lit material's diffuse mid-tone
+                // gets attenuated by the BRDF + new linear lighting equation.
+                // The visual result is that line-mode neurons read noticeably
+                // brighter than cylinder/sphere modes. Dim the line colour
+                // by a fixed scalar so the perceived brightness aligns.
+                const lineColor = color.clone().multiplyScalar(0.4);
                 if (this.mode == 2) {
                     geometry = new LineSegmentsGeometry();
                     geometry.setPositions(vs);
                     material_lines = new LineMaterial({
                         transparent: true,
                         linewidth: neu3dSettings.defaultRadius * 2,
-                        color: color.getHex(),
+                        color: lineColor.getHex(),
                         dashed: false,
                         worldUnits: true,
                         opacity: opacity,
@@ -999,7 +1012,7 @@ export class NeuronSkeleton extends RenderObj {
                     geometry.setAttribute('position', new Float32BufferAttribute(vs, 3));
                     material_lines = new LineBasicMaterial({
                         transparent: true,
-                        color: color,
+                        color: lineColor,
                         opacity: opacity
                     });
                     lines = new LineSegments(geometry, material_lines);
