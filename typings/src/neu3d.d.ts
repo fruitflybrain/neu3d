@@ -435,6 +435,8 @@ export class Neu3D {
      */
     setBackgroundColor(color: any[]): void;
     setSceneBackgroundColor(color: any): void;
+    toggleStats(d?: any): void;
+    refreshNeuron3dModeOptions(meshConfig?: { [name: string]: any }): void;
     /**
      * Reset camera and control position
      */

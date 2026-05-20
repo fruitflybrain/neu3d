@@ -105,18 +105,15 @@ Neu3D.prototype.initControlPanel = function(options = {}) {
     // add settings
     let f_vis = controlPanel.addFolder('Settings');
     let f0 = f_vis.addFolder('Display Mode');
+    this._neuron3dModeFolder = f0;
     // f0.add(this.settings, 'neuron3d').name("Enable 3D Mode");
-    f0.add(this.settings, 'neuron3dMode', [0, 1, 2, 3, 4, 5, 6]).title(
-        `Display mode for neuron visualization:
-      mode 0: default mode (light), renders a neuron in their approximate branch width.
-      mode 1: skeleton mode (very light), renders a neuron with lines, was the previous default mode.
-      mode 2: thick line mode (light), render similarly to mode 0 but radii of each segment is the same and defined by setting, can change width from setting and takes immediate effect.
-      mode 3: sphere mode (medium), renders each point on the skeleton as a sphere and connected by a line.
-      mode 4: cylinder mode (heavy), renders a neuron with cylinders.
-      mode 5: cylinder+sphere mode (heavy), renders a neuron with cylinders and spheres.
-      mode 6: cylinder+tube (very heavy), renders a neuron with cylinders and tubes as joints.
-    `
-    );
+    // Base modes 0-6 are SWC-derived (lines, spheres, cylinders). Modes 7+
+    // are URL-based gltf meshes; one mode is exposed per key in
+    // _metadata.neuron_mesh, in declaration order. So a dataset with two
+    // gltf mesh tiers (e.g. "Coarse Mesh", "Fine Mesh") gets modes 7 and 8.
+    // Use refreshNeuron3dModeOptions() to rebuild the dropdown when the
+    // dataset (and thus the available mesh set) changes.
+    this._neuron3dModeController = this._buildNeuron3dModeController(f0);
     f0.add(this.settings, 'neuron3dApp').name("Change Existing").title("Change existing neurons' rendering mode?");
 
     let f1 = f_vis.addFolder('Visualization');
@@ -243,6 +240,51 @@ Neu3D.prototype.disposeControlPanel = function() {
     }
     this.controlPanel.updateDisplay();
     this.controlPanel.destroy();
+};
+
+// Build (or rebuild) the neuron3dMode dat.gui controller using the current
+// _metadata.neuron_mesh as the source of modes 7+. Called once from
+// initControlPanel and again from refreshNeuron3dModeOptions whenever the
+// caller updates _metadata.neuron_mesh (e.g. on dataset switch).
+Neu3D.prototype._buildNeuron3dModeController = function (folder) {
+    const baseModes = [0, 1, 2, 3, 4, 5, 6];
+    const nm = (this._metadata && this._metadata.neuron_mesh) || {};
+    const meshKeys = Object.keys(nm);
+    const modeOptions = baseModes.concat(meshKeys.map((_, i) => 7 + i));
+    const meshModeHelp = meshKeys
+        .map((k, i) => `      mode ${7 + i}: ${k} (gltf mesh, fetched from ${nm[k].base || '<url>'}).`)
+        .join('\n');
+    return folder.add(this.settings, 'neuron3dMode', modeOptions).title(
+        `Display mode for neuron visualization:
+      mode 0: default mode (light), renders a neuron in their approximate branch width.
+      mode 1: skeleton mode (very light), renders a neuron with lines, was the previous default mode.
+      mode 2: thick line mode (light), render similarly to mode 0 but radii of each segment is the same and defined by setting, can change width from setting and takes immediate effect.
+      mode 3: sphere mode (medium), renders each point on the skeleton as a sphere and connected by a line.
+      mode 4: cylinder mode (heavy), renders a neuron with cylinders.
+      mode 5: cylinder+sphere mode (heavy), renders a neuron with cylinders and spheres.
+      mode 6: cylinder+tube (very heavy), renders a neuron with cylinders and tubes as joints.${meshModeHelp ? '\n' + meshModeHelp : ''}
+    `
+    );
+};
+
+// Rebuild the neuron3dMode dropdown after _metadata.neuron_mesh changes.
+// Pass an optional new mesh-config object; if omitted, the current value of
+// _metadata.neuron_mesh is used.
+Neu3D.prototype.refreshNeuron3dModeOptions = function (meshConfig) {
+    if (meshConfig !== undefined) {
+        this._metadata.neuron_mesh = meshConfig || {};
+    }
+    if (!this._neuron3dModeFolder || !this._neuron3dModeController) {
+        return;
+    }
+    // dat.gui Controller exposes a .remove() that takes the controller off the
+    // folder; rebuilding with folder.add() puts the fresh dropdown back in the
+    // same folder, after the previously-rendered "Change Existing" toggle.
+    // Capture current value first so the user's selection survives the rebuild.
+    const current = this.settings.neuron3dMode;
+    this._neuron3dModeController.remove();
+    this._neuron3dModeController = this._buildNeuron3dModeController(this._neuron3dModeFolder);
+    this.settings.neuron3dMode = current;
 };
 
 export {

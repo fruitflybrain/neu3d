@@ -377,6 +377,20 @@ export class Neu3D {
         }), "defaultSomaRadius");
 
         this.settings.on("change", ((e) => {
+            // Modes 7+ require a corresponding key in _metadata.neuron_mesh.
+            // If the user picks one with no backing mesh entry, bail to mode 0
+            // so we don't try to render with an undefined gltf URL.
+            if (e.value >= 7) {
+                const nm = this._metadata && this._metadata.neuron_mesh;
+                const keys = nm ? Object.keys(nm) : [];
+                if (e.value - 7 >= keys.length) {
+                    console.warn(
+                        `[Neu3D] mode ${e.value} is not configured (neuron_mesh has no matching entry); reverting to mode 0.`
+                    );
+                    this.settings.neuron3dMode = 0;
+                    return;
+                }
+            }
             if (this.settings.neuron3dApp) {
                 this.recreateNeurons(e.value);
             }
