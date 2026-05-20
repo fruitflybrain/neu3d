@@ -240,7 +240,7 @@ export class Neu3D {
             // bottom-left positioning isn't fighting the top:0 / left:0 the
             // library wrote first. z-index keeps it on top of the axis HUD.
             this.stats.dom.style.cssText =
-                'position:absolute;bottom:60px;left:5px;cursor:pointer;opacity:0.9;z-index:10000;display:none;';
+                'position:absolute;bottom:40px;left:5px;cursor:pointer;opacity:0.9;z-index:10000;display:none;';
             this.stats.dom.className += ' vis-3d-stats';
             this._addedDOMElements.push(this.stats.dom);
             this.container.appendChild(this.stats.dom);
