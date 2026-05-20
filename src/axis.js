@@ -28,6 +28,16 @@ Neu3D.prototype.addAxisIndicator = function () {
     if (!settings.anteriorAxis || !settings.dorsalAxis || !settings.rightHemisphereAxis) {
         return false;
     }
+    // Idempotent: if the indicator was added before (same Neu3D instance,
+    // e.g. dataset switch with different axes), strip the previous arrows
+    // + labels from scenes.back and restore the original render method so
+    // we don't accumulate per-frame placement wrappers.
+    if (this._axisIndicator) {
+        this.scenes.back.remove(this._axisIndicator.axisGroup);
+        this.scenes.back.remove(this._axisIndicator.labels);
+        this.render = this._axisIndicator.originalRender;
+        this._axisIndicator = null;
+    }
     const colorX = 0xff5555;  // anterior  (red)
     const colorY = 0x55ff55;  // dorsal    (green)
     const colorZ = 0x5599ff;  // right     (blue)
@@ -98,6 +108,11 @@ Neu3D.prototype.addAxisIndicator = function () {
     this.render = function (...args) {
         updateAxisPlacement();
         return _origRender(...args);
+    };
+    this._axisIndicator = {
+        axisGroup,
+        labels,
+        originalRender: _origRender
     };
     return true;
 };
