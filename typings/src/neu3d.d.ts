@@ -437,6 +437,8 @@ export class Neu3D {
     setSceneBackgroundColor(color: any): void;
     toggleStats(d?: any): void;
     refreshNeuron3dModeOptions(meshConfig?: { [name: string]: any }): void;
+    addAxisIndicator(): void;
+    enableOrthogonalTrackballUp(): void;
     /**
      * Reset camera and control position
      */
