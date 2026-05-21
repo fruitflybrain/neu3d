@@ -439,6 +439,15 @@ export class Neu3D {
     refreshNeuron3dModeOptions(meshConfig?: { [name: string]: any }): void;
     addAxisIndicator(): void;
     enableOrthogonalTrackballUp(): void;
+    addBrainIndicator(options?: {
+        meshUrl?: string | null;
+        size?: number;
+        padding?: number;
+        opacity?: number;
+        wireframe?: boolean;
+        meshColor?: number;
+        showFrustum?: boolean;
+    }): boolean;
     /**
      * Reset camera and control position
      */
