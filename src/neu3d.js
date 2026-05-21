@@ -1652,6 +1652,9 @@ export class Neu3D {
         const label = obj.htmllabel || obj.label || rid;
         this._appendMenuItem(menuList, `Hide ${label}`, () => this.hide(rid));
         this._appendMenuItem(menuList, `Center view on ${label}`, () => this.resetViewOn(rid));
+        if (hitPoint) {
+            this._appendMenuItem(menuList, `Pan view to clicked point`, () => this.panToPoint(hitPoint));
+        }
     }
 
     buildNeuronContextMenu(obj, hitPoint) {
@@ -1669,6 +1672,7 @@ export class Neu3D {
         this._appendMenuItem(menuList, `Hide ${label}`, () => this.hide(rid));
         this._appendMenuItem(menuList, `Center view on ${label}`, () => this.resetViewOn(rid));
         if (hitPoint) {
+            this._appendMenuItem(menuList, `Pan view to clicked point`, () => this.panToPoint(hitPoint));
             this._appendMenuItem(menuList, `Copy click position to clipboard`, () => {
                 navigator.clipboard.writeText(`${hitPoint.x}, ${hitPoint.y}, ${hitPoint.z}`);
             });
@@ -1679,6 +1683,29 @@ export class Neu3D {
         // Synapses get the same actions as neurons currently; mesh3d had subtle
         // differences but for now we share the implementation.
         this.buildNeuronContextMenu(obj, hitPoint);
+    }
+
+    /**
+     * Translate the view to put `point` at controls.target without changing
+     * camera distance or fov. The camera is shifted by the same delta as
+     * the target, so its offset from the new target is identical to its
+     * offset from the old one -- pure pan, no zoom-in/out.
+     *
+     * `point` may be a THREE.Vector3 or anything with x/y/z numeric fields.
+     */
+    panToPoint(point) {
+        if (!point || !this.controls) return;
+        const dx = point.x - this.controls.target.x;
+        const dy = point.y - this.controls.target.y;
+        const dz = point.z - this.controls.target.z;
+        this.controls.target.set(point.x, point.y, point.z);
+        this.camera.position.x += dx;
+        this.camera.position.y += dy;
+        this.camera.position.z += dz;
+        this.camera.updateMatrixWorld(true);
+        if (typeof this.controls.update === 'function') {
+            this.controls.update();
+        }
     }
 
     /**

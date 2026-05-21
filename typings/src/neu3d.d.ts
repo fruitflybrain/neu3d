@@ -448,6 +448,7 @@ export class Neu3D {
         meshColor?: number;
         showFrustum?: boolean;
     }): boolean;
+    panToPoint(point: { x: number; y: number; z: number }): void;
     /**
      * Reset camera and control position
      */
