@@ -1028,6 +1028,21 @@ export class Neu3D {
      * Dispose everything and release memory
      */
     dispose() {
+        // Unsubscribe every PropertyManager listener registered during boot
+        // (~26 across settings/meshDict/uiVars/states + control_panel) before
+        // we start tearing down state. Without this, `delete this.foo` below
+        // would fire change/remove events through callback closures that
+        // reference now-deleted instance fields.
+        if (this.meshDict && this.meshDict.dispose_callbacks) this.meshDict.dispose_callbacks();
+        if (this.settings) {
+            if (this.settings.bloomPass && this.settings.bloomPass.dispose_callbacks) this.settings.bloomPass.dispose_callbacks();
+            if (this.settings.effectFXAA && this.settings.effectFXAA.dispose_callbacks) this.settings.effectFXAA.dispose_callbacks();
+            if (this.settings.backrenderSSAO && this.settings.backrenderSSAO.dispose_callbacks) this.settings.backrenderSSAO.dispose_callbacks();
+            if (this.settings.dispose_callbacks) this.settings.dispose_callbacks();
+        }
+        if (this.uiVars && this.uiVars.dispose_callbacks) this.uiVars.dispose_callbacks();
+        if (this.states && this.states.dispose_callbacks) this.states.dispose_callbacks();
+
         this.reset(true);
         this.render();
         cancelAnimationFrame(this._animationId);

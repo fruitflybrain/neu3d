@@ -4,6 +4,12 @@ let PropertyManagerHandler = {
             obj[prop] = value;
             return true;
         }
+        // After dispose_callbacks(), swallow writes silently -- teardown
+        // may still touch state, but no listeners should fire.
+        if (obj._PropMan_disposed) {
+            obj[prop] = value;
+            return true;
+        }
         try {
             if (!Object.getOwnPropertyDescriptor(obj, prop).writable) {
                 console.error("Can't set the value for " + prop + " in PropertyManager");
@@ -80,6 +86,10 @@ let PropertyManagerHandler = {
     },
 
     deleteProperty: function(obj, prop) {
+        if (obj._PropMan_disposed) {
+            delete obj[prop];
+            return true;
+        }
         obj._PropMan_callbacks._remove_any.forEach(function(f) {
             try {
                 f({
@@ -152,8 +162,17 @@ export class PropertyManager {
             value: {},
             enumerable: false
         });
+        Object.defineProperty(map, '_PropMan_disposed', {
+            value: false,
+            enumerable: false,
+            writable: true
+        });
         Object.defineProperty(map, 'on', {
             value: function(event, callback, prop) {
+                if (this._PropMan_disposed) {
+                    console.warn(`[Neu3D-PropMan] .on() called on a disposed PropertyManager; ignoring`);
+                    return false;
+                }
                 if (['add', 'remove', 'change'].indexOf(event) < 0) {
                     console.error(`[Neu3D-PropMan] Event type not understood`);
                     return false;
@@ -192,6 +211,59 @@ export class PropertyManager {
             enumerable: false
         });
 
+        Object.defineProperty(map, 'off', {
+            value: function(event, callback, prop) {
+                if (['add', 'remove', 'change'].indexOf(event) < 0) {
+                    console.error(`[Neu3D-PropMan] Event type not understood`);
+                    return false;
+                }
+                const removeFrom = (arr) => {
+                    const i = arr.indexOf(callback);
+                    if (i >= 0) arr.splice(i, 1);
+                };
+                if (prop == undefined) {
+                    if (event == 'change') {
+                        console.error(`[Neu3D-PropMan] Change event can only have callbacks for specific properties`);
+                        return false;
+                    }
+                    const bucket = ({ add: '_add_any', remove: '_remove_any' })[event];
+                    removeFrom(this._PropMan_callbacks[bucket]);
+                } else {
+                    if (!(prop instanceof Array)) prop = Array(prop);
+                    prop.forEach(function(p) {
+                        if (p in this._PropMan_callbacks) {
+                            removeFrom(this._PropMan_callbacks[p][event]);
+                        }
+                    }.bind(this));
+                }
+                return true;
+            },
+            configurable: false,
+            writable: false,
+            enumerable: false
+        });
+
+        Object.defineProperty(map, 'dispose_callbacks', {
+            value: function() {
+                // Wholesale unsubscribe: clear every callback array and flip the
+                // disposed flag so any in-flight set/delete operations during the
+                // rest of teardown become no-ops instead of firing into freed state.
+                this._PropMan_callbacks._add_any.length = 0;
+                this._PropMan_callbacks._remove_any.length = 0;
+                for (const k of Object.keys(this._PropMan_callbacks)) {
+                    if (k === '_add_any' || k === '_remove_any') continue;
+                    const b = this._PropMan_callbacks[k];
+                    b.change.length = 0;
+                    b.add.length = 0;
+                    b.remove.length = 0;
+                }
+                this._PropMan_disposed = true;
+            },
+            configurable: false,
+            writable: false,
+            enumerable: false
+        });
+
         Object.defineProperty(map, 'add_validation', {
             value: function(prop, validator) {
                 if (!(validator instanceof Function)) {
@@ -210,6 +282,7 @@ export class PropertyManager {
 
         Object.defineProperty(map, '_PropMan_propogate_event', {
             value: function(e) {
+                if (this._PropMan_disposed) return;
                 if (e['prop'] in this._PropMan_callbacks)
                     this._PropMan_callbacks[e['prop']]['change'].forEach(function(f) {
                         try {
