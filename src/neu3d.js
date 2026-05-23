@@ -310,6 +310,7 @@ export class Neu3D {
             'remove': this.remove,
             'setcolor': this.setColor,
             'resetview': this.resetView,
+            'resetvisibleview': this.resetVisibleView,
         };
 
         /** Callbacks fired on `this` will be callbacks fired on `meshDict` */
@@ -2730,13 +2731,42 @@ export class Neu3D {
      */
     resetVisibleView() {
         this.computeVisibleBoundingBox();
+        // Inflate any axis with zero extent (e.g. a neuron lying flat in the
+        // Y=0, Z=0 plane). Otherwise the bbox-projection math below divides
+        // through depths of zero and the camera ends up at NaN.
+        const inflate = axis => {
+            const min = 'min' + axis;
+            const max = 'max' + axis;
+            const extent =
+                this.visibleBoundingBox[max] - this.visibleBoundingBox[min];
+            if (Math.abs(extent) < 1e-6) {
+                const center = 0.5 * (this.visibleBoundingBox[min] + this.visibleBoundingBox[max]);
+                this.visibleBoundingBox[min] = center - 0.5;
+                this.visibleBoundingBox[max] = center + 0.5;
+            }
+        };
+        inflate('X');
+        inflate('Y');
+        inflate('Z');
         // Capture current camera→target direction BEFORE shifting the target,
         // same as resetViewOn — otherwise neu3d's TrackballControls reads cam_dir
         // off the post-shift state and tips the view orientation.
         const cam_dir = new Vector3();
         cam_dir.subVectors(this.camera.position, this.controls.target);
-        const prevDist = cam_dir.length();
-        cam_dir.normalize();
+        let prevDist = cam_dir.length();
+        // Degenerate fallback for figures with no preset configured (camera
+        // and target both at the origin). Pick +Z as the look-from direction
+        // and a distance proportional to the bbox diagonal so the view
+        // actually frames the data instead of landing the camera inside it.
+        if (prevDist < 1e-6) {
+            cam_dir.set(0, 0, 1);
+            const dx = this.visibleBoundingBox.maxX - this.visibleBoundingBox.minX;
+            const dy = this.visibleBoundingBox.maxY - this.visibleBoundingBox.minY;
+            const dz = this.visibleBoundingBox.maxZ - this.visibleBoundingBox.minZ;
+            prevDist = Math.max(1.0, Math.sqrt(dx * dx + dy * dy + dz * dz));
+        } else {
+            cam_dir.normalize();
+        }
 
         this.controls.target.x = 0.5 * (this.visibleBoundingBox.minX + this.visibleBoundingBox.maxX);
         this.controls.target.y = 0.5 * (this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY);
