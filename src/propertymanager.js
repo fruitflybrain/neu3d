@@ -57,7 +57,7 @@ let PropertyManagerHandler = {
             }
         } else { //add callback (not propogated to parents)
             obj[prop] = value;
-            obj._PropMan_callbacks._add_any.forEach(function(f) {
+            obj._PropMan_callbacks._add_any.forEach(function(f, i) {
                 try {
                     f({
                         'event': 'add',
@@ -65,7 +65,13 @@ let PropertyManagerHandler = {
                         'value': value
                     });
                 } catch (err) {
-                    console.error(`[Neu3D-PropMan] Error, ${err}`);
+                    // Include the callback index so multiple listeners on
+                    // the same dict can be told apart when one of them
+                    // throws (e.g. neu3d's internal vs. a widget bridge).
+                    console.error(
+                        `[Neu3D-PropMan] _add_any[${i}] for ${prop} failed:`,
+                        err
+                    );
                 }
             });
             if (prop in obj._PropMan_callbacks)

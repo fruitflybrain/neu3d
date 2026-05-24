@@ -2754,19 +2754,35 @@ export class Neu3D {
         const cam_dir = new Vector3();
         cam_dir.subVectors(this.camera.position, this.controls.target);
         let prevDist = cam_dir.length();
-        // Degenerate fallback for figures with no preset configured (camera
-        // and target both at the origin). Pick +Z as the look-from direction
-        // and a distance proportional to the bbox diagonal so the view
-        // actually frames the data instead of landing the camera inside it.
-        if (prevDist < 1e-6) {
-            cam_dir.set(0, 0, 1);
+        // Degenerate camera (position == target, OR camera previously got
+        // NaN'd by a botched earlier call). Short-circuit: place the camera
+        // directly at a sensible distance along +Z and skip the FOV-fitting
+        // math below. That math projects bbox corners through
+        // camera.matrixWorldInverse; with the camera at the origin and one
+        // of the corners also at the origin we get atan(0/0) -> NaN and the
+        // camera position blows up. The NaN check is essential because once
+        // the camera is NaN, prevDist becomes NaN and `NaN < 1e-6` is false,
+        // so we'd fall through and re-NaN it forever.
+        if (!isFinite(prevDist) || prevDist < 1e-6) {
+            const cx = 0.5 * (this.visibleBoundingBox.minX + this.visibleBoundingBox.maxX);
+            const cy = 0.5 * (this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY);
+            const cz = 0.5 * (this.visibleBoundingBox.minZ + this.visibleBoundingBox.maxZ);
             const dx = this.visibleBoundingBox.maxX - this.visibleBoundingBox.minX;
             const dy = this.visibleBoundingBox.maxY - this.visibleBoundingBox.minY;
             const dz = this.visibleBoundingBox.maxZ - this.visibleBoundingBox.minZ;
-            prevDist = Math.max(1.0, Math.sqrt(dx * dx + dy * dy + dz * dz));
-        } else {
-            cam_dir.normalize();
+            const diag = Math.max(1.0, Math.sqrt(dx * dx + dy * dy + dz * dz));
+            // 2x the diagonal at the default 20deg fov keeps the bbox well
+            // inside the frame; user can zoom in afterwards.
+            const dist = 2.0 * diag;
+            this.controls.target.set(cx, cy, cz);
+            this.camera.up.set(0, 1, 0);
+            this.camera.position.set(cx, cy, cz + dist);
+            this.camera.lookAt(cx, cy, cz);
+            this.camera.updateMatrixWorld();
+            this.camera.updateProjectionMatrix();
+            return;
         }
+        cam_dir.normalize();
 
         this.controls.target.x = 0.5 * (this.visibleBoundingBox.minX + this.visibleBoundingBox.maxX);
         this.controls.target.y = 0.5 * (this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY);
