@@ -64,7 +64,17 @@ Neu3D.prototype.export_state = function() {
         'visibility': {},
         'camera': {
             'position': {},
-            'up': {}
+            'up': {},
+            // Also persist the camera quaternion. The (position, up, target)
+            // triple is sufficient to define orientation in principle, but
+            // reconstructing it via lookAt(target) doesn't always round-trip
+            // to the exact quaternion -- the up vector that comes out of
+            // TrackballControls + enableOrthogonalTrackballUp is the
+            // already-projected one, and re-projecting in lookAt during
+            // import can leave the camera with a different roll/tilt.
+            // Saving the quaternion lets import_state pin orientation
+            // directly and bypass that ambiguity.
+            'quaternion': {}
         },
         'target': {}
     };
@@ -74,6 +84,10 @@ Neu3D.prototype.export_state = function() {
     state_metadata['camera']['up']['x'] = this.camera.up.x;
     state_metadata['camera']['up']['y'] = this.camera.up.y;
     state_metadata['camera']['up']['z'] = this.camera.up.z;
+    state_metadata['camera']['quaternion']['x'] = this.camera.quaternion.x;
+    state_metadata['camera']['quaternion']['y'] = this.camera.quaternion.y;
+    state_metadata['camera']['quaternion']['z'] = this.camera.quaternion.z;
+    state_metadata['camera']['quaternion']['w'] = this.camera.quaternion.w;
     state_metadata['target']['x'] = this.controls.target.x;
     state_metadata['target']['y'] = this.controls.target.y;
     state_metadata['target']['z'] = this.controls.target.z;
@@ -94,6 +108,14 @@ Neu3D.prototype.export_state = function() {
  * @param {object} state_metadata
  */
 Neu3D.prototype.import_state = function(state_metadata) {
+    // resetVisibleView (often scheduled by an auto-fit on load) defers the
+    // actual camera placement to a 400ms setTimeout. If it fires AFTER
+    // we restore the camera here, it clobbers the saved pose. Cancel any
+    // pending one so the imported state wins.
+    if (this._resetVisibleViewTimer !== null) {
+        clearTimeout(this._resetVisibleViewTimer);
+        this._resetVisibleViewTimer = null;
+    }
     this.camera.position.x = state_metadata['camera']['position']['x'];
     this.camera.position.y = state_metadata['camera']['position']['y'];
     this.camera.position.z = state_metadata['camera']['position']['z'];
@@ -103,7 +125,17 @@ Neu3D.prototype.import_state = function(state_metadata) {
     this.controls.target.x = state_metadata['target']['x'];
     this.controls.target.y = state_metadata['target']['y'];
     this.controls.target.z = state_metadata['target']['z'];
-    this.camera.lookAt(this.controls.target);
+    // Apply quaternion directly when available -- bypasses lookAt's
+    // up-projection so the reconstructed orientation matches the
+    // exporter exactly. Falls back to lookAt for older saved files.
+    const q = state_metadata['camera'] && state_metadata['camera']['quaternion'];
+    if (q && typeof q.x === 'number' && typeof q.y === 'number'
+          && typeof q.z === 'number' && typeof q.w === 'number') {
+        this.camera.quaternion.set(q.x, q.y, q.z, q.w);
+        this.camera.updateMatrixWorld(true);
+    } else {
+        this.camera.lookAt(this.controls.target);
+    }
     for (let i = 0; i < state_metadata['pinned'].length; ++i) {
         let key = state_metadata['pinned'][i];
         if (Object.prototype.hasOwnProperty.call(this.meshDict, key)) {

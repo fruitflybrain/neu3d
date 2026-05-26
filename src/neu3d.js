@@ -130,6 +130,10 @@ export class Neu3D {
         this._animationId = null; // animation frame id, useful for stopping animation
         this._containerEventListener = {}; // function references to event listeners on container div
         this._addedDOMElements = [];
+        // Tracks resetVisibleView's deferred camera-placement setTimeout
+        // so a caller (e.g. an importer restoring a saved camera) can
+        // cancel a pending fit before it clobbers their pose.
+        this._resetVisibleViewTimer = null;
         /* default metadata */
         this._metadata = {
             colormap: "noPurpleExpanded",
@@ -1965,11 +1969,12 @@ export class Neu3D {
          * show label of mesh object when it intersects with cursor
          */
         if (this.states.mouseOver && !this.mousedown) {
-            // Hover-raycast should only consider front objects (neurons/synapses).
-            // mesh3d behaved the same way; intersecting `back` here makes
-            // neuropils flash on mouse-over. The right-click handler still
-            // raycasts both groups so the context menu can target a neuropil.
-            let intersected = this.getIntersection([this.groups.front]);
+            // Hover-raycast both groups so the background branch below
+            // (tooltip for neuropils, no highlight) is reachable. The
+            // highlight() call is gated to the non-background case
+            // already, so neuropils get their label without flashing
+            // every other neuron. Restores mesh3d's hover behavior.
+            let intersected = this.getIntersection([this.groups.front, this.groups.back]);
             if (this.uiVars.currentIntersected || intersected) {
                 // make sure when hovering over a neuron transits to hovering on neuropil the highlight state is reset.
                 if (this.uiVars.currentIntersected !== undefined && intersected !== undefined){
@@ -2788,7 +2793,13 @@ export class Neu3D {
         this.controls.target.y = 0.5 * (this.visibleBoundingBox.minY + this.visibleBoundingBox.maxY);
         this.controls.target.z = 0.5 * (this.visibleBoundingBox.minZ + this.visibleBoundingBox.maxZ);
         this.camera.updateProjectionMatrix();
-        setTimeout(() => {
+        // Cancel any previous in-flight fit so we don't queue overlapping
+        // placements when the user triggers resetVisibleView repeatedly.
+        if (this._resetVisibleViewTimer !== null) {
+            clearTimeout(this._resetVisibleViewTimer);
+        }
+        this._resetVisibleViewTimer = setTimeout(() => {
+            this._resetVisibleViewTimer = null;
             let positions = [
                 new Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.minY, this.visibleBoundingBox.minZ),
                 new Vector3(this.visibleBoundingBox.minX, this.visibleBoundingBox.minY, this.visibleBoundingBox.maxZ),
@@ -2853,7 +2864,14 @@ export class Neu3D {
         this._addedDOMElements.push(this.toolTipDiv);
         this.toolTipDiv.style.cssText = 'position: fixed; text-align: center; width: auto; min-width: 100px; height: auto; padding: 2px; font: 12px arial; z-index: 999; background: #ccc; border: solid #212121 3px; border-radius: 8px; pointer-events: none; opacity: 0.0; color: #212121';
         this.toolTipDiv.style.transition = "opacity 0.5s";
-        this.container.appendChild(this.toolTipDiv);
+        // Append to document.body, not this.container. Lumino's structural
+        // widgets set `contain: strict`, which makes them the containing
+        // block for fixed-positioned descendants *and* clips paint to their
+        // box. With the tooltip inside the container, position:fixed
+        // resolves against the Lumino widget, and the viewport-space
+        // coordinates we write into style.left/top end up outside the
+        // clip region. Body-appended escapes that containment entirely.
+        document.body.appendChild(this.toolTipDiv);
     }
 
 
