@@ -127,6 +127,21 @@ Neu3D.prototype.loadMorphJSONCallBack = function(key, unit, visibility) {
             this._registerObject(key, unit, skeleton);
         } else if (unit['class'] == 'Synapse') {
             let syn = new Synapses(unit, unit['morph_type']);
+            // Auto-fill N (synapse count for the master-sidebar table /
+            // synapseNum counter) from parsed SWC so callers don't have
+            // to thread it through every payload. parseSWCDict sets
+            // synapseCount to count(identifier==7) when pre/post
+            // markers are present, else total entry count (matches
+            // the points_to_morphology convention where all are 0).
+            if (unit['N'] === undefined || unit['N'] === null) {
+                if (typeof syn.synapseCount === 'number') {
+                    unit['N'] = syn.synapseCount;
+                } else if (Array.isArray(syn.locations)) {
+                    unit['N'] = syn.locations.length;
+                } else {
+                    unit['N'] = 0;
+                }
+            }
             syn.createObject(unit['color'], unit['background'], this.settings);
             syn.updateVisibility(visibility);
             this._registerObject(key, unit, syn);

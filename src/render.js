@@ -127,6 +127,21 @@ export class RenderObj {
         this.type = 'morphology_json';
     }
 
+    /**
+     * Export a JSON-friendly snapshot of this object's morphology for
+     * addJson re-ingest.
+     *
+     * Returns ``{ morphology, kind }`` -- the ``morphology`` dict is
+     * what addJson's `morphology_json` (or equivalent) path consumes;
+     * ``kind`` is one of ``'neuron'`` / ``'synapse'`` / ``'mesh'``.
+     * Subclasses override to emit their type-specific arrays. Default
+     * returns ``null`` (unexportable: caller should fall back to
+     * unit-level fields like ``url`` / ``dataStr``).
+     */
+    export() {
+        return null;
+    }
+
     /** Register rid of rendered Object3D, and compute position
      *
      * @param {*} rid :  rid for raycaster
@@ -446,6 +461,23 @@ export class MeshObj extends RenderObj {
         let data = {};
         data = JSON.parse(meshString);
         return this.parseMeshDict(data);
+    }
+
+    /** Emit the vertices/faces arrays addJson's morphology_json mesh
+     * path consumes. Kind is always 'mesh'.
+     */
+    export() {
+        if (!this.vertices || !this.faces) {
+            return null;
+        }
+        return {
+            morphology: {
+                morph_type: 'mesh',
+                vertices: Array.from(this.vertices),
+                faces: Array.from(this.faces)
+            },
+            kind: 'mesh'
+        };
     }
 }
 
@@ -1193,6 +1225,52 @@ export class NeuronSkeleton extends RenderObj {
         };
         return skeleton;
     }
+
+    /** Flatten the per-node vertices dict + segments back into the
+     * sample / identifier / x / y / z / r / parent arrays that
+     * parseSWCDict expects. The transform was already applied during
+     * parse, so the caller should pair this with identity transforms
+     * on the outgoing unit to avoid double-applying scale/shift.
+     */
+    export() {
+        if (!this.vertices) {
+            return null;
+        }
+        const parentMap = new Map();
+        for (const seg of Object.values(this.segments || {})) {
+            if (seg && typeof seg.end !== 'undefined') {
+                parentMap.set(Number(seg.end), Number(seg.start));
+            }
+        }
+        for (const head of this.heads || []) {
+            parentMap.set(Number(head), -1);
+        }
+        const sample = [];
+        const identifier = [];
+        const x = [];
+        const y = [];
+        const z = [];
+        const r = [];
+        const parent = [];
+        for (const key of Object.keys(this.vertices)) {
+            const v = this.vertices[key];
+            const ni = Number(key);
+            sample.push(ni);
+            identifier.push(Number(v.type ?? 0));
+            x.push(Number(v.x));
+            y.push(Number(v.y));
+            z.push(Number(v.z));
+            r.push(Number(v.radius ?? 0));
+            parent.push(parentMap.has(ni) ? parentMap.get(ni) : -1);
+        }
+        return {
+            morphology: {
+                morph_type: 'swc',
+                sample, identifier, x, y, z, r, parent
+            },
+            kind: 'neuron'
+        };
+    }
 }
 
 
@@ -1413,9 +1491,22 @@ export class Synapses extends RenderObj {
         var locdict = {};
         let len = unit['sample'].length;
         var nodeIndex, x, y, z, xyzr, type, radius, parentIndex;
+        // Count identifier==7 (presynaptic) entries as the synapse count.
+        // Database/processor synapses come as pre/post pairs with
+        // identifier 7 (pre) and 8 (post linked to its 7-parent). Point-
+        // cloud synapses from neurowatch.points_to_morphology arrive with
+        // all identifier==0; in that case fall back to total entry count.
+        let preCount = 0;
+        let nonZeroSeen = false;
         for (let j = 0; j < len; j++) {
             nodeIndex = parseInt(unit['sample'][j]);
             type = parseInt(unit['identifier'][j]);
+            if (type !== 0) {
+                nonZeroSeen = true;
+            }
+            if (type === 7) {
+                preCount++;
+            }
             x = parseFloat(unit['x'][j]);
             y = parseFloat(unit['y'][j]);
             z = parseFloat(unit['z'][j]);
@@ -1444,8 +1535,60 @@ export class Synapses extends RenderObj {
         for (const [k, v] of Object.entries(locdict)) {
             locations.push(v);
         }
+        // Surface the count for loadMorphJSONCallBack to set unit.N.
+        this.synapseCount = nonZeroSeen ? preCount : len;
 
         return locations;
+    }
+
+    /** Flatten the locations array back to the SWC-dict form that
+     * Synapses.parseSWCDict (and the morphology_json route in
+     * loadMorphJSONCallBack with class='Synapse') consumes. Each pre
+     * becomes a parent=-1 entry; each paired post becomes a child of
+     * its pre.
+     */
+    export() {
+        if (!Array.isArray(this.locations)) {
+            return null;
+        }
+        const sample = [];
+        const identifier = [];
+        const x = [];
+        const y = [];
+        const z = [];
+        const r = [];
+        const parent = [];
+        let next = 1;
+        for (const loc of this.locations) {
+            if (typeof loc?.pre_x !== 'number') {
+                continue;
+            }
+            const preIdx = next++;
+            sample.push(preIdx);
+            identifier.push(7); // SWC type 7: presynaptic site
+            x.push(Number(loc.pre_x));
+            y.push(Number(loc.pre_y));
+            z.push(Number(loc.pre_z));
+            r.push(Number(loc.pre_radius ?? 0));
+            parent.push(-1);
+            if (typeof loc.post_x === 'number') {
+                const postIdx = next++;
+                sample.push(postIdx);
+                identifier.push(8); // SWC type 8: postsynaptic site
+                x.push(Number(loc.post_x));
+                y.push(Number(loc.post_y));
+                z.push(Number(loc.post_z));
+                r.push(Number(loc.post_radius ?? 0));
+                parent.push(preIdx);
+            }
+        }
+        return {
+            morphology: {
+                morph_type: 'swc',
+                sample, identifier, x, y, z, r, parent
+            },
+            kind: 'synapse'
+        };
     }
 }
 
