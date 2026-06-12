@@ -488,7 +488,7 @@ export class NeuronSkeleton extends RenderObj {
         if (typeof data === 'string' || data instanceof String) {
             if (type === 'swc') {
                 skeleton = this.parseSWCFile(data);
-            } else if (type === 'ns') {
+            } else if (type === 'ns' || type === 'nsk') {
                 skeleton = this.parseNSFile(data);
             } else {
                 console.error("[Neu3D] NeuronSkeleton unknown type.");
@@ -496,7 +496,7 @@ export class NeuronSkeleton extends RenderObj {
         } else {
             if (type === 'swc') {
                 skeleton = this.parseSWCDict(data);
-            } else if (type === 'ns') {
+            } else if (type === 'ns' || type === 'nsk') {
                 skeleton = this.parseNSDict(data);
             } else {
                 console.error("[Neu3D] NeuronSkeleton unknown type.");
@@ -1226,24 +1226,101 @@ export class NeuronSkeleton extends RenderObj {
         return skeleton;
     }
 
+    /**
+     * Convert an nsk (neuron-skeleton) dict to the internal
+     * {vertices, segments, heads} model.
+     *
+     * Unlike SWC, connectivity is carried by explicit `segment_start` /
+     * `segment_end` arrays rather than a per-node `parent`, so loops and
+     * multi-root forests survive (no spanning tree is imposed). Vertices
+     * are built exactly as in parseSWCDict; `heads` (roots used by the
+     * tree-mode renderer) are the vertices that never appear as a segment
+     * `end`. If every vertex is some segment's end (e.g. a pure loop), the
+     * lowest vertex id is used as a fallback head so tree-mode still roots.
+     *
+     * @param {*} unit dict with `sample`, `identifier`, `x`, `y`, `z`,
+     *   `r` (or `radius`), `segment_start`, `segment_end`.
+     * @returns skeleton json with vertices, segments and heads
+     */
+    parseNSDict(unit) {
+        var vertices = {};
+        var segments = {};
+        var heads = [];
+        let len = unit['sample'].length;
+        var nodeIndex, x, y, z, xyzr, type, radius;
+        for (let j = 0; j < len; j++) {
+            nodeIndex = parseInt(unit['sample'][j]);
+            type = parseInt(unit['identifier'][j]);
+            if ('radius' in unit) {
+                radius = parseFloat(unit['radius'][j]);
+            } else {
+                radius = parseFloat(unit['r'][j]);
+            }
+            x = parseFloat(unit['x'][j]);
+            y = parseFloat(unit['y'][j]);
+            z = parseFloat(unit['z'][j]);
+            xyzr = this.transform(x, y, z, radius);
+            vertices[nodeIndex] = {
+                'type': type,
+                'x': xyzr[0],
+                'y': xyzr[1],
+                'z': xyzr[2],
+                'radius': xyzr[3]
+            };
+        }
+
+        var ends = new Set();
+        let slen = unit['segment_start'].length;
+        for (let i = 0; i < slen; i++) {
+            let start = parseInt(unit['segment_start'][i]);
+            let end = parseInt(unit['segment_end'][i]);
+            segments[i] = {
+                'start': start,
+                'end': end
+            };
+            ends.add(end);
+        }
+
+        for (let key of Object.keys(vertices)) {
+            let ni = parseInt(key);
+            if (!ends.has(ni)) {
+                heads.push(ni);
+            }
+        }
+        if (heads.length === 0 && Object.keys(vertices).length > 0) {
+            heads.push(Math.min(...Object.keys(vertices).map((k) => parseInt(k))));
+        }
+
+        var skeleton = {
+            'vertices': vertices,
+            'segments': segments,
+            'heads': heads
+        };
+        return skeleton;
+    }
+
+    /**
+     * Convert a string of an nsk file (JSON of the nsk dict) to the
+     * internal skeleton model.
+     * @param {String} nsString
+     * @returns vertices, segments and heads
+     */
+    parseNSFile(nsString) {
+        return this.parseNSDict(JSON.parse(nsString));
+    }
+
     /** Flatten the per-node vertices dict + segments back into the
-     * sample / identifier / x / y / z / r / parent arrays that
-     * parseSWCDict expects. The transform was already applied during
-     * parse, so the caller should pair this with identity transforms
-     * on the outgoing unit to avoid double-applying scale/shift.
+     * nsk arrays (sample / identifier / x / y / z / r plus
+     * segment_start / segment_end) that parseNSDict expects. Unlike an
+     * swc export, the explicit segments preserve loops and multi-root
+     * forests losslessly (heads are recomputed on reload). The transform
+     * was already applied during parse, so the caller should pair this
+     * with identity transforms on the outgoing unit to avoid
+     * double-applying scale/shift.
      */
     export() {
         if (!this.vertices) {
             return null;
-        }
-        const parentMap = new Map();
-        for (const seg of Object.values(this.segments || {})) {
-            if (seg && typeof seg.end !== 'undefined') {
-                parentMap.set(Number(seg.end), Number(seg.start));
-            }
-        }
-        for (const head of this.heads || []) {
-            parentMap.set(Number(head), -1);
         }
         const sample = [];
         const identifier = [];
@@ -1251,22 +1328,29 @@ export class NeuronSkeleton extends RenderObj {
         const y = [];
         const z = [];
         const r = [];
-        const parent = [];
         for (const key of Object.keys(this.vertices)) {
             const v = this.vertices[key];
-            const ni = Number(key);
-            sample.push(ni);
+            sample.push(Number(key));
             identifier.push(Number(v.type ?? 0));
             x.push(Number(v.x));
             y.push(Number(v.y));
             z.push(Number(v.z));
             r.push(Number(v.radius ?? 0));
-            parent.push(parentMap.has(ni) ? parentMap.get(ni) : -1);
+        }
+        const segment_start = [];
+        const segment_end = [];
+        for (const seg of Object.values(this.segments || {})) {
+            if (seg && typeof seg.start !== 'undefined'
+                    && typeof seg.end !== 'undefined') {
+                segment_start.push(Number(seg.start));
+                segment_end.push(Number(seg.end));
+            }
         }
         return {
             morphology: {
-                morph_type: 'swc',
-                sample, identifier, x, y, z, r, parent
+                morph_type: 'nsk',
+                sample, identifier, x, y, z, r,
+                segment_start, segment_end
             },
             kind: 'neuron'
         };

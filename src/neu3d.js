@@ -1313,6 +1313,16 @@ export class Neu3D {
                             delete unit['r'];
                             delete unit['parent'];
                             delete unit['sample'];
+                        } else if (unit['morph_type'] === 'ns' || unit['morph_type'] === 'nsk') {
+                            delete unit['identifier'];
+                            delete unit['x'];
+                            delete unit['y'];
+                            delete unit['z'];
+                            delete unit['r'];
+                            delete unit['radius'];
+                            delete unit['sample'];
+                            delete unit['segment_start'];
+                            delete unit['segment_end'];
                         }
                     }
                 } else if (metadata.type === "obj") {
