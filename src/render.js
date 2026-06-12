@@ -491,7 +491,9 @@ export class NeuronSkeleton extends RenderObj {
             } else if (type === 'ns' || type === 'nsk') {
                 skeleton = this.parseNSFile(data);
             } else {
-                console.error("[Neu3D] NeuronSkeleton unknown type.");
+                console.error(
+                    "[Neu3D] NeuronSkeleton: unknown morph_type " +
+                    JSON.stringify(type) + " (expected 'swc', 'ns' or 'nsk').");
             }
         } else {
             if (type === 'swc') {
@@ -499,12 +501,21 @@ export class NeuronSkeleton extends RenderObj {
             } else if (type === 'ns' || type === 'nsk') {
                 skeleton = this.parseNSDict(data);
             } else {
-                console.error("[Neu3D] NeuronSkeleton unknown type.");
+                console.error(
+                    "[Neu3D] NeuronSkeleton: unknown morph_type " +
+                    JSON.stringify(type) + " (expected 'swc', 'ns' or 'nsk').");
             }
         }
-        // if (!NeuronSkeleton.verifySkeleton(skeleton)) {
-        //     console.error("[Neu3D] Parse NeuronSkeleton failed.");
-        // }
+        // Guard: if parsing produced nothing (unknown type, or a parser
+        // that returned null), leave this object empty instead of throwing
+        // a cryptic "Cannot read properties of null (reading 'vertices')".
+        // Callers (createObject) tolerate empty vertices/segments.
+        if (!skeleton) {
+            console.error(
+                "[Neu3D] NeuronSkeleton: could not parse morphology " +
+                "(morph_type " + JSON.stringify(type) + "); rendering nothing.");
+            skeleton = { vertices: {}, segments: {}, heads: [] };
+        }
         this.vertices = skeleton['vertices'];
         this.segments = skeleton['segments'];
         this.heads = skeleton['heads'];
